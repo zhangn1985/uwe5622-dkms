@@ -135,10 +135,16 @@ int sdiohal_tx_thread(void *data)
 {
 	struct sdiohal_data_t *p_data = sdiohal_get_data();
 	struct sdiohal_list_t data_list;
+        struct sched_attr attr = {
+                .sched_policy   = SCHED_FIFO,
+                .sched_priority = SDIO_TX_TASK_PRIO,
+                .sched_nice     = PRIO_TO_NICE(current->static_prio),
+        };
 	struct timespec tm_begin, tm_end;
 	static long time_total_ns;
 	static int times_count;
 
+	sched_setattr_nocheck(current, &attr);
 
 	while (1) {
 		/* Wait the semaphore */
