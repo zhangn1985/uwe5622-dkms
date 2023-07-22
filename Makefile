@@ -10,9 +10,12 @@ PWD  := $(shell pwd)
 
 default:
 	$(MAKE) -C $(KDIR) M=$(PWD)/uwe5622 modules
+	$(MAKE) -C $(KDIR) M=$(PWD)/bluetooth modules
 
 install:
 	$(MAKE) -C $(KDIR) M=$(PWD)/uwe5622 modules_install
+	$(MAKE) -C $(KDIR) M=$(PWD)/bluetooth modules_install
 clean:
 	$(MAKE) -C $(KDIR) M=$(PWD)/uwe5622 clean
+	$(MAKE) -C $(KDIR) M=$(PWD)/bluetooth clean
 
