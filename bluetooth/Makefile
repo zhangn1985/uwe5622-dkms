@@ -3,25 +3,27 @@
 # Makefile for the Linux Bluetooth subsystem.
 #
 
-CONFIG_BT=m
-CONFIG_BT_BREDR=y
-CONFIG_BT_LE=y
-CONFIG_BT_HS=y
-CONFIG_BT_LEDS=y
-CONFIG_BT_DEBUGFS=y
-obj-$(CONFIG_BT)	+= bluetooth_sprd.o
+obj-$(CONFIG_BT)	+= bluetooth.o
+obj-$(CONFIG_BT_RFCOMM)	+= rfcomm/
+obj-$(CONFIG_BT_BNEP)	+= bnep/
+obj-$(CONFIG_BT_CMTP)	+= cmtp/
+obj-$(CONFIG_BT_HIDP)	+= hidp/
+obj-$(CONFIG_BT_6LOWPAN) += bluetooth_6lowpan.o
 
+bluetooth_6lowpan-y := 6lowpan.o
 
-bluetooth_sprd-y := af_bluetooth.o hci_core.o hci_conn.o hci_event.o mgmt.o \
+bluetooth-y := af_bluetooth.o hci_core.o hci_conn.o hci_event.o mgmt.o \
 	hci_sock.o hci_sysfs.o l2cap_core.o l2cap_sock.o smp.o lib.o \
 	ecdh_helper.o hci_request.o mgmt_util.o mgmt_config.o hci_codec.o \
 	eir.o hci_sync.o
 
-bluetooth_sprd-$(CONFIG_BT_BREDR) += sco.o
-bluetooth_sprd-$(CONFIG_BT_LE) += iso.o
-bluetooth_sprd-$(CONFIG_BT_HS) += a2mp.o amp.o
-bluetooth_sprd-$(CONFIG_BT_LEDS) += leds.o
-bluetooth_sprd-$(CONFIG_BT_MSFTEXT) += msft.o
-bluetooth_sprd-$(CONFIG_BT_AOSPEXT) += aosp.o
-bluetooth_sprd-$(CONFIG_BT_DEBUGFS) += hci_debugfs.o
-bluetooth_sprd-$(CONFIG_BT_SELFTEST) += selftest.o
+bluetooth-$(CONFIG_DEV_COREDUMP) += coredump.o
+
+bluetooth-$(CONFIG_BT_BREDR) += sco.o
+bluetooth-$(CONFIG_BT_LE) += iso.o
+bluetooth-$(CONFIG_BT_HS) += a2mp.o amp.o
+bluetooth-$(CONFIG_BT_LEDS) += leds.o
+bluetooth-$(CONFIG_BT_MSFTEXT) += msft.o
+bluetooth-$(CONFIG_BT_AOSPEXT) += aosp.o
+bluetooth-$(CONFIG_BT_DEBUGFS) += hci_debugfs.o
+bluetooth-$(CONFIG_BT_SELFTEST) += selftest.o
