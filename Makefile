@@ -5,7 +5,7 @@ export CONFIG_SPRDWL_NG=m
 export CONFIG_UNISOC_WIFI_PS=y
 
 
-KDIR := /usr/lib/modules/$(shell uname -r)/build
+KDIR := /usr/lib/modules/$(kernelver)/build
 PWD  := $(shell pwd)
 
 default:
