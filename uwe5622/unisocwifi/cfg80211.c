@@ -1388,6 +1388,18 @@ void sprdwl_scan_timeout(unsigned long data)
 	spin_unlock_bh(&priv->scan_lock);
 }
 
+static char *sprd_strncpy(char *dest, const char *src, size_t count)
+{
+	char *tmp = dest;
+	while (count) {
+		if ((*tmp = *src) != 0)
+			src++;
+		tmp++;
+		count--;
+	}
+	return dest;
+}
+
 static int sprdwl_cfg80211_scan(struct wiphy *wiphy,
 				struct cfg80211_scan_request *request)
 {
@@ -1531,7 +1543,7 @@ static int sprdwl_cfg80211_scan(struct wiphy *wiphy,
 			if (!ssids[i].ssid_len)
 				continue;
 			scan_ssids->len = ssids[i].ssid_len;
-			strncpy(scan_ssids->ssid, ssids[i].ssid,
+			sprd_strncpy(scan_ssids->ssid, ssids[i].ssid,
 				ssids[i].ssid_len);
 			scan_ssids_len += (ssids[i].ssid_len
 					   + sizeof(scan_ssids->len));
@@ -2878,7 +2890,7 @@ static void sprdwl_cfg80211_stop_p2p_device(struct wiphy *wiphy,
 }
 
 static int sprdwl_cfg80211_tdls_mgmt(struct wiphy *wiphy,
-					 struct net_device *ndev, const u8 *peer,
+					 struct net_device *ndev, const u8 *peer, int link_id,
 					 u8 action_code, u8 dialog_token,
 					 u16 status_code,  u32 peer_capability,
 					 bool initiator, const u8 *buf, size_t len)
