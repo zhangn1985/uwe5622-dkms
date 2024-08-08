@@ -17,7 +17,7 @@ bluetooth_sprd-y := af_bluetooth.o hci_core.o hci_conn.o hci_event.o mgmt.o \
 	ecdh_helper.o hci_request.o mgmt_util.o mgmt_config.o hci_codec.o \
 	eir.o hci_sync.o
 
-bluetooth-$(CONFIG_DEV_COREDUMP) += coredump.o
+bluetooth_sprd-$(CONFIG_DEV_COREDUMP) += coredump.o
 
 bluetooth_sprd-$(CONFIG_BT_BREDR) += sco.o
 bluetooth_sprd-$(CONFIG_BT_LE) += iso.o

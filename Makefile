@@ -3,7 +3,6 @@ export CONFIG_RK_WIFI_DEVICE_UWE5622=y
 export CONFIG_WLAN_UWE5622=m
 export CONFIG_SPRDWL_NG=m
 export CONFIG_UNISOC_WIFI_PS=y
-export CONFIG_RTC_DRV_RS5C372=m
 
 KDIR := /usr/lib/modules/$(kernelver)/build
 PWD  := $(shell pwd)
