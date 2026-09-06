@@ -1389,18 +1389,6 @@ void sprdwl_scan_timeout(unsigned long data)
 	spin_unlock_bh(&priv->scan_lock);
 }
 
-static char *sprd_strncpy(char *dest, const char *src, size_t count)
-{
-	char *tmp = dest;
-	while (count) {
-		if ((*tmp = *src) != 0)
-			src++;
-		tmp++;
-		count--;
-	}
-	return dest;
-}
-
 static int sprdwl_cfg80211_scan(struct wiphy *wiphy,
 				struct cfg80211_scan_request *request)
 {
@@ -1411,6 +1399,7 @@ static int sprdwl_cfg80211_scan(struct wiphy *wiphy,
 	struct sprdwl_scan_ssid *scan_ssids;
 	u8 *ssids_ptr = NULL;
 	int scan_ssids_len = 0;
+	int scan_ssid_len;
 	u32 channels = 0;
 	unsigned int i, n;
 	int ret;
@@ -1543,11 +1532,15 @@ static int sprdwl_cfg80211_scan(struct wiphy *wiphy,
 		for (i = 0; i < n; i++) {
 			if (!ssids[i].ssid_len)
 				continue;
+			scan_ssid_len = sizeof(scan_ssids->len) + ssids[i].ssid_len;
+			if (scan_ssids_len + scan_ssid_len > 512) {
+				ret = -EINVAL;
+				kfree(ssids_ptr);
+				goto err;
+			}
 			scan_ssids->len = ssids[i].ssid_len;
-			sprd_strncpy(scan_ssids->ssid, ssids[i].ssid,
-				ssids[i].ssid_len);
-			scan_ssids_len += (ssids[i].ssid_len
-					   + sizeof(scan_ssids->len));
+			memcpy(scan_ssids->ssid, ssids[i].ssid, ssids[i].ssid_len);
+			scan_ssids_len += scan_ssid_len;
 			scan_ssids = (struct sprdwl_scan_ssid *)
 				(ssids_ptr + scan_ssids_len);
 		}
