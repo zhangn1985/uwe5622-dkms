@@ -1539,7 +1539,8 @@ static int sprdwl_cfg80211_scan(struct wiphy *wiphy,
 				goto err;
 			}
 			scan_ssids->len = ssids[i].ssid_len;
-			memcpy(scan_ssids->ssid, ssids[i].ssid, ssids[i].ssid_len);
+			memcpy((u8 *)scan_ssids + sizeof(*scan_ssids),
+			       ssids[i].ssid, ssids[i].ssid_len);
 			scan_ssids_len += scan_ssid_len;
 			scan_ssids = (struct sprdwl_scan_ssid *)
 				(ssids_ptr + scan_ssids_len);
