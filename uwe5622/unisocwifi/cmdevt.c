@@ -1133,7 +1133,7 @@ int sprdwl_add_key(struct sprdwl_priv *priv, u8 vif_ctx_id, const u8 *key_data,
 	if (mac_addr)
 		ether_addr_copy(p->mac, mac_addr);
 	if (key_data)
-		memcpy(p->value, key_data, key_len);
+		memcpy((u8 *)p + sizeof(*p), key_data, key_len);
 
 	if (mac_addr)
 		reset_pn(priv, mac_addr);
@@ -1219,7 +1219,7 @@ int sprdwl_set_ie(struct sprdwl_priv *priv, u8 vif_ctx_id, u8 type,
 	p = (struct sprdwl_cmd_set_ie *)msg->data;
 	p->type = type;
 	p->len = len;
-	memcpy(p->data, ie, len);
+	memcpy((u8 *)p + sizeof(*p), ie, len);
 
 	return sprdwl_cmd_send_recv(priv, msg, CMD_WAIT_TIMEOUT, NULL, NULL);
 }
@@ -1344,7 +1344,8 @@ int sprdwl_scan(struct sprdwl_priv *priv, u8 vif_ctx_id,
 	ext_5g = (struct sprdwl_5g_chn *)((u8 *)p + sizeof(*p) + ssid_len);
 	if (chn_count_5g > 0) {
 		ext_5g->n_5g_chn = chn_count_5g;
-		memcpy(ext_5g->chns, chns_5g, chns_len_5g);
+		memcpy((u8 *)ext_5g + sizeof(*ext_5g), chns_5g,
+		       chns_len_5g);
 	} else {
 		ext_5g->n_5g_chn = 0;
 	}
