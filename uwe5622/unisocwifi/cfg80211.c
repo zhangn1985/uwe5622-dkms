@@ -22,7 +22,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
-
+#include <linux/string.h>
 #include "sprdwl.h"
 #include "cfg80211.h"
 #include "cmdevt.h"
@@ -820,20 +820,6 @@ int sprdwl_change_beacon(struct sprdwl_vif *vif,
 	return ret;
 }
 
-static char *sprd_strncpy(char *dest, const char *src, size_t count)
-{
-        char *tmp = dest;
-
-        while (count) {
-                if ((*tmp = *src) != 0)
-                        src++;
-                tmp++;
-                count--;
-        }
-        return dest;
-}
-
-
 static int sprdwl_cfg80211_start_ap(struct wiphy *wiphy,
 					struct net_device *ndev,
 					struct cfg80211_ap_settings *settings)
@@ -867,7 +853,7 @@ static int sprdwl_cfg80211_start_ap(struct wiphy *wiphy,
 		wl_ndev_log(L_ERR, ndev, "%s invalid SSID!\n", __func__);
 		return -EINVAL;
 	}
-	sprd_strncpy(vif->ssid, settings->ssid, settings->ssid_len);
+	strscpy(vif->ssid, settings->ssid, settings->ssid_len);
 	vif->ssid_len = settings->ssid_len;
 
 #ifdef STA_SOFTAP_SCC_MODE
@@ -938,7 +924,7 @@ static int sprdwl_cfg80211_start_ap(struct wiphy *wiphy,
 	*(data + index) = (u8)(settings->ssid_len + 1);
 	index += 1;
 	/* copy ssid */
-	sprd_strncpy(data + index, settings->ssid, settings->ssid_len);
+	strscpy(data + index, settings->ssid, settings->ssid_len);
 	index += settings->ssid_len;
 	/* set hidden ssid flag */
 	*(data + index) = (u8)settings->hidden_ssid;
@@ -2034,7 +2020,7 @@ static int sprdwl_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev,
 	if (!sme->ssid) {
 		wl_ndev_log(L_DBG, ndev, "No SSID specified!\n");
 	} else {
-		sprd_strncpy(con.ssid, sme->ssid, sme->ssid_len);
+		strscpy(con.ssid, sme->ssid, sme->ssid_len);
 		con.ssid_len = sme->ssid_len;
 		vif->sm_state = SPRDWL_CONNECTING;
 
@@ -2049,7 +2035,7 @@ static int sprdwl_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev,
 		ret = sprdwl_connect(vif->priv, vif->ctx_id, &con);
 		if (ret)
 			goto err;
-		sprd_strncpy(vif->ssid, sme->ssid, sme->ssid_len);
+		strscpy(vif->ssid, sme->ssid, sme->ssid_len);
 		vif->ssid_len = sme->ssid_len;
 		wl_ndev_log(L_DBG, ndev, "%s %s\n", __func__, vif->ssid);
 	}
@@ -3966,11 +3952,7 @@ struct sprdwl_priv *sprdwl_core_create(enum sprdwl_hw_type type,
 	int ret = 0;
 
 	sprdwl_check_intf_ops(ops);
-	ret = sprdwl_cmd_init();
-	if (ret) {
-		wl_err("sprdwl_cmd_init failed: %d\n", ret);
-		return NULL;
-	}
+	sprdwl_cmd_init();
 
 	wiphy = wiphy_new(&sprdwl_cfg80211_ops, sizeof(*priv));
 	if (!wiphy) {
