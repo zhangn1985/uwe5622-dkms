@@ -849,11 +849,11 @@ static int sprdwl_cfg80211_start_ap(struct wiphy *wiphy,
 		vif->priv->beacon_period = settings->beacon_interval;
 #endif
 
-	if (!settings->ssid) {
+	if (!settings->ssid || settings->ssid_len > sizeof(vif->ssid)) {
 		wl_ndev_log(L_ERR, ndev, "%s invalid SSID!\n", __func__);
 		return -EINVAL;
 	}
-	strscpy(vif->ssid, settings->ssid, settings->ssid_len);
+	memcpy(vif->ssid, settings->ssid, settings->ssid_len);
 	vif->ssid_len = settings->ssid_len;
 
 #ifdef STA_SOFTAP_SCC_MODE
@@ -924,7 +924,7 @@ static int sprdwl_cfg80211_start_ap(struct wiphy *wiphy,
 	*(data + index) = (u8)(settings->ssid_len + 1);
 	index += 1;
 	/* copy ssid */
-	strscpy(data + index, settings->ssid, settings->ssid_len);
+	memcpy(data + index, settings->ssid, settings->ssid_len);
 	index += settings->ssid_len;
 	/* set hidden ssid flag */
 	*(data + index) = (u8)settings->hidden_ssid;
@@ -1749,8 +1749,8 @@ void sprdwl_disconnect_handle(struct sprdwl_vif *vif)
 			NULL, 0, GFP_KERNEL);
 #endif
 		wl_ndev_log(L_DBG, vif->ndev,
-			"%s %s, reason_code %d\n", __func__,
-			vif->ssid, reason_code);
+			"%s %.*s, reason_code %d\n", __func__,
+			(int)vif->ssid_len, vif->ssid, reason_code);
 	}
 
 	vif->sm_state = SPRDWL_DISCONNECTED;
@@ -1788,8 +1788,8 @@ static int sprdwl_cfg80211_disconnect(struct wiphy *wiphy,
 	intf->sta_home_channel = 0;
 #endif
 
-	wl_ndev_log(L_DBG, ndev, "%s %s reason: %d\n", __func__, vif->ssid,
-			reason_code);
+	wl_ndev_log(L_DBG, ndev, "%s %.*s reason: %d\n", __func__,
+			(int)vif->ssid_len, vif->ssid, reason_code);
 
 	vif->sm_state = SPRDWL_DISCONNECTING;
 
@@ -1834,6 +1834,10 @@ static int sprdwl_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev,
 		(sme->crypto.cipher_group == WLAN_CIPHER_SUITE_WEP104);
 	int random_mac_flag;
 	int ret = -EPERM;
+
+	if (sme->ssid_len > sizeof(con.ssid) ||
+	    sme->ssid_len > sizeof(vif->ssid))
+		return -EINVAL;
 
 	/*workround for bug 795430*/
 	if (vif->priv->fw_stat[vif->mode] == SPRDWL_INTF_CLOSE) {
@@ -2020,12 +2024,13 @@ static int sprdwl_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev,
 	if (!sme->ssid) {
 		wl_ndev_log(L_DBG, ndev, "No SSID specified!\n");
 	} else {
-		strscpy(con.ssid, sme->ssid, sme->ssid_len);
+		memcpy(con.ssid, sme->ssid, sme->ssid_len);
 		con.ssid_len = sme->ssid_len;
 		vif->sm_state = SPRDWL_CONNECTING;
 
 		if (vif->wps_flag) {
-			if (strstr(con.ssid, "Marvell") || strstr(con.ssid, "Ralink")) {
+			if (strnstr(con.ssid, "Marvell", con.ssid_len) ||
+			    strnstr(con.ssid, "Ralink", con.ssid_len)) {
 				wl_info("%s, WPS connection\n", __func__);
 				msleep(3000);
 			}
@@ -2035,9 +2040,10 @@ static int sprdwl_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev,
 		ret = sprdwl_connect(vif->priv, vif->ctx_id, &con);
 		if (ret)
 			goto err;
-		strscpy(vif->ssid, sme->ssid, sme->ssid_len);
+		memcpy(vif->ssid, sme->ssid, sme->ssid_len);
 		vif->ssid_len = sme->ssid_len;
-		wl_ndev_log(L_DBG, ndev, "%s %s\n", __func__, vif->ssid);
+		wl_ndev_log(L_DBG, ndev, "%s %.*s\n", __func__,
+			   (int)vif->ssid_len, vif->ssid);
 	}
 
 	return 0;
@@ -2366,8 +2372,8 @@ void sprdwl_report_connection(struct sprdwl_vif *vif,
 		}
 
 		mgmt = (struct ieee80211_mgmt *)conn_info->bea_ie;
-		wl_ndev_log(L_DBG, vif->ndev, "%s update BSS %s\n", __func__,
-				vif->ssid);
+		wl_ndev_log(L_DBG, vif->ndev, "%s update BSS %.*s\n", __func__,
+				(int)vif->ssid_len, vif->ssid);
 		if (!mgmt) {
 			wl_ndev_log(L_ERR, vif->ndev, "%s NULL frame!\n", __func__);
 			goto err;
@@ -2483,9 +2489,9 @@ void sprdwl_report_connection(struct sprdwl_vif *vif,
 
 	vif->sm_state = SPRDWL_CONNECTED;
 	memcpy(vif->bssid, conn_info->bssid, sizeof(vif->bssid));
-	wl_ndev_log(L_DBG, vif->ndev, "%s %s to %s (%pM)\n", __func__,
+	wl_ndev_log(L_DBG, vif->ndev, "%s %s to %.*s (%pM)\n", __func__,
 			conn_info->status == SPRDWL_CONNECT_SUCCESS ?
-			"connect" : "roam", vif->ssid, vif->bssid);
+			"connect" : "roam", (int)vif->ssid_len, vif->ssid, vif->bssid);
 	return;
 err:
 #ifdef STA_SOFTAP_SCC_MODE
@@ -2497,8 +2503,8 @@ err:
 		cfg80211_connect_result(vif->ndev, vif->bssid, NULL, 0, NULL, 0,
 					status_code, GFP_KERNEL);
 
-	wl_ndev_log(L_ERR, vif->ndev, "%s %s failed status code:%d!\n",
-				__func__, vif->ssid, status_code);
+	wl_ndev_log(L_ERR, vif->ndev, "%s %.*s failed status code:%d!\n",
+				__func__, (int)vif->ssid_len, vif->ssid, status_code);
 	memset(vif->bssid, 0, sizeof(vif->bssid));
 	memset(vif->ssid, 0, sizeof(vif->ssid));
 }
@@ -2518,8 +2524,8 @@ void sprdwl_report_disconnection(struct sprdwl_vif *vif, u16 reason_code)
 					  NULL, 0, GFP_KERNEL);
 #endif
 		wl_ndev_log(L_DBG, vif->ndev,
-				"%s %s, reason_code %d\n", __func__,
-				vif->ssid, reason_code);
+				"%s %.*s, reason_code %d\n", __func__,
+				(int)vif->ssid_len, vif->ssid, reason_code);
 	} else {
 		wl_ndev_log(L_ERR, vif->ndev, "%s Unexpected event!\n", __func__);
 		return;
