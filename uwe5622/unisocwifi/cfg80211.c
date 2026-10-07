@@ -2756,38 +2756,40 @@ static void sprdwl_cfg80211_mgmt_frame_register(struct wiphy *wiphy,
 	struct sprdwl_reg_mgmt *reg_mgmt;
 	u16 mgmt_type;
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0))
-       u16 frame_type = BIT(upd->global_stypes << 4);
-       bool reg = false;
-#endif
-
 	if (vif->mode == SPRDWL_MODE_NONE)
 		return;
 
-	mgmt_type = (frame_type & IEEE80211_FCTL_STYPE) >> 4;
-	if ((reg && test_and_set_bit(mgmt_type, &vif->mgmt_reg)) ||
-		(!reg && !test_and_clear_bit(mgmt_type, &vif->mgmt_reg))) {
-		wl_ndev_log(L_DBG, wdev->netdev, "%s  mgmt %d has %sreg\n", __func__,
-			   frame_type, reg ? "" : "un");
-		return;
+	for (mgmt_type = 0; mgmt_type <= (IEEE80211_FCTL_STYPE >> 4);
+	     mgmt_type++) {
+		u16 frame_type = mgmt_type << 4;
+		bool reg = !!(upd->interface_stypes & BIT(mgmt_type));
+
+		if (reg == test_bit(mgmt_type, &vif->mgmt_reg))
+			continue;
+
+		wl_ndev_log(L_DBG, wdev->netdev, "frame_type %d, reg %d\n",
+			   frame_type, reg);
+
+		misc_work = sprdwl_alloc_work(sizeof(*reg_mgmt));
+		if (!misc_work) {
+			wl_ndev_log(L_ERR, wdev->netdev, "%s out of memory\n", __func__);
+			return;
+		}
+
+		misc_work->vif = vif;
+		misc_work->id = SPRDWL_WORK_REG_MGMT;
+
+		reg_mgmt = (struct sprdwl_reg_mgmt *)misc_work->data;
+		reg_mgmt->type = frame_type;
+		reg_mgmt->reg = reg;
+
+		if (reg)
+			set_bit(mgmt_type, &vif->mgmt_reg);
+		else
+			clear_bit(mgmt_type, &vif->mgmt_reg);
+
+		sprdwl_queue_work(vif->priv, misc_work);
 	}
-
-	wl_ndev_log(L_DBG, wdev->netdev, "frame_type %d, reg %d\n", frame_type, reg);
-
-	misc_work = sprdwl_alloc_work(sizeof(*reg_mgmt));
-	if (!misc_work) {
-		wl_ndev_log(L_ERR, wdev->netdev, "%s out of memory\n", __func__);
-		return;
-	}
-
-	misc_work->vif = vif;
-	misc_work->id = SPRDWL_WORK_REG_MGMT;
-
-	reg_mgmt = (struct sprdwl_reg_mgmt *)misc_work->data;
-	reg_mgmt->type = frame_type;
-	reg_mgmt->reg = reg;
-
-	sprdwl_queue_work(vif->priv, misc_work);
 }
 
 void sprdwl_report_remain_on_channel_expired(struct sprdwl_vif *vif)
