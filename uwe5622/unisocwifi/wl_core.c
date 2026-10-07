@@ -530,10 +530,6 @@ static struct sprdwl_if_ops sprdwl_core_ops = {
 	.ini_download_status = sprdwl_ini_download_status
 };
 
-static struct notifier_block boost_notifier = {
-	.notifier_call = sprdwl_notifier_boost,
-};
-
 #ifdef CP2_RESET_SUPPORT
 extern struct sprdwl_priv *g_sprdwl_priv;
 extern void sprdwl_cancel_scan(struct sprdwl_vif *vif);
@@ -628,8 +624,8 @@ static int sprdwl_probe(struct platform_device *pdev)
 		ret = -ENXIO;
 		goto err_core_create;
 	}
-	memcpy(priv->wl_ver.kernel_ver, utsname()->release, 7);
-	priv->wl_ver.kernel_ver[7] = '\0';
+	memcpy(priv->wl_ver.kernel_ver, utsname()->release,
+			strlen(utsname()->release));
 	memcpy(priv->wl_ver.drv_ver, SPRDWL_DRIVER_VERSION,
 			strlen(SPRDWL_DRIVER_VERSION));
 	memcpy(priv->wl_ver.update, SPRDWL_UPDATE, strlen(SPRDWL_UPDATE));
@@ -686,7 +682,6 @@ static int sprdwl_probe(struct platform_device *pdev)
 #endif
 
 	sprdwl_debugfs_init(intf);
-	cpufreq_register_notifier(&boost_notifier, CPUFREQ_POLICY_NOTIFIER);
 
 	return ret;
 
@@ -713,7 +708,6 @@ static void sprdwl_remove(struct platform_device *pdev)
 	marlin_reset_callback_unregister(MARLIN_WIFI, &wifi_reset_notifier);
 #endif
 
-	cpufreq_unregister_notifier(&boost_notifier, CPUFREQ_POLICY_NOTIFIER);
 	sprdwl_debugfs_deinit();
 	sprdwl_core_deinit(priv);
 	sprdwl_tx_deinit(intf);
@@ -723,6 +717,7 @@ static void sprdwl_remove(struct platform_device *pdev)
 	kfree(intf);
 	stop_marlin(MARLIN_WIFI);
 	wl_info("%s\n", __func__);
+
 }
 
 static const struct of_device_id sprdwl_of_match[] = {

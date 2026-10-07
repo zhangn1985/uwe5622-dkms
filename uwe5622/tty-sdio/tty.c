@@ -801,16 +801,19 @@ static void mtty_remove(struct platform_device *pdev)
 	bluesleep_exit();
 }
 
+#ifdef CONFIG_OF
 static const struct of_device_id mtty_match_table[] = {
 	{ .compatible = "sprd,mtty", },
 	{ },
 };
-
+#endif
 static struct platform_driver mtty_driver = {
 	.driver = {
 		.owner = THIS_MODULE,
 		.name = "mtty",
+#ifdef CONFIG_OF
 		.of_match_table = mtty_match_table,
+#endif
 	},
 	.probe = mtty_probe,
 	.remove = mtty_remove,
