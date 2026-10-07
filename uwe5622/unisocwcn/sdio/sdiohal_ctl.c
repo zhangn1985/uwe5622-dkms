@@ -378,7 +378,7 @@ static void sdiohal_tx_send(int chn)
 	int num = 5;
 	int ret, i;
 
-	wait_for_completion(&sdiohal_thread_info[chn - 6].tx_completed);
+	wait_for_completion_interruptible(&sdiohal_thread_info[chn - 6].tx_completed);
 
 	if (!sprdwcn_bus_list_alloc(chn, &head, &tail, &num)) {
 		if (num >= 5) {

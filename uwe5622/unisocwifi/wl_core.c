@@ -121,8 +121,6 @@ struct debuginfo_s {
 	{enable_tcp_ack_delay, "tcpack_delay_en="},
 	{adjust_tcp_ack_delay, "tcpack_delay_cnt="},
 	{adjust_tcp_ack_delay_win, "tcpack_delay_win="},
-	{adjust_txnum_level, "txnum_level="},
-	{adjust_rxnum_level, "rxnum_level="},
 	{adjust_tdls_threshold, "tdls_threshold="},
 };
 

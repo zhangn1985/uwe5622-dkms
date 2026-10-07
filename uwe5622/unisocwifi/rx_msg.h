@@ -61,9 +61,6 @@ struct sprdwl_rx_if {
 	struct work_struct rx_net_work;
 	struct workqueue_struct *rx_net_workq;
 #endif
-	unsigned long rx_data_num;
-	ktime_t rxtimebegin;
-	ktime_t rxtimeend;
 };
 
 struct sprdwl_addr_trans_value {
@@ -73,13 +70,13 @@ struct sprdwl_addr_trans_value {
 #define SPRDWL_FLUSH_BUFFER 3
 	unsigned char type;
 	unsigned char num;
-	unsigned char address[0][5];
+	unsigned char address[][5];
 } __packed;
 
 struct sprdwl_addr_trans {
 	unsigned int timestamp;
 	unsigned char tlv_num;
-	struct sprdwl_addr_trans_value value[0];
+	DECLARE_FLEX_ARRAY(struct sprdwl_addr_trans_value, value);
 } __packed;
 
 /* NOTE: MUST not modify, defined by HW */
