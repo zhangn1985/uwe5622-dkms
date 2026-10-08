@@ -54,7 +54,7 @@ struct ring_device {
 	struct mutex mdbg_read_mutex;
 	struct list_head	rx_head;
 	struct work_struct	rx_task;
-	long int flag_smp;
+	long flag_smp;
 };
 
 struct sme_head_tag {
@@ -132,8 +132,8 @@ extern struct mchn_ops_t mdbg_proc_ops[MDBG_ASSERT_RX_OPS + 1];
 
 int mdbg_ring_init(void);
 void mdbg_ring_remove(void);
-long int mdbg_send(char *buf, long int len, unsigned int subtype);
-long int mdbg_receive(void *buf, long int len);
+long mdbg_send(char *buf, long len, unsigned int subtype);
+long mdbg_receive(void *buf, long len);
 int mdbg_tx_cb(int channel, struct mbuf_t *head,
 	       struct mbuf_t *tail, int num);
 int mdbg_tx_power_notify(int chn, int flag);

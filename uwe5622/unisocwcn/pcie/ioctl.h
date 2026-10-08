@@ -56,7 +56,7 @@ struct pcicmd {
 struct tlv {
 	unsigned short t;
 	unsigned short l;
-	unsigned char v[0];
+	DECLARE_FLEX_ARRAY(unsigned char, v);
 };
 
 struct arg_t {

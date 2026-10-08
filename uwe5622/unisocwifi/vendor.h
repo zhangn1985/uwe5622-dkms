@@ -775,7 +775,7 @@ struct wifi_peer_info {
 	u8 peer_mac_address[6];
 	u32 capabilities;
 	u32 num_rate;
-	struct wifi_rate_stat rate_stats[];
+	DECLARE_FLEX_ARRAY(struct wifi_rate_stat, rate_stats);
 };
 
 struct wifi_interface_link_layer_info {
@@ -826,7 +826,7 @@ struct wifi_iface_stat {
 	u32 rssi_ack;
 	struct wifi_wmm_ac_stat ac[WIFI_AC_MAX];
 	u32 num_peers;
-	struct wifi_peer_info peer_info[];
+	DECLARE_FLEX_ARRAY(struct wifi_peer_info, peer_info);
 };
 
 /* WiFi Common definitions */
@@ -872,7 +872,7 @@ struct wifi_radio_stat {
 	u32 on_time_pno_scan;
 	u32 on_time_hs20;
 	u32 num_channels;
-	struct wifi_channel_stat channels[];
+	DECLARE_FLEX_ARRAY(struct wifi_channel_stat, channels);
 };
 
 struct sprdwl_wmm_ac_stat {
@@ -1571,7 +1571,7 @@ struct sprdwl_epno_results {
 	u64 boot_time;
 	u8 request_id;
 	u8 nr_scan_results;
-	struct sprdwl_gscan_result results[0];
+	DECLARE_FLEX_ARRAY(struct sprdwl_gscan_result, results);
 } __packed;
 
 struct wifi_ssid {

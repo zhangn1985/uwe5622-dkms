@@ -40,7 +40,7 @@
 	pr_err("sdiohal err:" fmt, ## args)
 
 #ifdef CONFIG_DEBUG_FS
-extern long int sdiohal_log_level;
+extern long sdiohal_log_level;
 
 #define sdiohal_normal(fmt, args...) \
 	do { if (sdiohal_log_level & SDIOHAL_NORMAL_LEVEL) \

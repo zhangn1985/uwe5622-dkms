@@ -1,7 +1,7 @@
 #ifndef __EDMA_TEST_H__
 #define __EDMA_TEST_H__
 
-enum EDMA_TEST_CMD{
+enum EDMA_TEST_CMD {
 	EDMA_TEST_CMD_0,
 	EDMA_TEST_CMD_1,
 	EDMA_TEST_CMD_2,

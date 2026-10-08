@@ -7,7 +7,7 @@
 #include "wl_intf.h"
 #include <linux/version.h>
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0))
+#if (KERNEL_VERSION(3, 18, 0) > LINUX_VERSION_CODE)
 #define NL80211_RRF_AUTO_BW 0
 #endif
 

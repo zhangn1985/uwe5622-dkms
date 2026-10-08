@@ -113,7 +113,7 @@ enum acl_mode {
 
 struct sprdwl_scan_ssid {
 	u8 len;
-	u8 ssid[0];
+	DECLARE_FLEX_ARRAY(u8, ssid);
 } __packed;
 
 struct sprdwl_sched_scan_buf {
@@ -143,9 +143,9 @@ struct sprdwl_ieee80211_regdomain {
 	char alpha2[2];
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0) && \
 	LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0))
-	struct ieee80211_reg_rule reg_rules[];
+	DECLARE_FLEX_ARRAY(struct ieee80211_reg_rule, reg_rules);
 #else
-	struct unisoc_reg_rule reg_rules[];
+	DECLARE_FLEX_ARRAY(struct unisoc_reg_rule, reg_rules);
 #endif
 };
 

@@ -372,7 +372,7 @@ struct sprdwl_cmd_add_key {
 	u8 keyseq[16];
 	u8 cypher_type;
 	u8 key_len;
-	u8 value[0];
+	DECLARE_FLEX_ARRAY(u8, data);
 } __packed;
 
 struct sprdwl_cmd_del_key {
@@ -402,13 +402,13 @@ struct sprdwl_cmd_set_ie {
 #define	SPRDWL_IE_BEACON_TAIL		6
 	u8 type;
 	__le16 len;
-	u8 data[0];
+	DECLARE_FLEX_ARRAY(u8, data);
 } __packed;
 
 /* WIFI_CMD_START_AP */
 struct sprdwl_cmd_start_ap {
 	__le16 len;
-	u8 value[0];
+	DECLARE_FLEX_ARRAY(u8, value);
 } __packed;
 
 /* WIFI_CMD_DEL_STATION */
@@ -454,7 +454,7 @@ struct sprdwl_cmd_scan {
 	__le32 channels;	/* One bit for one channel */
 	__le32 reserved;
 	u16 ssid_len;
-	u8 ssid[0];
+	DECLARE_FLEX_ARRAY(u8, ssid);
 } __packed;
 
 /* WIFI_CMD_SCHED_SCAN */
@@ -794,7 +794,7 @@ struct sprdwl_cmd_ba {
 	unsigned char success;
 } __packed;
 
-struct sprdwl_ba_event_data{
+struct sprdwl_ba_event_data {
 	struct sprdwl_cmd_ba addba_rsp;
 	struct sprdwl_rx_ba_entry *ba_entry;
 	u8 sta_lut_index;

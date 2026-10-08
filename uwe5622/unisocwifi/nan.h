@@ -161,7 +161,7 @@ struct nan_enable_req {
 	 *           WLAN Intra Attr, P2P Operation Attr, WLAN IBSS Attr,
 	 *           WLAN Mesh Attr
 	*/
-	u8 nan_tlv[];
+	DECLARE_FLEX_ARRAY(u8, nan_tlv);
 } __packed;
 
 struct nan_disable_req {
@@ -200,7 +200,7 @@ struct nan_publish_req {
 	 * Required: Service Name,
 	 * Optional: Tx Match Filter, Rx Match Filter, Service Specific Info,
 	 */
-	u8 nan_tlv[];
+	DECLARE_FLEX_ARRAY(u8, nan_tlv);
 } __packed;
 
 struct nan_cancel_pub_req {
@@ -235,7 +235,7 @@ struct nan_subscribe_req {
 	 * Required: Service Name
 	 * Optional: Rx Match Filter, Tx Match Filter, Service Specific Info,
 	 */
-	u8 nan_tlv[];
+	DECLARE_FLEX_ARRAY(u8, nan_tlv);
 } __packed;
 
 struct nan_cancel_sub_req {
@@ -257,7 +257,7 @@ struct nan_followup_req {
 	 *
 	 * Required: Service Specific Info or Extended Service Specific Info
 	 */
-	u8 nan_tlv[];
+	DECLARE_FLEX_ARRAY(u8, nan_tlv);
 } __packed;
 
 struct nan_capabilities_req {
@@ -291,7 +291,7 @@ struct nan_capa {
 
 struct nan_cmd_header {
 	u16 data_len;
-	u8 data[0];
+	DECLARE_FLEX_ARRAY(u8, data);
 } __packed;
 
 /* cmd handler*/
