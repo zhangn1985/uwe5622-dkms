@@ -561,7 +561,7 @@ struct {
 
 struct wcn_usb_big_men {
 	struct list_head list;
-	char buf[0];
+	DECLARE_FLEX_ARRAY(char, buf);
 };
 
 #define LOCK_FREE_BIG_BUF(at) \

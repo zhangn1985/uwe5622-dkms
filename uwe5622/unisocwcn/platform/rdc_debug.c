@@ -103,7 +103,7 @@ static int wcn_find_cp2_file_num(char *path, loff_t *pos)
 			sprintf(wcn_cp2_file_path, path, i);
 			fp_size = filp_open(wcn_cp2_file_path, O_RDONLY, 0);
 			if (IS_ERR(fp_size)) {
-				WCN_INFO("%s: Error, config file not found. want config file:%s \n",
+				WCN_INFO("%s: Error, config file not found. want config file:%s\n",
 					__func__, wcn_cp2_file_path);
 				break;
 			}
@@ -206,8 +206,7 @@ retry:
 		if (PTR_ERR(filp) == -EACCES)
 			WCN_ERR("%s: Permission denied.\n", __func__);
 		else if (PTR_ERR(filp) == -ENOMEM)
-			WCN_ERR("%s: no memory in system,"
-				"please delete old log file.\n",
+			WCN_ERR("%s: no memory in system,please delete old log file.\n",
 				__func__);
 		return PTR_ERR(filp);
 	}
@@ -446,10 +445,9 @@ static void wcn_config_log_file(void)
 	for (index = 0; index < WCN_DEBUG_CFG_MAX_PATH_NUM; index++) {
 		fp_size = filp_open(wcn_cp2_config_path[index], O_RDONLY, 0);
 		if (IS_ERR(fp_size)) {
-			WCN_INFO("%s: Error, config file not found. want config file:%s \n",
+			WCN_INFO("%s: Error, config file not found. want config file:%s\n",
 				__func__, wcn_cp2_config_path[index]);
-		}
-		else {
+		} else {
 			config_size = (int)fp_size->f_inode->i_size;
 			WCN_INFO("%s: find config file:%s size:%d\n",
 				 __func__, wcn_cp2_config_path[index],
@@ -574,14 +572,12 @@ int wcn_debug_init(void)
 	int ret = 0;
 	unsigned char i;
 
-	WCN_DEBUG("%s entry\n", __func__);
 
 	/* config cp2 log if there is a config file.*/
 	if (config_inited == 0) {
 		wcn_config_log_file();
 		config_inited = 1;
-		WCN_INFO("%s unisoc cp2 log: limit_size:[%d Byte], "
-			 "log_file_num:[%d], cover_old:[%d-%s]\n",
+		WCN_INFO("%s unisoc cp2 log: limit_size:[%d Byte], log_file_num:[%d], cover_old:[%d-%s]\n",
 			 __func__, wcn_cp2_log_limit_size,
 			 wcn_cp2_file_max_num,
 			 wcn_cp2_log_cover_old,

@@ -173,7 +173,6 @@ void slp_mgr_reset(void)
 
 int slp_mgr_init(void)
 {
-	SLP_MGR_DBG("%s enter\n", __func__);
 
 	atomic_set(&(slp_mgr.cp2_state), STAY_AWAKING);
 	mutex_init(&(slp_mgr.drv_slp_lock));
@@ -192,7 +191,6 @@ EXPORT_SYMBOL(slp_mgr_init);
 
 int slp_mgr_deinit(void)
 {
-	SLP_MGR_DBG("%s enter\n", __func__);
 	atomic_set(&(slp_mgr.cp2_state), STAY_SLPING);
 	slp_mgr.active_module = 0;
 	mutex_destroy(&(slp_mgr.drv_slp_lock));

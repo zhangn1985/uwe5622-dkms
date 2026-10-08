@@ -189,7 +189,7 @@ int wcn_usb_store_init(void)
 		chn2ep = wcn_usb_store_get_chn2ep(i);
 		WARN_ON(chn2ep->ep != NULL);
 
-		chn2ep->ep = kzalloc(sizeof(struct wcn_usb_ep), GFP_KERNEL);
+		chn2ep->ep = kzalloc_obj(struct wcn_usb_ep, GFP_KERNEL);
 		if (!chn2ep->ep)
 			return -ENOMEM;
 

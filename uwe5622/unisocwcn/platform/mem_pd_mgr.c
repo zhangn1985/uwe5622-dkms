@@ -117,7 +117,6 @@ static int mem_pd_power_switch(int subsys, int val)
 	unsigned int bt_ram_mask;
 
 	/* unsigned int mem_pd_power_delay; */
-	MEM_PD_MGR_INFO("%s", __func__);
 	/* get the lock to write the register, use spinlock id=0 */
 	mem_pd_spinlock_lock(0);
 	/* CP reset write 1, mask mem CGG reg */
@@ -314,7 +313,7 @@ static int mem_pd_power_switch(int subsys, int val)
 			if (wcn_get_chip_model() == WCN_CHIP_MARLIN3L) {
 				wif_bt_mem_cfg = REG_AON_APB_BTWF_MEM_CGG2;
 				bt_ram_mask = mem_info_cp.bt_dram_mask;
-			} else{
+			} else {
 				wif_bt_mem_cfg = REG_AON_APB_BTWF_MEM_CGG1;
 				bt_ram_mask = mem_info_cp.bt_iram_mask;
 			}
@@ -328,7 +327,7 @@ static int mem_pd_power_switch(int subsys, int val)
 			if (reg_val & bt_ram_mask) {
 				/* val =1 ,powerdown */
 				MEM_PD_MGR_INFO(" mem reg val =1 !");
-			} else{
+			} else {
 				reg_val |= (bt_ram_mask);
 				/* clear bit_start ,mem power on */
 				ret = sprdwcn_bus_reg_write(
@@ -353,14 +352,12 @@ static int mem_pd_power_switch(int subsys, int val)
 static int inform_cp_wifi_download(void)
 {
 	sdio_ap_int_cp0(WIFI_BIN_DOWNLOAD);
-	MEM_PD_MGR_INFO("%s\n", __func__);
 
 	return 0;
 }
 static int inform_cp_bt_download(void)
 {
 	sdio_ap_int_cp0(BT_BIN_DOWNLOAD);
-	MEM_PD_MGR_INFO("%s", __func__);
 
 	return 0;
 }
@@ -540,7 +537,6 @@ static int mem_pd_read_add_from_cp(void)
 int mem_pd_save_bin(void)
 {
 	/* mutex_lock(&(mem_pd.mem_pd_lock)); */
-	MEM_PD_MGR_INFO("%s entry", __func__);
 	if (wait_for_completion_timeout(
 		&(mem_pd.save_bin_completion),
 		msecs_to_jiffies(CP_NO_MEM_PD_TIMEROUT)) <= 0) {
@@ -621,7 +617,6 @@ static int mem_pd_download_mem_bin(int subsys)
 	char *mem;
 	unsigned int len = 0;
 
-	MEM_PD_MGR_INFO("%s", __func__);
 	switch (subsys) {
 	case MARLIN_WIFI:
 		addr = mem_info_cp.wifi_begin_addr;
@@ -772,7 +767,6 @@ int mem_pd_poweroff_deinit(void)
 }
 int mem_pd_init(void)
 {
-	MEM_PD_MGR_INFO("%s enter", __func__);
 	mutex_init(&(mem_pd.mem_pd_lock));
 	init_completion(&(mem_pd.wifi_open_completion));
 	init_completion(&(mem_pd.wifi_cls_cpl));
@@ -792,7 +786,6 @@ int mem_pd_init(void)
 
 int mem_pd_exit(void)
 {
-	MEM_PD_MGR_INFO("%s enter", __func__);
 	/* atomic_set(&(slp_mgr.cp2_state), STAY_SLPING); */
 	/* sleep_active_modules = 0; */
 	/* wake_cnt = 0; */

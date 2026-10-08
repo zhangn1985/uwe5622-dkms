@@ -31,7 +31,7 @@
 
 static int smp_calc_chsum(unsigned short *buf, unsigned int size)
 {
-	unsigned long int cksum = 0;
+	unsigned long cksum = 0;
 	unsigned short data;
 
 	while (size > 1) {
@@ -231,7 +231,7 @@ static void mdbg_clear_log(void)
 	if (mdbg_dev->ring_dev->ring->rp
 		!= mdbg_dev->ring_dev->ring->wp) {
 		WCN_INFO("log:%ld left in ringbuf not read\n",
-			 (long int)(mdbg_dev->ring_dev->ring->wp -
+			 (long)(mdbg_dev->ring_dev->ring->wp -
 			 mdbg_dev->ring_dev->ring->rp));
 		mdbg_ring_clear(mdbg_dev->ring_dev->ring);
 	}
@@ -453,7 +453,7 @@ struct wcn_dump_head_info {
 	/* used to check if dump is full */
 	__le32 file_size;
 	u8 reserv[8];
-	struct wcn_dump_section_info section[0];
+	struct wcn_dump_section_info section[];
 } __packed;
 
 static int wcn_fill_dump_head_info(struct wcn_dump_mem_reg *mem_cfg, int cnt)
@@ -1251,7 +1251,7 @@ void dump_dummy_read(void)
  */
 int mdbg_dump_mem(void)
 {
-	long int count;
+	long count;
 	int ret;
 	static char mdbg_dump_mem_cnt;
 

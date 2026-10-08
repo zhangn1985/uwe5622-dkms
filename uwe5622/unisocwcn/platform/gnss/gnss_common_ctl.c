@@ -126,10 +126,8 @@ static int gnss_cali_init(void)
 static void gnss_cali_deinit(void)
 {
 	gnss_cali_data.cali_done = false;
-	if (gnss_cali_data.cali_data)
-		kfree(gnss_cali_data.cali_data);
-	if (gnss_efuse_data)
-		kfree(gnss_efuse_data);
+	kfree(gnss_cali_data.cali_data);
+	kfree(gnss_efuse_data);
 }
 
 int gnss_write_cali_data(void)
@@ -170,7 +168,6 @@ int gnss_backup_cali(void)
 	int tempvalue = 0;
 
 	if (!gnss_cali_data.cali_done) {
-		GNSSCOMM_INFO("%s begin\n", __func__);
 		if (gnss_cali_data.cali_data != NULL) {
 			while (i--) {
 				sprdwcn_bus_direct_read(GNSS_CALI_ADDRESS,
@@ -373,7 +370,6 @@ static ssize_t gnss_subsys_show(struct device *dev,
 {
 	int i = 0;
 
-	GNSSCOMM_INFO("%s\n", __func__);
 	if (gnss_common_ctl_dev.gnss_status == GNSS_STATUS_POWERON) {
 		i += scnprintf(buf + i, PAGE_SIZE - i, "%d:%s\n",
 				gnss_common_ctl_dev.gnss_subsys,
@@ -485,7 +481,6 @@ static ssize_t gnss_status_show(struct device *dev,
 {
 	int i = 0;
 
-	GNSSCOMM_INFO("%s\n", __func__);
 
 	i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n",
 			gnss_common_ctl_dev.gnss_status);
@@ -624,7 +619,6 @@ static int gnss_common_ctl_probe(struct platform_device *pdev)
 	const struct of_device_id *of_id;
 #endif
 
-	GNSSCOMM_ERR("%s enter", __func__);
 	gnss_common_ctl_dev.dev = &pdev->dev;
 
 	gnss_common_ctl_dev.gnss_status = GNSS_STATUS_POWEROFF;

@@ -392,14 +392,13 @@ EXPORT_SYMBOL_GPL(marlin_get_bt_wl_wake_host_en);
 unsigned int marlin_get_wcn_chipid(void)
 {
 	int ret;
-	static unsigned long int chip_id;
+	static unsigned long chip_id;
 #ifdef CONFIG_WCN_USB
 	return MARLIN3E_AA_CHIPID;
 #endif
 	if (likely(chip_id))
 		return chip_id;
 
-	WCN_DEBUG("%s enter.\n", __func__);
 
 #ifndef CONFIG_CHECK_DRIVER_BY_CHIPID
 	ret = sprdwcn_bus_reg_read(CHIPID_REG, &chip_id, 4);
@@ -889,14 +888,13 @@ static const struct imageinfo *marlin_judge_images(const unsigned char *buffer)
 }
 
 static char *load_firmware_data_path(const char *path, loff_t offset,
-	unsigned long int imag_size)
+	unsigned long imag_size)
 {
 	int read_len, size, i, opn_num_max = 1;
 	char *buffer = NULL;
 	char *data = NULL;
 	struct file *file;
 
-	WCN_DEBUG("%s Enter\n", __func__);
 	file = filp_open(path, O_RDONLY, 0);
 	for (i = 1; i <= opn_num_max; i++) {
 		if (IS_ERR(file)) {
@@ -991,7 +989,7 @@ static int marlin_request_firmware(struct marlin_firmware **mfirmware_p)
 #endif
 
 	*mfirmware_p = NULL;
-	mfirmware = kmalloc(sizeof(struct marlin_firmware), GFP_KERNEL);
+	mfirmware = kmalloc_obj(struct marlin_firmware, GFP_KERNEL);
 	if (!mfirmware)
 		return -ENOMEM;
 
@@ -2215,7 +2213,6 @@ static int check_cp_clock_mode(void)
 	int ret = 0;
 	unsigned int temp_val;
 
-	WCN_DEBUG("%s\n", __func__);
 
 	ret = spi_read_rf_reg(AD_DCXO_BONDING_OPT, &temp_val);
 	if (ret < 0) {
@@ -2343,15 +2340,15 @@ static int marlin_bind_verify(void)
 
 	/*transform confuse data to verify data*/
 	memcpy(din, &marlin_dev->sync_f.bind_verify_data[0], 16);
-	WCN_INFO("%s confuse data: 0x%02x%02x%02x%02x%02x%02x%02x%02x"
-		 "%02x%02x%02x%02x%02x%02x%02x%02x\n", __func__,
+	WCN_INFO("%s confuse data: 0x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n",
+		 __func__,
 		 din[0], din[1], din[2], din[3],
 		 din[4], din[5], din[6], din[7],
 		 din[8], din[9], din[10], din[11],
 		 din[12], din[13], din[14], din[15]);
 	wcn_bind_verify_calculate_verify_data(din, dout);
-	WCN_INFO("%s verify data: 0x%02x%02x%02x%02x%02x%02x%02x%02x"
-		 "%02x%02x%02x%02x%02x%02x%02x%02x\n", __func__,
+	WCN_INFO("%s verify data: 0x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n",
+		 __func__,
 		 dout[0], dout[1], dout[2], dout[3],
 		 dout[4], dout[5], dout[6], dout[7],
 		 dout[8], dout[9], dout[10], dout[11],
@@ -2456,7 +2453,6 @@ static int marlin_reset_by_128_bit(void)
 {
 	unsigned char reg;
 
-	WCN_INFO("%s entry\n", __func__);
 	if (sprdwcn_bus_aon_readb(REG_CP_RST_CHIP, &reg)) {
 		WCN_ERR("%s line:%d\n", __func__, __LINE__);
 		return -1;
@@ -2478,7 +2474,6 @@ static unsigned int hi_gpio_set_value(unsigned int gpio, unsigned int value)
 {
 	int status;
 
-	WCN_INFO("%s entry\n", __func__);
 
 	status = HI_DRV_GPIO_SetDirBit(gpio, HI_DIR_OUT);
 	if (status != HI_SUCCESS) {
@@ -2591,13 +2586,13 @@ void marlin_chip_en(bool enable, bool reset)
 	if (enable) {
 		if (chip_en_count == 0) {
 			msleep(100);
-			WCN_INFO("marlin chip en dummy pull up -- need manually set GPIO \n");
+			WCN_INFO("marlin chip en dummy pull up -- need manually set GPIO\n");
 		}
 		chip_en_count++;
 	} else {
 		chip_en_count--;
 		if (chip_en_count == 0) {
-			WCN_INFO("marlin chip en dummy pull down -- need manually set GPIO \n");
+			WCN_INFO("marlin chip en dummy pull down -- need manually set GPIO\n");
 		}
 	}
 	return;
@@ -2850,7 +2845,7 @@ static int wcn_usb_fdl_download(void)
 	int ret;
 	struct marlin_firmware *firmware;
 
-	firmware = kmalloc(sizeof(struct marlin_firmware), GFP_KERNEL);
+	firmware = kmalloc_obj(struct marlin_firmware, GFP_KERNEL);
 	if (!firmware)
 		return -ENOMEM;
 
@@ -3039,7 +3034,6 @@ void set_wifipa_status(int subsys, int val)
  */
 int chip_power_on(int subsys)
 {
-	WCN_DEBUG("%s\n", __func__);
 
 #ifndef CONFIG_WCN_PCIE
 	/* may be we can call reinit_completion api */
@@ -3078,7 +3072,6 @@ int chip_power_on(int subsys)
 
 int chip_power_off(int subsys)
 {
-	WCN_INFO("%s\n", __func__);
 
 	sprdwcn_bus_driver_unregister();
 	marlin_avdd18_dcxo_enable(false);
@@ -3114,7 +3107,6 @@ int gnss_powerdomain_open(void)
 	return 0;
 #endif
 
-	WCN_INFO("%s\n", __func__);
 
 	ret = sprdwcn_bus_reg_read(CGM_GNSS_FAKE_CFG, &temp, 4);
 	if (ret < 0) {
@@ -3171,7 +3163,6 @@ int gnss_powerdomain_close(void)
 	return 0;
 #endif
 
-	WCN_INFO("%s\n", __func__);
 
 	ret = sprdwcn_bus_reg_read(PD_GNSS_SS_AON_CFG4, &temp, 4);
 	if (ret < 0) {
@@ -3710,7 +3701,6 @@ EXPORT_SYMBOL_GPL(stop_marlin);
 
 static void marlin_power_wq(struct work_struct *work)
 {
-	WCN_INFO("%s start\n", __func__);
 
 	/* WCN_AUTO is for auto backup gnss cali data */
 	marlin_set_power(WCN_AUTO, true);
@@ -3881,7 +3871,6 @@ static void marlin_shutdown(struct platform_device *pdev)
 static int marlin_suspend(struct device *dev)
 {
 
-	WCN_INFO("[%s]enter\n", __func__);
 #if (defined(CONFIG_BT_WAKE_HOST_EN) && defined(CONFIG_AW_BOARD))
 	/* enable wcn wake host irq. */
 	marlin_bt_wake_int_en();
@@ -3911,6 +3900,7 @@ EXPORT_SYMBOL_GPL(marlin_reset_unregister_notify);
 static void marlin_reset_notify_init(void)
 {
 	int i = 0;
+
 	for (i = 0; i < MARLIN_ALL; i++)
 		 RAW_INIT_NOTIFIER_HEAD(&marlin_reset_notifiers[i]);
 }
@@ -3922,8 +3912,9 @@ int marlin_reset_notify_call(enum marlin_cp2_status sts)
 {
 
 	int i = 0;
+
 	for (i = 0; i < MARLIN_ALL; i++) {
-		if (NULL != marlin_reset_notifiers[i].head)
+		if (marlin_reset_notifiers[i].head != NULL)
 			raw_notifier_call_chain(&marlin_reset_notifiers[i], sts, (void *)strno(i));
 	}
 	return 0;
@@ -3939,6 +3930,7 @@ EXPORT_SYMBOL_GPL(marlin_reset_callback_register);
 void marlin_reset_callback_unregister(u32 subsys, struct notifier_block *nb)
 {
 	int ret = 0;
+
 	ret = raw_notifier_chain_unregister(&marlin_reset_notifiers[subsys], nb);
 	if (ret)
 		WCN_ERR("%s is not registered for reset notification\n", strno(subsys));
@@ -3947,7 +3939,6 @@ EXPORT_SYMBOL_GPL(marlin_reset_callback_unregister);
 
 static int marlin_resume(struct device *dev)
 {
-	WCN_INFO("[%s]enter\n", __func__);
 #if (defined(CONFIG_BT_WAKE_HOST_EN) && defined(CONFIG_AW_BOARD))
 	/* disable wcn wake host irq. */
 	marlin_bt_wake_int_dis();
@@ -3983,7 +3974,6 @@ static struct platform_driver marlin_driver = {
 #ifndef CONFIG_WCN_PARSE_DTS
 static void uwe_release(struct device *dev)
 {
-	WCN_INFO("[%s]enter\n", __func__);
 }
 
 static struct platform_device uwe_device = {
@@ -3996,7 +3986,6 @@ static struct platform_device uwe_device = {
 #ifdef CONFIG_WCN_GNSS
 static void gnss_common_ctl_release(struct device *dev)
 {
-	WCN_INFO("[%s]enter\n", __func__);
 }
 static struct platform_device gnss_common_ctl_device = {
 	.name = "gnss_common_ctl",

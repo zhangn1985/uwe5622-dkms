@@ -660,14 +660,12 @@ void sdiohal_dump_debug_bus(void)
 	struct debug_bus_t *config = bus_config;
 	int arry_size = sizeof(bus_config) / sizeof(struct debug_bus_t);
 
-	sdiohal_info("%s entry\n", __func__);
 
 	sdiohal_debug_en(true);
 	for (index = 0; index < arry_size; index++)
 		sdiohal_dump_sys_signal(index, config);
 	sdiohal_debug_en(false);
 
-	sdiohal_info("%s end\n", __func__);
 }
 
 static char *sdiohal_haddr[8] = {
@@ -1165,7 +1163,6 @@ static irqreturn_t sdiohal_irq_handler(int irq, void *para)
 {
 	struct sdiohal_data_t *p_data = sdiohal_get_data();
 
-	sdiohal_debug("%s entry\n", __func__);
 
 	sdiohal_lock_rx_ws();
 	sdiohal_disable_rx_irq(irq);
@@ -1207,7 +1204,6 @@ static int sdiohal_host_irq_init(struct gpio_desc *irq_gpio)
 	struct sdiohal_data_t *p_data = sdiohal_get_data();
 	int ret = 0;
 
-	sdiohal_debug("%s enter\n", __func__);
 
 #ifdef CONFIG_AML_BOARD
 	/* As for amlogic platform, gpio trigger type low will request fail. */
@@ -1365,8 +1361,7 @@ static int sdiohal_parse_dt(void)
 		p_data->blk_size = true;
 #endif
 
-	sdiohal_info("%s adma_tx:%d, adma_rx:%d, pwrseq:%d, irq type:%s, "
-		     "gpio_num:%d, blksize:%d\n",
+	sdiohal_info("%s adma_tx:%d, adma_rx:%d, pwrseq:%d, irq type:%s, gpio_num:%d, blksize:%d\n",
 		     __func__, p_data->adma_tx_enable,
 		     p_data->adma_rx_enable, p_data->pwrseq,
 		     ((p_data->irq_type == SDIOHAL_RX_EXTERNAL_IRQ) ? "gpio" :
@@ -1456,7 +1451,6 @@ static void sdiohal_irq_handler_data(struct sdio_func *func)
 	struct sdiohal_data_t *p_data = sdiohal_get_data();
 	int err;
 
-	sdiohal_debug("%s entry\n", __func__);
 
 	if (!WCN_CARD_EXIST(&p_data->xmit_cnt)) {
 		sdiohal_err("%s line %d not have card\n", __func__, __LINE__);
@@ -1483,7 +1477,6 @@ static int sdiohal_suspend(struct device *dev)
 	struct sdio_func *func;
 	int chn, ret = 0;
 
-	sdiohal_info("[%s]enter\n", __func__);
 
 #ifdef CONFIG_WCN_RESUME_KEEPPWR_RESETSDIO
 	/* After resume will reset sdio reg */
@@ -1557,7 +1550,6 @@ static int sdiohal_resume(struct device *dev)
 	int init_state = 0;
 #endif
 
-	sdiohal_info("[%s]enter\n", __func__);
 
 #if (defined(CONFIG_WCN_RESUME_KEEPPWR_RESETSDIO) ||\
 	defined(CONFIG_WCN_RESUME_POWER_DOWN))
@@ -1683,7 +1675,6 @@ int sdiohal_runtime_get(void)
 
 	int ret;
 
-	sdiohal_info("%s entry\n", __func__);
 	if (!p_data)
 		return -ENODEV;
 
@@ -1741,7 +1732,6 @@ int sdiohal_runtime_put(void)
 	struct sdiohal_data_t *p_data = sdiohal_get_data();
 	int xmit_cnt;
 
-	sdiohal_info("%s entry\n", __func__);
 
 	if (!p_data)
 		return -ENODEV;
@@ -1876,8 +1866,7 @@ static int sdiohal_probe(struct sdio_func *func,
 	int ret;
 	struct mmc_host *host = func->card->host;
 
-	sdiohal_info("%s: func->class=%x, vendor=0x%04x, device=0x%04x, "
-		     "func_num=0x%04x, clock=%d\n",
+	sdiohal_info("%s: func->class=%x, vendor=0x%04x, device=0x%04x, func_num=0x%04x, clock=%d\n",
 		     __func__, func->class, func->vendor, func->device,
 		     func->num, host->ios.clock);
 
@@ -1976,7 +1965,6 @@ static void sdiohal_remove(struct sdio_func *func)
 {
 	struct sdiohal_data_t *p_data = sdiohal_get_data();
 
-	sdiohal_info("[%s]enter\n", __func__);
 
 #ifdef CONFIG_HISI_BOARD
 	sdiohal_set_card_present(0);
@@ -2021,7 +2009,6 @@ static void sdiohal_stop_thread(void)
 {
 	struct sdiohal_data_t *p_data = sdiohal_get_data();
 
-	sdiohal_info("[%s]enter\n", __func__);
 	atomic_set(&p_data->flag_resume, 1);
 	p_data->exit_flag = 1;
 	if (p_data->tx_thread) {
@@ -2087,7 +2074,7 @@ void sdiohal_remove_card(void)
 
 #ifdef CONFIG_RK_BOARD
 	//rockchip_wifi_set_carddetect(0);
-	return ;
+	return;
 #endif
 
 #ifdef CONFIG_AW_BOARD
@@ -2243,7 +2230,7 @@ int sdiohal_init(void)
 
 	sdiohal_debug("sdiohal_init entry\n");
 
-	p_data = kzalloc(sizeof(struct sdiohal_data_t), GFP_KERNEL);
+	p_data = kzalloc_obj(struct sdiohal_data_t, GFP_KERNEL);
 	if (!p_data) {
 		WARN_ON(1);
 		return -ENOMEM;

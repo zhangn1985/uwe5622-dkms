@@ -134,7 +134,7 @@ static int set_wcnevent(struct event_t *event)
 
 static int edma_spin_lock_init(struct irq_lock_t *lock)
 {
-	lock->irq_spinlock_p = kmalloc(sizeof(spinlock_t), GFP_KERNEL);
+	lock->irq_spinlock_p = kmalloc_obj(spinlock_t, GFP_KERNEL);
 	lock->flag = 0;
 	spin_lock_init(lock->irq_spinlock_p);
 
@@ -1451,7 +1451,6 @@ int edma_init(struct wcn_pcie_info *pcie_info)
 		create_wcnevent(&(edma->chn_sw[i].event), i);
 		edma->chn_sw[i].mode = -1;
 	}
-	PCIE_INFO("%s done\n", __func__);
 
 	return 0;
 }

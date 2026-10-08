@@ -29,7 +29,7 @@
 #include "mdbg_type.h"
 
 static struct atcmd_fifo s_atcmd_owner;
-static unsigned long int s_marlin_bootup_time;
+static unsigned long s_marlin_bootup_time;
 
 void mdbg_atcmd_owner_init(void)
 {
@@ -84,9 +84,9 @@ void mdbg_atcmd_clean(void)
  * We'd better send all of the ATCMD with this function
  * or caused WCND error
  */
-long int mdbg_send_atcmd(char *buf, long int len, enum atcmd_owner owner)
+long mdbg_send_atcmd(char *buf, long len, enum atcmd_owner owner)
 {
-	long int sent_size = 0;
+	long sent_size = 0;
 
 	mdbg_atcmd_owner_add(owner);
 
@@ -129,7 +129,7 @@ static void wcn_gmtime(struct timespec64 *tv, struct wcn_tm *tm)
 }
 
 /* AP notify BTWF time by at+aptime=... cmd */
-long int wcn_ap_notify_btwf_time(void)
+long wcn_ap_notify_btwf_time(void)
 {
 #if KERNEL_VERSION(4, 20, 0) <= LINUX_VERSION_CODE
 	struct timespec64 now;
@@ -138,7 +138,7 @@ long int wcn_ap_notify_btwf_time(void)
 #endif
 	struct wcn_tm tm;
 	char aptime[64];
-	long int send_cnt = 0;
+	long send_cnt = 0;
 
 	/* get ap kernel time and transfer to China-BeiJing Time */
 #if KERNEL_VERSION(4, 20, 0) <= LINUX_VERSION_CODE
@@ -177,7 +177,7 @@ void marlin_bootup_time_update(void)
 		s_marlin_bootup_time);
 }
 
-unsigned long int marlin_bootup_time_get(void)
+unsigned long marlin_bootup_time_get(void)
 {
 	return s_marlin_bootup_time;
 }

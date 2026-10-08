@@ -329,7 +329,7 @@ static struct channel *channel_init(int id, struct proc_dir_entry *dir,
 {
 	struct channel *channel;
 
-	channel = kzalloc(sizeof(struct channel), GFP_KERNEL);
+	channel = kzalloc_obj(struct channel, GFP_KERNEL);
 	if (!channel)
 		return NULL;
 
@@ -372,7 +372,7 @@ struct chnmg {
 	struct proc_dir_entry *print_level;
 	struct proc_dir_entry *channel_debug;
 	int num_channels;
-	struct channel *channel[0];
+	DECLARE_FLEX_ARRAY(struct channel *, channel);
 };
 
 static void channel_destroy(struct channel *channel)
@@ -784,7 +784,7 @@ static int wcn_usb_test_command(struct chnmg *chnmg, char *buf, int buf_len)
 	if (!ep)
 		return -EIO;
 
-	test_cmd = kzalloc(sizeof(struct usb_test_cmd_desc), GFP_KERNEL);
+	test_cmd = kzalloc_obj(struct usb_test_cmd_desc, GFP_KERNEL);
 	if (test_cmd == NULL)
 		return -ENOMEM;
 

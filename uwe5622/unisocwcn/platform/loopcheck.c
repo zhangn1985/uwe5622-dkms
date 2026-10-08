@@ -108,7 +108,6 @@ int get_board_ant_num(void)
 	unsigned char *at_cmd_buf;
 	unsigned char ret;
 
-	WCN_DEBUG("%s entry!\n", __func__);
 
 	/* 1. uwe5621 module on RK board(rk3368):
 	 * Antenna num is fixed to one.
@@ -178,7 +177,6 @@ void get_cp2_version(void)
 	char a[] = "at+spatgetcp2info\r\n";
 	unsigned char ret;
 
-	WCN_INFO("%s entry!\n", __func__);
 	mutex_lock(&atcmd_lock);
 	ret = at_cmd_send(a, sizeof(a));
 	if (ret) {
@@ -198,7 +196,6 @@ void start_loopcheck(void)
 	if (!test_bit(WCN_LOOPCHECK_INIT, &loopcheck.status) ||
 		test_and_set_bit(WCN_LOOPCHECK_OPEN, &loopcheck.status))
 		return;
-	WCN_INFO("%s\n", __func__);
 	reinit_completion(&loopcheck.completion);
 	queue_delayed_work(loopcheck.workqueue, &loopcheck.work, HZ);
 }
@@ -208,7 +205,6 @@ void stop_loopcheck(void)
 	if (!test_bit(WCN_LOOPCHECK_INIT, &loopcheck.status) ||
 		!test_and_clear_bit(WCN_LOOPCHECK_OPEN, &loopcheck.status))
 		return;
-	WCN_INFO("%s\n", __func__);
 	complete_all(&loopcheck.completion);
 	cancel_delayed_work_sync(&loopcheck.work);
 }

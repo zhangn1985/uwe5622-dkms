@@ -108,9 +108,9 @@ int tp_tx_buf_cnt = TP_TX_BUF_CNT;
 int tp_tx_buf_len = TP_TX_BUF_LEN;
 int rx_pop_cnt;
 #ifdef CONFIG_SPRD_DEBUG
-long int sdiohal_log_level = SDIOHAL_NORMAL_LEVEL;
+long sdiohal_log_level = SDIOHAL_NORMAL_LEVEL;
 #else
-long int sdiohal_log_level;
+long sdiohal_log_level;
 #endif
 
 #if TCP_TEST_RX
@@ -439,7 +439,7 @@ static void sdiohal_tx_test_init(void)
 
 
 	for (chn = 0; chn < chn_num; chn++) {
-		tx_test_ops = kzalloc(sizeof(struct mchn_ops_t), GFP_KERNEL);
+		tx_test_ops = kzalloc_obj(struct mchn_ops_t, GFP_KERNEL);
 		if (!tx_test_ops) {
 			sdiohal_err("sdio tx test,alloc mem fail\n");
 			return;
@@ -494,7 +494,7 @@ static void sdiohal_rx_test_init(void)
 
 
 	for (chn = 0; chn < chn_num; chn++) {
-		rx_test_ops = kzalloc(sizeof(struct mchn_ops_t), GFP_KERNEL);
+		rx_test_ops = kzalloc_obj(struct mchn_ops_t, GFP_KERNEL);
 		if (!rx_test_ops) {
 			sdiohal_err("sdio tx test,alloc mem fail\n");
 			return;
@@ -605,7 +605,7 @@ static int at_cmd_deinit(void)
 	return 0;
 }
 
-static char *sdiohal_firmware_data(unsigned long int imag_size)
+static char *sdiohal_firmware_data(unsigned long imag_size)
 {
 	int read_len, size;
 	char *buffer = NULL;
@@ -613,7 +613,6 @@ static char *sdiohal_firmware_data(unsigned long int imag_size)
 	struct file *file;
 	loff_t pos = 0;
 
-	sdiohal_info("%s entry\n", __func__);
 	file = filp_open(FIRMWARE_PATH, O_RDONLY, 0);
 	if (IS_ERR(file)) {
 		sdiohal_err("%s open file %s error\n",
@@ -650,13 +649,12 @@ static char *sdiohal_firmware_data(unsigned long int imag_size)
 static int sdiohal_download_firmware(void)
 {
 	int err, len, trans_size;
-	unsigned long int img_size;
+	unsigned long img_size;
 	char *buffer = NULL;
 	char *temp_buf;
 
 	img_size = FIRMWARE_MAX_SIZE;
 
-	sdiohal_info("%s entry\n", __func__);
 	buffer = sdiohal_firmware_data(img_size);
 	if (!buffer) {
 		sdiohal_err("%s buff is NULL\n", __func__);
@@ -694,7 +692,6 @@ static void sdiohal_int_power_wq(struct work_struct *work)
 	unsigned char reg_pub_int_sts0 = 0;
 	unsigned char reg_pub_int_sts1 = 0;
 
-	sdiohal_info("%s entry\n", __func__);
 	/* read public interrupt status register */
 	sprdwcn_bus_aon_readb(REG_TO_AP_PUB_STS0, &reg_pub_int_sts0);
 	sprdwcn_bus_aon_readb(REG_TO_AP_PUB_STS1, &reg_pub_int_sts1);
@@ -790,7 +787,6 @@ static void sdiohal_change_to_sdr104(void)
 {
 	struct sdiohal_data_t *p_data = sdiohal_get_data();
 
-	sdiohal_info("%s entry\n", __func__);
 
 	if (!p_data->sdio_dev_host) {
 		sdiohal_err("%s get host failed!\n", __func__);
@@ -816,7 +812,7 @@ static ssize_t at_cmd_write(struct file *filp,
 	struct sdiohal_data_t *p_data = sdiohal_get_data();
 	struct mbuf_t *head, *tail, *mbuf_node;
 	int num = 1, i;
-	long int long_data;
+	long long_data;
 	int ret;
 	unsigned char *send_buf = NULL;
 
@@ -839,7 +835,7 @@ static ssize_t at_cmd_write(struct file *filp,
 
 	/* read cp2 register by direct mode: "readreg 0x40844220" */
 	if (strncmp(cmd_buf + PUB_HEAD_RSV, "readreg 0x", 10) == 0) {
-		long int reg_addr_read;
+		long reg_addr_read;
 		unsigned int reg_addr, reg_val;
 
 		cmd_buf[SDIOHAL_WRITE_SIZE + PUB_HEAD_RSV - 1] = 0;
@@ -859,11 +855,11 @@ static ssize_t at_cmd_write(struct file *filp,
 	 * the unit of len is byte, and len must be a multiple of 4
 	 */
 	if (strncmp(cmd_buf + PUB_HEAD_RSV, "readregblock 0x", 15) == 0) {
-		long int reg_addr_read;
+		long reg_addr_read;
 		unsigned int reg_addr, reg_val;
 		int i = 0;
 		char pk[16] = {0};
-		long int len = 0;
+		long len = 0;
 		int line = 0;
 		char addr[12] = {0};
 
@@ -916,7 +912,7 @@ static ssize_t at_cmd_write(struct file *filp,
 
 	/* write cp2 register by direct mode: "writereg 0x40844220 0x0" */
 	if (strncmp(cmd_buf + PUB_HEAD_RSV, "writereg 0x", 11) == 0) {
-		long int reg_addr_read, reg_val_read;
+		long reg_addr_read, reg_val_read;
 		unsigned int reg_addr, reg_val;
 
 		cmd_buf[SDIOHAL_WRITE_SIZE + PUB_HEAD_RSV - 1] = 0;
@@ -1039,7 +1035,7 @@ static ssize_t at_cmd_write(struct file *filp,
 	}
 
 	if (strncmp(cmd_buf + PUB_HEAD_RSV, "sdio_int", 8) == 0) {
-		unsigned long int int_bitmap;
+		unsigned long int_bitmap;
 		unsigned int addr = REG_TO_CP0_REQ0;
 
 		if (strncmp(cmd_buf + PUB_HEAD_RSV, "sdio_int_rx", 11) == 0)

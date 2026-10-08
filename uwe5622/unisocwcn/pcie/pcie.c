@@ -278,9 +278,8 @@ static int sprd_pcie_probe(struct pci_dev *pdev,
 
 	int ret = -ENODEV, i, flag;
 
-	PCIE_INFO("%s Enter\n", __func__);
 
-	priv = kzalloc(sizeof(struct wcn_pcie_info), GFP_KERNEL);
+	priv = kzalloc_obj(struct wcn_pcie_info, GFP_KERNEL);
 	if (!priv)
 		return -ENOMEM;
 
@@ -590,7 +589,6 @@ static int __init sprd_pcie_init(void)
 
 static void __exit sprd_pcie_exit(void)
 {
-	PCIE_INFO("%s\n", __func__);
 	pci_unregister_driver(&sprd_pcie_driver);
 }
 

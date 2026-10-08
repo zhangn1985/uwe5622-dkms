@@ -40,7 +40,7 @@ void wcnlog_clear_log(void)
 	if (mdbg_dev->ring_dev->ring->rp
 		!= mdbg_dev->ring_dev->ring->wp) {
 		WCN_INFO("log:%ld left in ringbuf not read\n",
-			(long int)(mdbg_dev->ring_dev->ring->wp -
+			(long)(mdbg_dev->ring_dev->ring->wp -
 			mdbg_dev->ring_dev->ring->rp));
 		mdbg_ring_clear(mdbg_dev->ring_dev->ring);
 	}
@@ -89,7 +89,7 @@ static int wcnlog_release(struct inode *inode, struct file *filp)
 static ssize_t wcnlog_read(struct file *filp,
 		char __user *buf, size_t count, loff_t *ppos)
 {
-	long int read_size;
+	long read_size;
 	int timeout = -1;
 	int rval = 0;
 	static unsigned int dum_send_size;
@@ -109,7 +109,7 @@ static ssize_t wcnlog_read(struct file *filp,
 	WCN_DEBUG("wcnlog_read z=%d,major=%d,minor = %d\n", dev->cdev.dev,
 		MAJOR(dev->cdev.dev), MINOR(dev->cdev.dev));
 	/* count :100K-log, 32K-mem ;cat :4096 */
-	WCN_DEBUG("wcnlog_read len = %ld\n", (long int)count);
+	WCN_DEBUG("wcnlog_read len = %ld\n", (long)count);
 	if ((functionmask[7] & CP2_FLAG_YLOG) == 1)
 		return -EIO;
 
@@ -133,7 +133,7 @@ static ssize_t wcnlog_read(struct file *filp,
 	}
 
 	mutex_lock(&mdbg_dev->mdbg_lock);
-	read_size = mdbg_receive((void *)buf, (long int)count);
+	read_size = mdbg_receive((void *)buf, (long)count);
 	if (sprdwcn_bus_get_carddump_status() == 1) {
 		dum_send_size += read_size;
 		WCN_INFO("read_size = %ld dum_total_size= %d,remainder =%ld\n",
@@ -158,7 +158,7 @@ static ssize_t wcnlog_read(struct file *filp,
 static ssize_t wcnlog_write(struct file *filp,
 		const char __user *buf, size_t count, loff_t *ppos)
 {
-	long int sent_size = 0;
+	long sent_size = 0;
 	char *p_data = NULL;
 
 	if (mdbg_dev->exit_flag) {
@@ -166,7 +166,7 @@ static ssize_t wcnlog_write(struct file *filp,
 		return -EIO;
 	}
 
-	WCN_INFO("wcnlog_write count=%ld\n", (long int)count);
+	WCN_INFO("wcnlog_write count=%ld\n", (long)count);
 	if (count > MDBG_WRITE_SIZE) {
 		WCN_ERR("mdbg_write count > MDBG_WRITE_SIZE\n");
 		return -ENOMEM;
@@ -281,7 +281,7 @@ int log_cdev_init(void)
 	}
 
 	for (i = 0; i < WCN_LOG_MAX_MINOR; i++) {
-		dev[i] = kmalloc(sizeof(struct wcnlog_dev), GFP_KERNEL);
+		dev[i] = kmalloc_obj(struct wcnlog_dev, GFP_KERNEL);
 		if (!dev[i]) {
 			WCN_ERR("failed alloc mem!\n");
 			continue;
@@ -333,7 +333,7 @@ int log_dev_init(void)
 	int err;
 
 	MDBG_FUNC_ENTERY;
-	mdbg_dev = kzalloc(sizeof(struct mdbg_device_t), GFP_KERNEL);
+	mdbg_dev = kzalloc_obj(struct mdbg_device_t, GFP_KERNEL);
 	if (!mdbg_dev)
 		return -ENOMEM;
 

@@ -322,7 +322,7 @@ int wcn_usb_dinit(void)
 {
 	struct wcn_usb_ddata *this;
 
-	this = kzalloc(sizeof(struct wcn_usb_ddata), GFP_KERNEL);
+	this = kzalloc_obj(struct wcn_usb_ddata, GFP_KERNEL);
 	if (!this) {
 		wcn_usb_dp("%s[%d] no memory\n", __func__, __LINE__);
 		return -ENOMEM;

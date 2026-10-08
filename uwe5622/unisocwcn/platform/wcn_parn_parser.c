@@ -172,7 +172,6 @@ int parse_firmware_path(char *firmware_path)
 	u32 loop;
 	struct file *file1;
 
-	WCN_INFO("%s entry\n", __func__);
 	for (loop = 0; loop < FSTAB_PATH_NUM; loop++) {
 		file1 = NULL;
 		WCN_DEBUG("dir:%s: loop:%d\n", fstab_dir[loop], loop);

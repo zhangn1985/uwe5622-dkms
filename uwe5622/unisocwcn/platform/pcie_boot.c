@@ -74,7 +74,6 @@ int wcn_boot_init(struct wcn_pcie_info *pcie_info)
 	char a[10];
 	int i;
 
-	PCIE_INFO("%s enter\n", __func__);
 	buffer = load_firmware_data(FIRMWARE_SIZE_MAX);
 	/* download firmware */
 	sprd_pcie_bar_map(pcie_info, 0, 0x40400000);

@@ -761,7 +761,7 @@ static ssize_t mdbg_proc_write(struct file *filp,
 	/* unit of loglimitsize is MByte. */
 	if (strncmp(mdbg_proc->write_buf, "loglimitsize=",
 		strlen("loglimitsize=")) == 0) {
-		long int log_limit_size;
+		long log_limit_size;
 
 		ret = kstrtol(&mdbg_proc->write_buf[strlen("loglimitsize=")],
 			10, &log_limit_size);
@@ -773,7 +773,7 @@ static ssize_t mdbg_proc_write(struct file *filp,
 
 	if (strncmp(mdbg_proc->write_buf, "logmaxnum=",
 		strlen("logmaxnum=")) == 0) {
-		long int log_file_max_num;
+		long log_file_max_num;
 
 		ret = kstrtol(&mdbg_proc->write_buf[strlen("logmaxnum=")],
 			10, &log_file_max_num);
@@ -785,7 +785,7 @@ static ssize_t mdbg_proc_write(struct file *filp,
 
 	if (strncmp(mdbg_proc->write_buf, "logcoverold=",
 		strlen("logcoverold=")) == 0) {
-		long int cover_old_flag;
+		long cover_old_flag;
 
 		ret = kstrtol(&mdbg_proc->write_buf[strlen("logcoverold=")],
 			10, &cover_old_flag);
@@ -938,8 +938,8 @@ static ssize_t mdbg_proc_write(struct file *filp,
 	/* loopcheck add kernel time ms/1000 */
 	if (strncmp(mdbg_proc->write_buf, "at+loopcheck", 12) == 0) {
 		/* struct timespec now; */
-		unsigned long int ns = local_clock();
-		unsigned long int time = marlin_bootup_time_get();
+		unsigned long ns = local_clock();
+		unsigned long time = marlin_bootup_time_get();
 		unsigned int ap_t = MARLIN_64B_NS_TO_32B_MS(ns);
 		unsigned int marlin_boot_t = MARLIN_64B_NS_TO_32B_MS(time);
 
@@ -1184,7 +1184,7 @@ static  void mdbg_memory_free(void)
 
 int proc_fs_init(void)
 {
-	mdbg_proc = kzalloc(sizeof(struct mdbg_proc_t), GFP_KERNEL);
+	mdbg_proc = kzalloc_obj(struct mdbg_proc_t, GFP_KERNEL);
 	if (!mdbg_proc)
 		return -ENOMEM;
 

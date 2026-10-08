@@ -715,7 +715,7 @@ static int wcn_probe(struct platform_device *pdev)
 
 	WCN_INFO("start!\n");
 
-	wcn_dev = kzalloc(sizeof(struct wcn_device), GFP_KERNEL);
+	wcn_dev = kzalloc_obj(struct wcn_device, GFP_KERNEL);
 	if (!wcn_dev)
 		return -ENOMEM;
 

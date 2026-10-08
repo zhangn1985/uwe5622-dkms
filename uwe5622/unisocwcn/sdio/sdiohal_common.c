@@ -251,6 +251,7 @@ void sdiohal_lock_scan_ws(void)
 {
 #ifdef CONFIG_PM_SLEEP
 	struct sdiohal_data_t *p_data = sdiohal_get_data();
+
 	__pm_stay_awake(p_data->scan_ws);
 #endif
 }
@@ -259,6 +260,7 @@ void sdiohal_unlock_scan_ws(void)
 {
 #ifdef CONFIG_PM_SLEEP
 	struct sdiohal_data_t *p_data = sdiohal_get_data();
+
 	__pm_relax(p_data->scan_ws);
 #endif
 }
@@ -1096,7 +1098,7 @@ struct sdiohal_list_t *sdiohal_get_rx_mbuf_list(int num)
 			kfree(idle_list);
 			goto err;
 		}
-		WARN_ON(((unsigned long int)mbuf_temp->buf) % 64);
+		WARN_ON(((unsigned long)mbuf_temp->buf) % 64);
 		mbuf_temp = mbuf_temp->next;
 	}
 
@@ -1129,7 +1131,7 @@ void *sdiohal_get_rx_free_buf(unsigned int *alloc_size, unsigned int read_len)
 #endif
 				   1, alloc_size);
 
-	WARN_ON(((unsigned long int)p) % 64);
+	WARN_ON(((unsigned long)p) % 64);
 
 	return p;
 }
@@ -1141,7 +1143,7 @@ static int sdiohal_alloc_rx_mbuf_nodes(int num)
 	int i;
 
 	for (i = 0; i < num; i++) {
-		mbuf_node = kzalloc(sizeof(struct mbuf_t), GFP_KERNEL);
+		mbuf_node = kzalloc_obj(struct mbuf_t, GFP_KERNEL);
 		if (i == 0) {
 			p_data->list_rx_buf.mbuf_head = mbuf_node;
 			p_data->list_rx_buf.mbuf_tail = mbuf_node;

@@ -23,9 +23,9 @@
 			((u_long)(rp) - (u_long)(wp)))
 
 /* valid buf for write */
-long int mdbg_ring_free_space(struct mdbg_ring_t *ring)
+long mdbg_ring_free_space(struct mdbg_ring_t *ring)
 {
-	return (long int)_MDBG_RING_REMAIN(ring->rp,
+	return (long)_MDBG_RING_REMAIN(ring->rp,
 				ring->wp, ring->size);
 }
 
@@ -57,7 +57,7 @@ bool mdbg_ring_over_loop(struct mdbg_ring_t *ring, u_long len, int rw)
 	return false;
 }
 
-struct mdbg_ring_t *mdbg_ring_alloc(long int size)
+struct mdbg_ring_t *mdbg_ring_alloc(long size)
 {
 	struct mdbg_ring_t *ring = NULL;
 
@@ -171,7 +171,7 @@ int mdbg_ring_read(struct mdbg_ring_t *ring, void *buf, int len)
 			}
 		}
 		ring->rp = (char *)((u_long)pstart + len2);
-	} else{
+	} else {
 		/* RP < WP */
 		if (ring->p_order_flag == 0) {
 			if (((ring->rp + read_len) > ring->wp)
@@ -261,7 +261,7 @@ int mdbg_ring_write(struct mdbg_ring_t *ring, void *buf, unsigned int len)
 		}
 		ring->wp = (char *)((u_long)pstart + len2);
 
-	} else{
+	} else {
 		/* RP > WP */
 		if ((uintptr_t)buf > TASK_SIZE)
 			memcpy(ring->wp, buf, len);
@@ -299,7 +299,7 @@ int mdbg_ring_write_timeout(struct mdbg_ring_t *ring, void *buf,
 	return mdbg_ring_write(ring, buf, len);
 }
 
-char *mdbg_ring_write_ext(struct mdbg_ring_t *ring, long int len)
+char *mdbg_ring_write_ext(struct mdbg_ring_t *ring, long len)
 {
 	char *wp = NULL;
 
@@ -333,7 +333,7 @@ bool mdbg_ring_will_full(struct mdbg_ring_t *ring, int len)
 }
 
 /* remain data for read */
-long int mdbg_ring_readable_len(struct mdbg_ring_t *ring)
+long mdbg_ring_readable_len(struct mdbg_ring_t *ring)
 {
 	return ring->size - mdbg_ring_free_space(ring);
 }

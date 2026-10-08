@@ -44,7 +44,7 @@
 	((u_long)(rp)-(u_long)(wp)))
 
 struct gnss_ring_t {
-	unsigned long int size;
+	unsigned long size;
 	char *pbuff;
 	char *rp;
 	char *wp;
@@ -61,13 +61,13 @@ struct gnss_device {
 static struct gnss_ring_t *gnss_rx_ring;
 static struct gnss_device *gnss_dev;
 
-static unsigned long int gnss_ring_remain(struct gnss_ring_t *pring)
+static unsigned long gnss_ring_remain(struct gnss_ring_t *pring)
 {
-	return (unsigned long int)GNSS_RING_REMAIN(pring->rp,
+	return (unsigned long)GNSS_RING_REMAIN(pring->rp,
 						   pring->wp, pring->size);
 }
 
-static unsigned long int gnss_ring_content_len(struct gnss_ring_t *pring)
+static unsigned long gnss_ring_content_len(struct gnss_ring_t *pring)
 {
 	return pring->size - gnss_ring_remain(pring);
 }
@@ -112,7 +112,7 @@ static void gnss_ring_destroy(struct gnss_ring_t *pring)
 	}
 }
 
-static struct gnss_ring_t *gnss_ring_init(unsigned long int size,
+static struct gnss_ring_t *gnss_ring_init(unsigned long size,
 					  int (*rd)(char*, char*, size_t),
 					  int (*wr)(char*, char*, size_t))
 {
@@ -124,7 +124,7 @@ static struct gnss_ring_t *gnss_ring_init(unsigned long int size,
 	}
 
 	do {
-		pring = kmalloc(sizeof(struct gnss_ring_t), GFP_KERNEL);
+		pring = kmalloc_obj(struct gnss_ring_t, GFP_KERNEL);
 		if (!pring) {
 			GNSS_ERR("Ring malloc Failed.");
 			break;
@@ -250,7 +250,7 @@ static int gnss_memcpy_wr(char *dest, char *src, size_t count)
 
 static int gnss_device_init(void)
 {
-	gnss_dev = kzalloc(sizeof(*gnss_dev), GFP_KERNEL);
+	gnss_dev = kzalloc_obj(*gnss_dev, GFP_KERNEL);
 	if (!gnss_dev) {
 		GNSS_ERR("alloc gnss device error");
 		return -ENOMEM;

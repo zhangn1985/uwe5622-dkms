@@ -94,8 +94,8 @@ long mdbg_content_len(void)
 	return mdbg_ring_readable_len(ring_dev->ring);
 }
 
-static long int mdbg_comm_write(char *buf,
-				long int len, unsigned int subtype)
+static long mdbg_comm_write(char *buf,
+				long len, unsigned int subtype)
 {
 	unsigned char *send_buf = NULL;
 	char *str = NULL;
@@ -200,7 +200,7 @@ int mdbg_log_read(int channel, struct mbuf_t *head,
 
 	if (ring_dev) {
 		mutex_lock(&ring_dev->mdbg_read_mutex);
-		rx = kmalloc(sizeof(*rx), GFP_KERNEL);
+		rx = kmalloc_obj(*rx, GFP_KERNEL);
 		if (!rx) {
 			WCN_ERR("mdbg ring low memory\n");
 			mutex_unlock(&ring_dev->mdbg_read_mutex);
@@ -221,9 +221,9 @@ int mdbg_log_read(int channel, struct mbuf_t *head,
 	return 0;
 }
 
-long int mdbg_send(char *buf, long int len, unsigned int subtype)
+long mdbg_send(char *buf, long len, unsigned int subtype)
 {
-	long int sent_size = 0;
+	long sent_size = 0;
 
 	WCN_DEBUG("BYTE MODE");
 
@@ -235,7 +235,7 @@ long int mdbg_send(char *buf, long int len, unsigned int subtype)
 }
 EXPORT_SYMBOL_GPL(mdbg_send);
 
-long int mdbg_receive(void *buf, long int len)
+long mdbg_receive(void *buf, long len)
 {
 	return mdbg_ring_read(ring_dev->ring, buf, len);
 }
@@ -292,7 +292,7 @@ int mdbg_ring_init(void)
 {
 	int err = 0;
 
-	ring_dev = kmalloc(sizeof(struct ring_device), GFP_KERNEL);
+	ring_dev = kmalloc_obj(struct ring_device, GFP_KERNEL);
 	if (!ring_dev)
 		return -ENOMEM;
 

@@ -404,8 +404,7 @@ int hexdump(char *name, char *buf, int len)
 	PCIE_INFO("%s %s hex(len=%d):\n", __func__, name, len);
 	for (i = 0; i < count; i++) {
 		p = (unsigned int *)(buf + i * 32);
-		PCIE_INFO("mem[0x%04x] 0x%08x,0x%08x,0x%08x,0x%08x,"
-			  "0x%08x,0x%08x,0x%08x,0x%08x,\n",
+		PCIE_INFO("mem[0x%04x] 0x%08x,0x%08x,0x%08x,0x%08x,0x%08x,0x%08x,0x%08x,0x%08x,\n",
 			  i * 32, p[0], p[1], p[2], p[3],
 			  p[4], p[5], p[6], p[7]);
 	}
@@ -417,7 +416,6 @@ static int char_open(struct inode *inode, struct file *filp)
 {
 	struct char_drv_info *dev;
 
-	PCIE_INFO("%s\n", __func__);
 	dev = container_of(inode->i_cdev, struct char_drv_info, testcdev);
 	filp->private_data = dev;
 
@@ -427,7 +425,6 @@ static int char_open(struct inode *inode, struct file *filp)
 static ssize_t char_write(struct file *filp, const char __user *buffer,
 			  size_t count, loff_t *offset)
 {
-	PCIE_INFO("%s\n", __func__);
 
 	return 0;
 }
@@ -435,14 +432,12 @@ static ssize_t char_write(struct file *filp, const char __user *buffer,
 static ssize_t char_read(struct file *filp, char __user *buffer, size_t count,
 		  loff_t *offset)
 {
-	PCIE_INFO("%s\n", __func__);
 
 	return 0;
 }
 
 static int char_release(struct inode *inode, struct file *filp)
 {
-	PCIE_INFO("%s\n", __func__);
 
 	return 0;
 }
@@ -488,7 +483,7 @@ static int ioctlcmd_init(struct wcn_pcie_info *bus)
 	dev_t dev;
 	struct char_drv_info *drv;
 
-	drv = kmalloc(sizeof(struct char_drv_info), GFP_KERNEL);
+	drv = kmalloc_obj(struct char_drv_info, GFP_KERNEL);
 	if (!drv) {
 		ret = -ENOMEM;
 		return ret;

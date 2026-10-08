@@ -595,7 +595,6 @@ static int swd_power_up(void)
 {
 	u32 data;
 
-	pr_info("%s entry\n", __func__);
 
 	data = 0x50000000;
 	swd_dap_write(DP_CTRL_STAT, &data);
@@ -670,7 +669,6 @@ void swd_hold_btwf_core(void)
 
 int swd_dump_arm_reg(void)
 {
-	pr_info("%s entry\n", __func__);
 
 	swd_ext_sel(true);
 	swd_line_reset();
@@ -690,7 +688,6 @@ int swd_dump_arm_reg(void)
 	swd_wake_to_dormant();
 	swd_ext_sel(false);
 
-	pr_info("%s end\n", __func__);
 
 	return 0;
 }

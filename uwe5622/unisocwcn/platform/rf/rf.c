@@ -588,7 +588,6 @@ static int wifi_nvm_parse(const char *path, const int type, void *p_data)
 	char *buffer = NULL;
 	loff_t file_size = 0, pos = 0;
 
-	pr_info("%s()...\n", __func__);
 
 	file = filp_open(path, O_RDONLY, 0);
 	if (IS_ERR(file)) {

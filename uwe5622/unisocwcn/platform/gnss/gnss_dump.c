@@ -213,7 +213,7 @@ static int gnss_dump_cp_register_data(u32 addr, u32 len)
 	u32 i;
 	u8 *buf = NULL;
 	u8 *ptr = NULL;
-	long int ret;
+	long ret;
 	void  *iram_buffer = NULL;
 
 	GNSSDUMP_INFO(" start dump cp register!addr:%x,len:%d\n", addr, len);
@@ -380,7 +380,7 @@ static int gnss_dump_share_memory(u32 len)
 {
 	void *virt_addr;
 	phys_addr_t base_addr;
-	long int ret;
+	long ret;
 	void  *ddr_buffer = NULL;
 
 	if (len == 0)
@@ -451,7 +451,6 @@ static int gnss_ext_hold_cpu(void)
 	uint temp = 0;
 	int ret = 0;
 
-	GNSSDUMP_INFO("%s entry\n", __func__);
 	temp = BIT_GNSS_APB_MCU_AP_RST_SOFT;
 	ret = sprdwcn_bus_reg_write(REG_GNSS_APB_MCU_AP_RST + GNSS_SET_OFFSET,
 		&temp, 4);
@@ -520,7 +519,6 @@ static int gnss_ext_dump_mem(void)
 	int ret = 0;
 	int i = 0;
 
-	GNSSDUMP_INFO("%s entry\n", __func__);
 // #ifdef CONFIG_CHECK_DRIVER_BY_CHIPID
 	/*update the two address after get chip type*/
 	gnss_marlin3_dump[0].address = GNSS_CP_START_ADDR;

@@ -132,7 +132,7 @@ static int wcn_sipc_recv(struct sipc_chn_info *sipc_chn, void *buf, int len)
 	if (unlikely(!wcn_sipc_ops))
 		return -E_NULLPOINT;
 
-	head = kzalloc(sizeof(struct mbuf_t), GFP_KERNEL);
+	head = kzalloc_obj(struct mbuf_t, GFP_KERNEL);
 	if (unlikely(!head))
 		return -E_NOMEM;
 

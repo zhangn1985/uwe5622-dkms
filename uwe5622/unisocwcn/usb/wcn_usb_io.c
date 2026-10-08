@@ -315,7 +315,7 @@ struct wcn_usb_packet *wcn_usb_alloc_packet(gfp_t mem_flags)
 {
 	struct wcn_usb_packet *packet;
 
-	packet = kzalloc(sizeof(struct wcn_usb_packet), mem_flags);
+	packet = kzalloc_obj(struct wcn_usb_packet, mem_flags);
 	if (packet == NULL)
 		return NULL;
 
@@ -790,7 +790,7 @@ int wcn_usb_ep_set(struct wcn_usb_ep *ep, int setting_id)
 	return ret;
 }
 
-/* we don't need usb usb major number to find interface */
+/* we don't need usb major number to find interface */
 #if 0
 #define USB_SWCN_MINOR_BASE 123
 /* TODO this fops need fill! Plan is that: fill it with io_dbg_fop */
@@ -807,7 +807,7 @@ static int wcn_usb_io_probe(struct usb_interface *interface,
 	/* init a struct wcn_usb_intf and fill it! */
 	struct wcn_usb_intf *intf;
 
-	intf = kzalloc(sizeof(struct wcn_usb_intf), GFP_KERNEL);
+	intf = kzalloc_obj(struct wcn_usb_intf, GFP_KERNEL);
 	if (!intf)
 		return -ENOMEM;
 

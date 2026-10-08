@@ -20,7 +20,7 @@
 static struct mchn_ops_t *virtual_pop_ventor[4];
 struct virtual_buf {
 	unsigned char ventor_id;
-	char buf[0];
+	char buf[];
 };
 #define virtual_to_head(x) ((char *)x - sizeof(unsigned char))
 
@@ -134,7 +134,7 @@ static struct wcn_usb_notifier *wcn_usb_notifier_register(void (*cb)(void *),
 		cb(data);
 
 	/* wait corresponding event */
-	wn = kzalloc(sizeof(struct wcn_usb_notifier), GFP_KERNEL);
+	wn = kzalloc_obj(struct wcn_usb_notifier, GFP_KERNEL);
 	if (!wn)
 		return NULL;
 
@@ -480,7 +480,7 @@ static int wcn_usb_check_cp_ready(unsigned int addr, int timout)
 	static struct wcn_usb_notifier *usb_notifier;
 	int ret = 0;
 
-	sync_complete = kzalloc(sizeof(struct completion), GFP_KERNEL);
+	sync_complete = kzalloc_obj(struct completion, GFP_KERNEL);
 	if (!sync_complete) {
 		ret = -ENOMEM;
 		goto OUT;
