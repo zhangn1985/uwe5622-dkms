@@ -109,7 +109,7 @@ int  bluesleep_init(void)
 	}
 
 	/* Creating read/write  entry */
-	ent = proc_create("btwrite", S_IRUGO | S_IWUSR | S_IWGRP, sleep_dir,
+	ent = proc_create("btwrite", 0664, sleep_dir,
 		&lpm_proc_btwrite_fops); /*read/write */
 	if (ent == NULL) {
 		pr_info("Unable to create /proc/%s/btwake entry",

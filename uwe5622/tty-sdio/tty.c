@@ -344,6 +344,7 @@ static int mtty_tx_cb(int chn, struct mbuf_t *head, struct mbuf_t *tail, int num
 {
 	int i;
 	struct mbuf_t *pos = NULL;
+
 	BT_VER("%s channel: %d, head: %p, tail: %p num: %d\n", __func__, chn, head, tail, num);
 	pos = head;
 	for (i = 0; i < num; i++, pos = pos->next) {
@@ -363,6 +364,7 @@ static int mtty_open(struct tty_struct *tty, struct file *filp)
 {
 	struct mtty_device *mtty = NULL;
 	struct tty_driver *driver = NULL;
+
 	data_dump = (bt_host_data_dump *)vmalloc(sizeof(bt_host_data_dump));
 	memset(data_dump, 0, sizeof(bt_host_data_dump));
 	if (tty == NULL) {
@@ -495,7 +497,7 @@ static struct tty_port *mtty_port_init(void)
 {
 	struct tty_port *port = NULL;
 
-	port = kzalloc(sizeof(struct tty_port), GFP_KERNEL);
+	port = kzalloc_obj(struct tty_port, GFP_KERNEL);
 	if (port == NULL)
 		return NULL;
 	tty_port_init(port);
@@ -560,7 +562,7 @@ static int mtty_parse_dt(struct mtty_init_data **init, struct device *dev)
 	struct mtty_init_data *pdata = NULL;
 	int ret;
 
-	pdata = kzalloc(sizeof(struct mtty_init_data), GFP_KERNEL);
+	pdata = kzalloc_obj(struct mtty_init_data, GFP_KERNEL);
 	if (!pdata)
 	return -ENOMEM;
 
@@ -598,6 +600,7 @@ static inline void mtty_destroy_pdata(struct mtty_init_data **init)
 static int bt_tx_powerchange(int channel, int is_resume)
 {
 	unsigned long power_state = marlin_get_power_state();
+
 	pr_info("%s is_resume =%d", __func__, is_resume);
 	if (test_bit(MARLIN_BLUETOOTH, &power_state)) {
 		if (!is_resume) {
@@ -769,7 +772,8 @@ int marlin_sdio_write(const unsigned char *buf, int count)
 #ifdef WOBLE_FUN
 static void  mtty_shutdown(struct platform_device *pdev)
 {
-	unsigned long int power_state = marlin_get_power_state();
+	unsigned long power_state = marlin_get_power_state();
+
 	pr_info("%s ---\n", __func__);
 	if (test_bit(MARLIN_BLUETOOTH, &power_state)) {
 		pr_info("set bluetooth into sleep mode\n");
@@ -826,6 +830,7 @@ static struct platform_device *mtty_pdev;
 static int __init mtty_pdev_init(void)
 {
 	int ret;
+
 	ret = platform_driver_register(&mtty_driver);
 	if (!ret) {
 		mtty_pdev = platform_device_alloc("mtty", -1);

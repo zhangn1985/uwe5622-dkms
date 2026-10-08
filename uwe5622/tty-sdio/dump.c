@@ -14,11 +14,12 @@
 #include <linux/vmalloc.h>
 #include "dump.h"
 
-extern bt_host_data_dump *data_dump;
+extern bt_host_data_dump * data_dump;
 
 static void data_left_shift(unsigned char data_inout)
 {
 	unsigned char loop_count_i = 0;
+
 	switch (data_inout) {
 	case BT_DATA_OUT:
 		for (; loop_count_i < BT_MAX_DUMP_FRAME_LEN - 1; loop_count_i++) {
@@ -40,6 +41,7 @@ static void data_left_shift(unsigned char data_inout)
 void do_gettimeofday(struct timeval *tv)
 {
 	struct timespec64 ts;
+
 	ktime_get_real_ts64(&ts);
 	tv->tv_sec = ts.tv_sec;
 	tv->tv_usec = ts.tv_nsec/1000;
@@ -70,7 +72,7 @@ void bt_host_data_save(const unsigned char *buf, int count, unsigned char data_i
 	if ((buf[0] == HCI_COMMAND) ||
 		((buf[0] == HCI_EVENT) && (buf[1] == HCI_COMMAND_STATUS)) ||
 		((buf[0] == HCI_EVENT) && (buf[1] == HCI_COMMAND_COMPELET))) {
-		pr_debug("bt_host_data_save: data %d \n", data_inout);
+		pr_debug("bt_host_data_save: data %d\n", data_inout);
 		data_left_shift(data_inout);
 		get_time(data_inout);
 	} else {
@@ -107,6 +109,7 @@ void bt_host_data_save(const unsigned char *buf, int count, unsigned char data_i
 void bt_host_data_printf(void)
 {
 	unsigned char loop_count_i = 0, loop_count_j = 0;
+
 	for (; loop_count_j < BT_MAX_DUMP_FRAME_LEN; loop_count_j++) {
 		printk("bt_host_data_printf txdata[%d]: ", loop_count_j + 1);
 		printk("%d-%d-%d %d:%d:%d.%06ld ", 1900 + data_dump->txtime_t[loop_count_j].rtc_t.tm_year,

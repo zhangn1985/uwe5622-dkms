@@ -47,6 +47,7 @@ int mtty_bt_str_hex(char *str, uint8_t count, char *hex)
 {
 	uint8_t data_buf[12] = {0x00};
 	uint8_t i = 0;
+
 	while ((*str != '\0') && (i < count * 2)) {
 		if ((*str >= '0') && (*str <= '9')) {
 			data_buf[i] = *str - '0' + 0x00;
@@ -81,6 +82,7 @@ int mtty_bt_conf_prase(char *conf_str)
 	char *str1, *str2, *str3;
 	uint8_t device_count = 0;
 	uint8_t loop_count = 0;
+
 	if (conf_str) {
 		while (tok_str != NULL) {
 			tok_str = strsep(&conf_str, "\r\n");
@@ -128,10 +130,11 @@ int mtty_bt_read_conf(void)
 	uint8_t device_count = 0;
 	loff_t file_size = 0;
 	loff_t file_offset = 0;
+
 	memset(bt_wake_dev_db, 0, sizeof(mtty_bt_wake_t) * MAX_WAKE_DEVICE_MAX_NUM);
 	bt_conf_fp = filp_open(CONFIG_FILE_PATH, O_RDONLY, 0);
 	if (IS_ERR(bt_conf_fp)) {
-		pr_info("%s open file %s error %ld \n",
+		pr_info("%s open file %s error %ld\n",
 				__func__, CONFIG_FILE_PATH, PTR_ERR(bt_conf_fp));
 		return device_count;
 	}
@@ -259,6 +262,7 @@ void hci_set_ap_sleep_mode(int is_shutdown, int is_resume)
 {
 	struct HC_BT_HDR *payload = (struct HC_BT_HDR *)vmalloc(sizeof(struct HC_BT_HDR) + 3);
 	unsigned char *p;
+
 	p = payload->data;
 
 	payload->len = 6;
@@ -287,6 +291,7 @@ void hci_add_device_to_wakeup_list(mtty_bt_wake_t bt_wakeup_dev)
 {
 	struct HC_BT_HDR *payload = (struct HC_BT_HDR *)vmalloc(sizeof(struct HC_BT_HDR) + 3);
 	unsigned char *p;
+
 	p = payload->data;
 
 	payload->len = 10;

@@ -48,7 +48,6 @@ int rfkill_bluetooth_init(struct platform_device *pdev)
 
 	int rc = 0;
 
-	pr_info("-->%s\n", __func__);
 	bt_rfk = rfkill_alloc(bt_name, &pdev->dev, RFKILL_TYPE_BLUETOOTH,
 			&rfkill_bluetooth_ops, NULL);
 	if (!bt_rfk) {
@@ -61,7 +60,6 @@ int rfkill_bluetooth_init(struct platform_device *pdev)
 	if (rc)
 		goto err_rfkill_reg;
 
-	pr_info("<--%s\n", __func__);
 
 	return 0;
 
@@ -73,10 +71,8 @@ err_rfkill_alloc:
 
 int rfkill_bluetooth_remove(struct platform_device *dev)
 {
-	pr_info("-->%s\n", __func__);
 	rfkill_unregister(bt_rfk);
 	rfkill_destroy(bt_rfk);
-	pr_info("<--%s\n", __func__);
 	return 0;
 }
 
