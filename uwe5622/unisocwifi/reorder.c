@@ -155,7 +155,7 @@ static inline bool replay_detection(struct rx_ba_pkt_desc *ba_pkt_desc,
 		rx_val_low = ba_pkt_desc->pn_l;
 		rx_val_high = ba_pkt_desc->pn_h;
 
-		if ((1 == ba_node_desc->reset_pn) &&
+		if ((ba_node_desc->reset_pn == 1) &&
 			(old_val_low >= rx_val_low) && (old_val_high >= rx_val_high)) {
 			wl_err("%s: clear reset_pn,old_val_low: %d, old_val_high: %d, rx_val_low: %d, rx_val_high: %d\n",
 				   __func__, old_val_low, old_val_high, rx_val_low, rx_val_high);
@@ -528,7 +528,7 @@ static struct rx_ba_node
 	unsigned int rx_ba_size = sizeof(struct rx_ba_node_desc) +
 				(size * sizeof(struct rx_ba_pkt));
 
-	ba_node = kzalloc(sizeof(*ba_node), GFP_ATOMIC);
+	ba_node = kzalloc_obj(*ba_node, GFP_ATOMIC);
 	if (ba_node) {
 		ba_node->rx_ba = kzalloc(rx_ba_size, GFP_ATOMIC);
 		if (ba_node->rx_ba) {
@@ -638,7 +638,6 @@ static void wlan_delba_event(struct sprdwl_rx_ba_entry *ba_entry,
 	struct rx_ba_node *ba_node = NULL;
 	struct rx_ba_node_desc *ba_node_desc = NULL;
 
-	wl_info("enter %s\n", __func__);
 	ba_node = find_ba_node(ba_entry,
 				   ba_event->sta_lut_index, ba_event->tid);
 	if (!ba_node) {
@@ -672,7 +671,6 @@ static void wlan_bar_event(struct sprdwl_rx_ba_entry *ba_entry,
 	struct rx_ba_node *ba_node = NULL;
 	struct rx_ba_node_desc *ba_node_desc = NULL;
 
-	wl_info("enter %s\n", __func__);
 	ba_node = find_ba_node(ba_entry,
 				   ba_event->sta_lut_index, ba_event->tid);
 	if (!ba_node) {
@@ -772,7 +770,6 @@ static int wlan_addba_event(struct sprdwl_rx_ba_entry *ba_entry,
 	unsigned short win_size = ba_event->win_param.win_size;
 	unsigned int index_size = get_index_size(2 * win_size);
 
-	wl_info("enter %s\n", __func__);
 	ba_node = find_ba_node(ba_entry, sta_lut_index, tid);
 	if (!ba_node) {
 		ba_node = create_ba_node(ba_entry, sta_lut_index,
@@ -926,7 +923,6 @@ static void ba_reorder_timeout(unsigned long data)
 						  ba_entry);
 	unsigned short pos_seqno = 0;
 
-	wl_info("enter %s\n", __func__);
 	debug_cnt_inc(REORDER_TIMEOUT_CNT);
 	spin_lock_bh(&ba_node->ba_node_lock);
 	if (ba_node->active && ba_node_desc->buff_cnt &&
@@ -968,7 +964,6 @@ static void ba_reorder_timeout(unsigned long data)
 	} else {
 		spin_unlock_bh(&ba_entry->skb_list_lock);
 	}
-	wl_info("leave %s\n", __func__);
 }
 
 void peer_entry_delba(void *hw_intf, unsigned char lut_index)
@@ -980,7 +975,6 @@ void peer_entry_delba(void *hw_intf, unsigned char lut_index)
 	struct sprdwl_rx_if *rx_if = (struct sprdwl_rx_if *)intf->sprdwl_rx;
 	struct sprdwl_rx_ba_entry *ba_entry = &rx_if->ba_entry;
 
-	wl_info("enter %s\n", __func__);
 	for (tid = 0; tid < NUM_TIDS; tid++) {
 		ba_node = find_ba_node(ba_entry, lut_index, tid);
 		if (ba_node) {

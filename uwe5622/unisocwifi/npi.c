@@ -178,7 +178,7 @@ static int sprdwl_nl_npi_handler(struct sk_buff *skb_2, struct genl_info *info)
 	s_buf = nla_data(info->attrs[SPRDWL_NL_ATTR_AP2CP]);
 	s_len = nla_len(info->attrs[SPRDWL_NL_ATTR_AP2CP]);
 	if (sprdwl_npi_cmd_is_start(s_buf) && sta_or_p2p_is_opened()) {
-		hdr = kzalloc(sizeof(*hdr), GFP_KERNEL);
+		hdr = kzalloc_obj(*hdr, GFP_KERNEL);
 		if (!hdr) {
 			wl_err("%s: failed to alloc hdr!\n", __func__);
 			kfree(r_buf);

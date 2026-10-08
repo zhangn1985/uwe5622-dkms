@@ -555,7 +555,7 @@ int sprdwl_rx_init(struct sprdwl_intf *intf)
 	int ret = 0;
 	struct sprdwl_rx_if *rx_if = NULL;
 
-	rx_if = kzalloc(sizeof(*rx_if), GFP_KERNEL);
+	rx_if = kzalloc_obj(*rx_if, GFP_KERNEL);
 	if (!rx_if) {
 		ret = -ENOMEM;
 		goto err_rx_if;

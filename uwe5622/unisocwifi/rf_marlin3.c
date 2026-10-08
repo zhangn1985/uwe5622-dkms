@@ -260,9 +260,9 @@ static int wifi_nvm_set_cmd(struct nvm_name_table *pTable,
 	int i;
 	unsigned char *p;
 
-	if ((1 != pTable->type) &&
-		(2 != pTable->type) &&
-		(4 != pTable->type))
+	if ((pTable->type != 1) &&
+		(pTable->type != 2) &&
+		(pTable->type != 4))
 		return -1;
 
 	p = (unsigned char *)(p_data) + pTable->mem_offset;
@@ -276,13 +276,13 @@ static int wifi_nvm_set_cmd(struct nvm_name_table *pTable,
 			cmd->par[9]);
 
 	for (i = 0; i < cmd->num; i++) {
-		if (1 == pTable->type)
+		if (pTable->type == 1)
 			*((unsigned char *)p + i)
 			= (unsigned char)(cmd->par[i]);
-		else if (2 == pTable->type)
+		else if (pTable->type == 2)
 			*((unsigned short *)p + i)
 			= (unsigned short)(cmd->par[i]);
-		else if (4 == pTable->type)
+		else if (pTable->type == 4)
 			*((unsigned int *)p + i)
 			= (unsigned int)(cmd->par[i]);
 		else
@@ -306,18 +306,18 @@ static void get_cmd_par(char *str, struct nvm_cali_cmd *cmd)
 	for (i = 0, j = 0;; i++) {
 		c = str[i];
 		cType = find_type(c);
-		if ((1 == cType) ||
-			(2 == cType) ||
-			(3 == cType)) {
+		if ((cType == 1) ||
+			(cType == 2) ||
+			(cType == 3)) {
 			tmp[j] = c;
 			j++;
 			if (-1 == bufType) {
-				if (2 == cType)
+				if (cType == 2)
 					bufType = 2;
 				else
 					bufType = 1;
-			} else if (2 == bufType) {
-				if (1 == cType)
+			} else if (bufType == 2) {
+				if (cType == 1)
 					bufType = 1;
 			}
 			continue;
@@ -325,7 +325,7 @@ static void get_cmd_par(char *str, struct nvm_cali_cmd *cmd)
 		if (-1 != bufType) {
 			tmp[j] = '\0';
 
-			if ((1 == bufType) && (0 == flag)) {
+			if ((1 == bufType) && (flag == 0)) {
 				strcpy(cmd->itm, tmp);
 				flag = 1;
 			} else {
@@ -338,9 +338,9 @@ static void get_cmd_par(char *str, struct nvm_cali_cmd *cmd)
 			bufType = -1;
 			j = 0;
 		}
-		if (0 == cType)
+		if (cType == 0)
 			continue;
-		if (4 == cType)
+		if (cType == 4)
 			return;
 	}
 }
@@ -351,12 +351,12 @@ static struct nvm_name_table *cf_table_match(struct nvm_cali_cmd *cmd)
 	struct nvm_name_table *pTable = NULL;
 	int len = sizeof(g_config_table) / sizeof(struct nvm_name_table);
 
-	if (NULL == cmd)
+	if (cmd == NULL)
 		return NULL;
 	for (i = 0; i < len; i++) {
-		if (NULL == g_config_table[i].itm)
+		if (g_config_table[i].itm == NULL)
 			continue;
-		if (0 != strcmp(g_config_table[i].itm, cmd->itm))
+		if (strcmp(g_config_table[i].itm, cmd->itm) != 0)
 			continue;
 		pTable = &g_config_table[i];
 		break;
@@ -371,10 +371,10 @@ static int wifi_nvm_buf_operate(char *pBuf, int file_len, void *p_data)
 	struct wifi_conf_t *conf;
 	struct nvm_name_table *pTable = NULL;
 
-	if ((NULL == pBuf) || (0 == file_len))
+	if ((NULL == pBuf) || (file_len == 0))
 		return -1;
 
-	cmd = kzalloc(sizeof(struct nvm_cali_cmd), GFP_KERNEL);
+	cmd = kzalloc_obj(struct nvm_cali_cmd, GFP_KERNEL);
 	for (i = 0, p = 0; i < file_len; i++) {
 		if (('\n' == *(pBuf + i)) ||
 			('\r' == *(pBuf + i)) ||
@@ -383,7 +383,7 @@ static int wifi_nvm_buf_operate(char *pBuf, int file_len, void *p_data)
 				get_cmd_par((pBuf + p), cmd);
 				pTable = cf_table_match(cmd);
 
-				if (NULL != pTable) {
+				if (pTable != NULL) {
 					wifi_nvm_set_cmd(pTable, cmd, p_data);
 					if (strcmp(pTable->itm, "rf_config") == 0) {
 						conf = (struct wifi_conf_t *)p_data;

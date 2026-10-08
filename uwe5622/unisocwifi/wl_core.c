@@ -439,7 +439,7 @@ void sprdwl_debugfs(void *spdev, struct dentry *dir)
 	struct sprdwl_intf *intf;
 
 	intf = (struct sprdwl_intf *)spdev;
-	debugfs_create_file("sprdwlinfo", S_IRUSR,
+	debugfs_create_file("sprdwlinfo", 0400,
 			    dir, intf, &sprdwl_intf_debug_fops);
 }
 
@@ -455,11 +455,11 @@ void sprdwl_debugfs_init(struct sprdwl_intf *intf)
 		return;
 	}
 
-	if (!debugfs_create_file("log_level", S_IRUSR | S_IWUSR,
+	if (!debugfs_create_file("log_level", 0600,
 		sprdwl_debug_root, intf, &sprdwl_intf_debug_fops))
 		wl_err("%s, create file fail!\n", __func__);
 
-	if (!debugfs_create_file("txrx_dbg", S_IRUSR | S_IWUSR,
+	if (!debugfs_create_file("txrx_dbg", 0600,
 		sprdwl_debug_root, NULL, &txrx_debug_fops))
 		wl_err("%s, %d, create_file fail!\n", __func__, __LINE__);
 	else
@@ -563,6 +563,7 @@ static void sprdwl_wifi_reset(void)
 static int wifi_exception_event(void)
 {
 	char *envp[2];
+
 	envp[0] = "CP2-EXCEPTION-EVENT";
 	envp[1] = NULL;
 	kobject_uevent_env(&sprdwl_dev->kobj, KOBJ_CHANGE, envp);
@@ -716,7 +717,6 @@ static void sprdwl_remove(struct platform_device *pdev)
 	sprdwl_core_free(priv);
 	kfree(intf);
 	stop_marlin(MARLIN_WIFI);
-	wl_info("%s\n", __func__);
 
 }
 

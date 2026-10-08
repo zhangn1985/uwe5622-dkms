@@ -237,7 +237,7 @@ int sprdwl_defrag_init(struct sprdwl_rx_defrag_entry *defrag_entry)
 	INIT_LIST_HEAD(&defrag_entry->list);
 
 	for (i = 0; i < MAX_DEFRAG_NUM; i++) {
-		node = kzalloc(sizeof(*node), GFP_KERNEL);
+		node = kzalloc_obj(*node, GFP_KERNEL);
 		if (likely(node)) {
 			skb_queue_head_init(&node->skb_list);
 			list_add(&node->list, &defrag_entry->list);

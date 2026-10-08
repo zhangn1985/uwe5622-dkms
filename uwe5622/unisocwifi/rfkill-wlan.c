@@ -61,8 +61,8 @@ struct rfkill_wlan_data {
 	struct wake_lock wlan_irq_wl;
 };
 
-static struct rfkill_wlan_data *g_rfkill = NULL;
-static int power_set_time = 0;
+static struct rfkill_wlan_data *g_rfkill;
+static int power_set_time;
 static int wifi_bt_vbat_state;
 static int wifi_power_state;
 
@@ -70,9 +70,9 @@ static const char wlan_name[] = "rkwifi";
 
 static char wifi_chip_type_string[64];
 /***********************************************************
- * 
+ *
  * Broadcom Wifi Static Memory
- * 
+ *
  **********************************************************/
 #ifdef CONFIG_RKWIFI
 #define BCM_STATIC_MEMORY_SUPPORT 0
@@ -354,7 +354,6 @@ int rockchip_wifi_get_oob_irq(void)
 	struct rfkill_wlan_data *mrfkill = g_rfkill;
 	struct rksdmmc_gpio *wifi_int_irq;
 
-	LOG("%s: Enter\n", __func__);
 
 	if (!mrfkill) {
 		LOG("%s: rfkill-wlan driver has not Successful initialized\n",
@@ -428,8 +427,7 @@ static int get_wifi_addr_vendor(unsigned char *addr)
 		    __func__, ret);
 #ifdef CONFIG_WIFI_GENERATE_RANDOM_MAC_ADDR
 		random_ether_addr(addr);
-		LOG("%s: generate random wifi mac address: "
-		    "%02x:%02x:%02x:%02x:%02x:%02x\n",
+		LOG("%s: generate random wifi mac address: %02x:%02x:%02x:%02x:%02x:%02x\n",
 		    __func__, addr[0], addr[1], addr[2], addr[3], addr[4],
 		    addr[5]);
 		ret = rk_vendor_write(WIFI_MAC_ID, addr, 6);
@@ -666,14 +664,12 @@ static int wlan_platdata_parse_dt(struct device *dev,
 
 static void wlan_early_suspend(struct early_suspend *h)
 {
-	LOG("%s :enter\n", __func__);
 
 	return;
 }
 
 static void wlan_late_resume(struct early_suspend *h)
 {
-	LOG("%s :enter\n", __func__);
 
 	return;
 }
@@ -688,14 +684,12 @@ struct early_suspend wlan_early_suspend {
 static void
 rfkill_wlan_early_suspend(void)
 {
-	//LOG("%s :enter\n", __func__);
 
 	return;
 }
 
 static void rfkill_wlan_later_resume(void)
 {
-	//LOG("%s :enter\n", __func__);
 
 	return;
 }
@@ -812,7 +806,6 @@ static int rfkill_wlan_probe(struct platform_device *pdev)
 	struct rksdmmc_gpio_wifi_moudle *pdata = pdev->dev.platform_data;
 	int ret = -1;
 
-	LOG("Enter %s\n", __func__);
 
 	class_register(&rkwifi_power);
 
@@ -886,7 +879,6 @@ static int rfkill_wlan_probe(struct platform_device *pdev)
 
 	fb_register_client(&rfkill_wlan_fb_notifier);
 
-	LOG("Exit %s\n", __func__);
 
 	return 0;
 
@@ -904,7 +896,6 @@ static int rfkill_wlan_remove(struct platform_device *pdev)
 {
 	struct rfkill_wlan_data *rfkill = platform_get_drvdata(pdev);
 
-	LOG("Enter %s\n", __func__);
 
 	wake_lock_destroy(&rfkill->wlan_irq_wl);
 
@@ -924,13 +915,11 @@ static int rfkill_wlan_remove(struct platform_device *pdev)
 
 static int rfkill_wlan_suspend(struct platform_device *pdev, pm_message_t state)
 {
-	LOG("Enter %s\n", __func__);
 	return 0;
 }
 
 static int rfkill_wlan_resume(struct platform_device *pdev)
 {
-	LOG("Enter %s\n", __func__);
 	return 0;
 }
 
@@ -950,19 +939,17 @@ static struct platform_driver rfkill_wlan_driver = {
 	.driver = {
 		.name = "wlan-platdata",
 		.owner = THIS_MODULE,
-        .of_match_table = of_match_ptr(wlan_platdata_of_match),
+	.of_match_table = of_match_ptr(wlan_platdata_of_match),
 	},
 };
 
 int __init rfkill_wlan_init(void)
 {
-	LOG("Enter %s\n", __func__);
 	return platform_driver_register(&rfkill_wlan_driver);
 }
 
 void __exit rfkill_wlan_exit(void)
 {
-	LOG("Enter %s\n", __func__);
 	platform_driver_unregister(&rfkill_wlan_driver);
 }
 

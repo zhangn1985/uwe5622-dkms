@@ -24,7 +24,7 @@ static int dbg_load_ini_resource(char *path[], char *buf, int size)
 	struct file *filp = (struct file *)-ENOENT;
 
 	for (index = 0; index < MAX_PATH_NUM; index++) {
-		filp = filp_open(path[index], O_RDONLY, S_IRUSR);
+		filp = filp_open(path[index], O_RDONLY, 0400);
 		if (!IS_ERR(filp)) {
 			pr_info("find wifi_dbg.ini file in %s\n", path[index]);
 			break;
@@ -339,6 +339,7 @@ void sprdwl_dbg_reset_head_ds_params(u8 *beacon_head, int head_len, u16 chn)
 void sprdwl_dbg_reset_tail_ht_oper(u8 *tail, int tail_len, u16 chn)
 {
 	u8 *ie;
+
 	ie = (u8 *)cfg80211_find_ie(WLAN_EID_HT_OPERATION, tail, tail_len);
 	if (ie != NULL) {
 		ie[2] = chn;

@@ -48,7 +48,7 @@ void sprdwl_hex_dump(unsigned char *name,
 	int i, p = 0, ret;
 	unsigned char buf[255] = {0};
 
-	if ((NULL == data) || (0 == len) || (NULL == name))
+	if ((NULL == data) || (0 == len) || (name == NULL))
 		return;
 
 	sprintf(buf, "sprdwl %s hex dump(len = %d)", name, len);
@@ -272,7 +272,7 @@ void sprdwl_add_tx_list_head(struct list_head *tx_fail_list,
 	if (msg_buf->msg_type != SPRDWL_TYPE_DATA) {
 		lock = &msg_buf->msglist->busylock;
 	} else {
-		if (SPRDWL_AC_MAX != ac_index)
+		if (ac_index != SPRDWL_AC_MAX)
 			lock = &msg_buf->data_list->p_lock;
 		else
 			lock = &msg_buf->xmit_msg_list->send_lock;
@@ -317,7 +317,7 @@ sprdwl_list_cut_position(struct list_head *tx_list_head,
 	if (msg_buf->msg_type != SPRDWL_TYPE_DATA) {
 		lock = &msg_buf->msglist->busylock;
 	} else {
-		if (SPRDWL_AC_MAX != ac_index)
+		if (ac_index != SPRDWL_AC_MAX)
 			lock = &msg_buf->data_list->p_lock;
 		else
 			lock = &msg_buf->xmit_msg_list->send_lock;
@@ -1288,7 +1288,7 @@ int sprdwl_suspend_resume_handle(int chn, int mode)
 		}
 	}
 
-	if (0 == mode_found) {
+	if (mode_found == 0) {
 		wl_err("%s suspend failed, mode not found\n", __func__);
 		return -EBUSY;
 	}
@@ -1325,8 +1325,7 @@ int sprdwl_suspend_resume_handle(int chn, int mode)
 			sprdwcn_bus_allow_sleep(WIFI);
 			wl_info("sprdwcn bus allow sleep\n");
 #endif
-		}
-		else
+		} else
 			intf->suspend_mode = SPRDWL_PS_RESUMED;
 		sprdwl_put_vif(vif);
 		return ret;

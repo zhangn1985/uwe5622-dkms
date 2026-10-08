@@ -171,7 +171,7 @@ static int sprdwl_vendor_set_llstat_handler(struct wiphy *wiphy,
 #endif
 	if (err)
 		return err;
-	ll_params = kzalloc(sizeof(*ll_params), GFP_KERNEL);
+	ll_params = kzalloc_obj(*ll_params, GFP_KERNEL);
 	if (!ll_params)
 		return -ENOMEM;
 	if (tb[SPRDWL_LL_STATS_MPDU_THRESHOLD]) {
@@ -451,11 +451,11 @@ sprdwl_sm_state_to_conn_state(enum sm_state sm_state)
 {
        switch (sm_state) {
        case SPRDWL_CONNECTING:
-               return WIFI_ASSOCIATING;
+	       return WIFI_ASSOCIATING;
        case SPRDWL_CONNECTED:
-               return WIFI_ASSOCIATED;
+	       return WIFI_ASSOCIATED;
        default:
-               return WIFI_DISCONNECTED;
+	       return WIFI_DISCONNECTED;
        }
 }
 
@@ -484,9 +484,9 @@ static int sprdwl_vendor_get_llstat_handler(struct wiphy *wiphy,
 	if (!(priv->fw_capa & SPRDWL_CAPA_LL_STATS))
 		return -ENOTSUPP;
 	memset(r_buf, 0, r_len);
-	radio_st = kzalloc(sizeof(*radio_st), GFP_KERNEL);
-	iface_st = kzalloc(sizeof(*iface_st), GFP_KERNEL);
-	dif_radio = kzalloc(sizeof(*dif_radio), GFP_KERNEL);
+	radio_st = kzalloc_obj(*radio_st, GFP_KERNEL);
+	iface_st = kzalloc_obj(*iface_st, GFP_KERNEL);
+	dif_radio = kzalloc_obj(*dif_radio, GFP_KERNEL);
 
 	if (!radio_st || !iface_st || !dif_radio)
 		goto out_put_fail;
@@ -664,8 +664,7 @@ static int sprdwl_vendor_gscan_start(struct wiphy *wiphy,
 	struct sprdwl_vif *vif = netdev_priv(wdev->netdev);
 	u16 rlen = sizeof(struct sprdwl_cmd_gscan_rsp_header);
 
-	wl_info("%s enter\n", __func__);
-	params = kmalloc(sizeof(*params), GFP_KERNEL);
+	params = kmalloc_obj(*params, GFP_KERNEL);
 	if (!params)
 		return -ENOMEM;
 
@@ -867,7 +866,6 @@ static int sprdwl_vendor_gscan_stop(struct wiphy *wiphy,
 	u16 rlen = sizeof(struct sprdwl_cmd_gscan_rsp_header);
 
 	enable = 0;
-	wl_ndev_log(L_INFO, vif->ndev, "%s\n", __func__);
 
 	return sprdwl_gscan_subcmd(vif->priv, vif->ctx_id,
 					(void *)(&enable),
@@ -975,7 +973,6 @@ static int sprdwl_vendor_get_gscan_capabilities(struct wiphy *wiphy,
 	struct sprdwl_gscan_capa *p = NULL;
 	void *rbuf;
 
-	wl_info("%s enter\n", __func__);
 
 	rlen = sizeof(struct sprdwl_gscan_capa) +
 		sizeof(struct sprdwl_cmd_gscan_rsp_header);
@@ -1289,7 +1286,7 @@ int sprdwl_vendor_cache_scan_result(struct sprdwl_vif *vif,
 		wl_ndev_log(L_ERR, vif->ndev, "%s the bucket isnot exsit.\n", __func__);
 		return -EINVAL;
 	}
-	if (MAX_AP_CACHE_PER_SCAN <= p->num_results) {
+	if (p->num_results >= MAX_AP_CACHE_PER_SCAN) {
 		wl_ndev_log(L_ERR, vif->ndev, "%s the scan result reach the MAX num.\n",
 			   __func__);
 		return -EINVAL;
@@ -1340,7 +1337,7 @@ int sprdwl_vendor_cache_hotlist_result(struct sprdwl_vif *vif,
 		return -EINVAL;
 	}
 
-	if (MAX_HOTLIST_APS <= p->num_results) {
+	if (p->num_results >= MAX_HOTLIST_APS) {
 		wl_ndev_log(L_ERR, vif->ndev, "%s the hotlist result reach the MAX num.\n",
 			   __func__);
 		return -EINVAL;
@@ -1393,7 +1390,7 @@ int sprdwl_vendor_cache_significant_change_result(struct sprdwl_vif *vif,
 		return -EINVAL;
 	}
 
-	if (MAX_SIGNIFICANT_CHANGE_APS <= p->num_results) {
+	if (p->num_results >= MAX_SIGNIFICANT_CHANGE_APS) {
 		wl_ndev_log(L_ERR, vif->ndev, "%s the significant_change result reach the MAX num.\n",
 			   __func__);
 		return -EINVAL;
@@ -2009,7 +2006,6 @@ static int sprdwl_vendor_get_support_feature(struct wiphy *wiphy,
 	uint32_t feature = 0, payload;
 	struct sprdwl_priv *priv = wiphy_priv(wiphy);
 
-	wiphy_info(wiphy, "%s\n", __func__);
 	payload = sizeof(feature);
 	reply = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, payload);
 
@@ -2174,9 +2170,8 @@ static int sprdwl_vendor_set_mac_oui(struct wiphy *wiphy,
 	struct sprdwl_cmd_gscan_rsp_header rsp;
 	u16 rlen = sizeof(struct sprdwl_cmd_gscan_rsp_header);
 
-	wiphy_info(wiphy, "%s\n", __func__);
 
-	rand_mac = kmalloc(sizeof(*rand_mac), GFP_KERNEL);
+	rand_mac = kmalloc_obj(*rand_mac, GFP_KERNEL);
 	if (!rand_mac)
 		return -ENOMEM;
 
@@ -2309,7 +2304,6 @@ static int sprdwl_vendor_get_wake_state(struct wiphy *wiphy,
 	uint32_t rx_multi_cnt, ipv4_mc_cnt, ipv6_mc_cnt;
 	uint32_t other_mc_cnt;
 
-	wiphy_info(wiphy, "%s\n", __func__);
 	wake_cnt = &priv->wakeup_tracer;
 	buf_len = NLMSG_HDRLEN;
 	buf_len += WLAN_GET_WAKE_STATS_MAX *
@@ -2391,7 +2385,6 @@ static int sprdwl_vendor_enable_nd_offload(struct wiphy *wiphy,
 					   struct wireless_dev *wdev,
 					   const void *data, int len)
 {
-	wiphy_info(wiphy, "%s\n", __func__);
 
 	return WIFI_SUCCESS;
 }
@@ -2400,7 +2393,6 @@ static int sprdwl_vendor_start_logging(struct wiphy *wiphy,
 					   struct wireless_dev *wdev,
 					   const void *data, int len)
 {
-	wiphy_info(wiphy, "%s\n", __func__);
 
 	return WIFI_SUCCESS;
 }
@@ -2409,7 +2401,6 @@ static int sprdwl_vendor_get_ring_data(struct wiphy *wiphy,
 					   struct wireless_dev *wdev,
 					   const void *data, int len)
 {
-	wiphy_info(wiphy, "%s\n", __func__);
 
 	return WIFI_SUCCESS;
 }
@@ -2418,7 +2409,6 @@ static int sprdwl_vendor_memory_dump(struct wiphy *wiphy,
 					 struct wireless_dev *wdev,
 					 const void *data, int len)
 {
-	wiphy_info(wiphy, "%s\n", __func__);
 
 	return -EOPNOTSUPP;
 }
@@ -2441,7 +2431,6 @@ static int sprdwl_vendor_get_driver_info(struct wiphy *wiphy,
 	struct nlattr *tb_vendor[SPRDWL_ATTR_WIFI_INFO_GET_MAX + 1];
 	char version[32];
 
-	wl_info("%s enter\n", __func__);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
 	if (nla_parse(tb_vendor, SPRDWL_ATTR_WIFI_INFO_GET_MAX, data,
 			  len, sprdwl_get_wifi_info_policy, NULL)) {
@@ -2822,7 +2811,7 @@ static int sprdwl_vendor_set_passpoint_list(struct wiphy *wiphy,
 						  (void *)(&flush),
 					SPRDWL_GSCAN_SUBCMD_RESET_ANQPO_CONFIG,
 					sizeof(int), (u8 *)(&rsp), &rlen);
-		} else{
+		} else {
 			ret = -EINVAL;
 		}
 		goto out;
@@ -2845,7 +2834,7 @@ static int sprdwl_vendor_set_passpoint_list(struct wiphy *wiphy,
 					"%s :Fail to parse tb2\n",
 				__func__);
 			ret = -EINVAL;
-				 goto out;
+				goto out;
 		}
 
 		if (!tb2[GSCAN_ANQPO_HS_NETWORK_ID]) {
@@ -2962,7 +2951,7 @@ static int sprdwl_vendor_monitor_rssi(struct wiphy *wiphy,
 	struct sprdwl_priv *priv = wiphy_priv(wiphy);
 
 	/*if wifi not connected,return	*/
-	if (SPRDWL_CONNECTED != vif->sm_state) {
+	if (vif->sm_state != SPRDWL_CONNECTED) {
 		wl_err("Wifi not connected!\n");
 		return -ENOTSUPP;
 	}
@@ -3493,7 +3482,6 @@ static int sprdwl_vendor_set_sar_limits(struct wiphy *wiphy,
 	struct sprdwl_vif *vif = container_of(wdev, struct sprdwl_vif, wdev);
 	struct nlattr *tb[WLAN_ATTR_SAR_LIMITS_MAX + 1];
 
-	wl_info("%s enter:\n", __func__);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
 	if (nla_parse(tb, WLAN_ATTR_SAR_LIMITS_MAX, data, len, NULL, NULL)) {
 #else
@@ -3514,11 +3502,11 @@ static int sprdwl_vendor_set_sar_limits(struct wiphy *wiphy,
 		return -EINVAL;
 	}
 
-	if (WLAN_SAR_LIMITS_BDF0 == bdf) {
+	if (bdf == WLAN_SAR_LIMITS_BDF0) {
 		/*set sar limits*/
 		ret = sprdwl_power_save(priv, vif->ctx_id,
 				 SPRDWL_SET_TX_POWER, bdf);
-	} else if (WLAN_SAR_LIMITS_NONE == bdf) {
+	} else if (bdf == WLAN_SAR_LIMITS_NONE) {
 		/*reset sar limits*/
 		ret = sprdwl_power_save(priv, vif->ctx_id,
 				SPRDWL_SET_TX_POWER, -1);
@@ -3894,7 +3882,7 @@ const struct wiphy_vendor_command sprdwl_vendor_cmd[] = {
 		.doit = sprdwl_vendor_set_significant_change,
 	},
 	{/*33*/
-	    {
+	{
 		.vendor_id = OUI_SPREAD,
 		.subcmd = SPRDWL_VENDOR_SUBCMD_GSCAN_RESET_SIGNIFICANT_CHANGE,
 	    },

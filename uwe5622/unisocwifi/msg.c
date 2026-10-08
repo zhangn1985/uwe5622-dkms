@@ -38,7 +38,7 @@ int sprdwl_msg_init(int num, struct sprdwl_msg_list *list)
 	atomic_set(&list->ref, 0);
 	atomic_set(&list->flow, 0);
 	for (i = 0; i < num; i++) {
-		msg_buf = kzalloc(sizeof(*msg_buf), GFP_KERNEL);
+		msg_buf = kzalloc_obj(*msg_buf, GFP_KERNEL);
 		if (msg_buf) {
 			INIT_LIST_HEAD(&msg_buf->list);
 			list_add_tail(&msg_buf->list, &list->freelist);

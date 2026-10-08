@@ -229,7 +229,7 @@ static int sprdwl_tcp_ack_match(struct sprdwl_tcp_ack_manage *ack_m,
 				struct sprdwl_tcp_ack_msg *ack_msg)
 {
 	int i, ret = -1;
-	unsigned start;
+	unsigned int start;
 	struct sprdwl_tcp_ack_info *ack_info;
 	struct sprdwl_tcp_ack_msg *ack;
 
@@ -281,7 +281,7 @@ static int sprdwl_tcp_ack_alloc_index(struct sprdwl_tcp_ack_manage *ack_m)
 {
 	int i, ret = -1;
 	struct sprdwl_tcp_ack_info *ack_info;
-	unsigned start;
+	unsigned int start;
 
 	spin_lock_bh(&ack_m->lock);
 	if (ack_m->max_num == SPRDWL_TCP_ACK_NUM) {
@@ -399,7 +399,7 @@ int sprdwl_tcp_ack_handle(struct sprdwl_msg_buf *new_msgbuf,
 }
 
 void sprdwl_filter_rx_tcp_ack(struct sprdwl_priv *priv,
-				  unsigned char *buf, unsigned plen)
+				  unsigned char *buf, unsigned int plen)
 {
 	int index;
 	struct sprdwl_tcp_ack_msg ack_msg;
@@ -445,13 +445,13 @@ int sprdwl_filter_send_tcp_ack(struct sprdwl_priv *priv,
 
 	sprdwl_tcp_ack_update(ack_m);
 	drop = sprdwl_tcp_check_ack(buf, &ack_msg, &win_scale);
-	if (!drop && (0 == win_scale))
+	if (!drop && (win_scale == 0))
 		return 0;
 
 	index = sprdwl_tcp_ack_match(ack_m, &ack_msg);
 	if (index >= 0) {
 		ack_info = ack_m->ack_info + index;
-		if ((0 != win_scale) &&
+		if ((win_scale != 0) &&
 			(ack_info->win_scale != win_scale)) {
 			write_seqlock_bh(&ack_info->seqlock);
 			ack_info->win_scale = win_scale;
@@ -526,7 +526,7 @@ void enable_tcp_ack_delay(char *buf, unsigned char offset)
 	struct sprdwl_msg_buf *drop_msg = NULL;
 
 	if (!g_sprdwl_priv)
-		return ;
+		return;
 
 	ack_m = &g_sprdwl_priv->ack_m;
 
@@ -558,7 +558,7 @@ void adjust_tcp_ack_delay(char *buf, unsigned char offset)
 	struct sprdwl_tcp_ack_manage *ack_m = NULL;
 
 	if (!g_sprdwl_priv)
-		return ;
+		return;
 
 	for (i = 0; i < MAX_LEN; (cnt *= 10), i++) {
 

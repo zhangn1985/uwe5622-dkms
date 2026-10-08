@@ -407,7 +407,7 @@ void sprdwl_fill_drv_api_version(struct sprdwl_priv *priv,
 	/*fill CMD struct drv_api*/
 	drv_api->main_ver = priv->sync_api.main_drv;
 	for (count = 0; count < MAX_API &&
-		 count < sizeof(g_api_array) / sizeof(g_api_array[0]); count++) {
+		 count < ARRAY_SIZE(g_api_array); count++) {
 		p = &g_api_array[count];
 		if (p->drv_version)
 			drv_api->api_map[count] =

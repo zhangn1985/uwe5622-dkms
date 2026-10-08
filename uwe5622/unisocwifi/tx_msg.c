@@ -66,7 +66,7 @@ struct sprdwl_msg_buf *sprdwl_get_msg_buf(void *pdev,
 	}
 
 	if (type == SPRDWL_TYPE_DATA && atomic_read(&list->ref) > (SPRDWL_TX_QOS_POOL_SIZE * 8 / 10)) {
-		msg_buf = kzalloc(sizeof(*msg_buf), GFP_KERNEL);
+		msg_buf = kzalloc_obj(*msg_buf, GFP_KERNEL);
 		if (msg_buf) {
 			INIT_LIST_HEAD(&msg_buf->list);
 			spin_lock_bh(&sprdwl_tx_dev->tx_list_qos_pool.freelock);
@@ -318,6 +318,7 @@ void sprdwl_dequeue_data_list(struct mbuf_t *head, int num)
 void tx_down(struct sprdwl_tx_msg *tx_msg)
 {
 	int ret;
+
 	do {
 		ret = wait_for_completion_interruptible(&tx_msg->tx_completed);
 	} while (ret == -ERESTARTSYS);
@@ -592,7 +593,7 @@ int sprdwl_fc_get_shared_num(struct sprdwl_tx_msg *tx_msg, u8 num)
 	for (i = 0; i < MAX_COLOR_BIT; i++) {
 		color_flow = atomic_read(&tx_msg->flow_ctrl[i].flow);
 		if ((tx_msg->flow_ctrl[i].mode == SPRDWL_MODE_NONE) &&
-			(0 != color_flow)) {
+			(color_flow != 0)) {
 			if ((num - shared_flow_num) <= color_flow) {
 				/*one shared color is enough?*/
 				tx_msg->color_num[i] = num - shared_flow_num;
@@ -681,7 +682,7 @@ int sprdwl_fc_test_shared_num(struct sprdwl_tx_msg *tx_msg)
 	for (i = 0; i < MAX_COLOR_BIT; i++) {
 		color_flow = atomic_read(&tx_msg->flow_ctrl[i].flow);
 		if ((tx_msg->flow_ctrl[i].mode == SPRDWL_MODE_NONE) &&
-			(0 != color_flow)) {
+			(color_flow != 0)) {
 			shared_flow_num += color_flow;
 		}
 	}
@@ -795,7 +796,7 @@ int handle_tx_timeout(struct sprdwl_tx_msg *tx_msg,
 	struct list_head *tx_list;
 	struct sprdwl_msg_buf *pos_buf, *temp_buf, *tailbuf;
 
-	if (SPRDWL_AC_MAX != ac_index) {
+	if (ac_index != SPRDWL_AC_MAX) {
 		tx_list = &p_list->head_list;
 		lock = &p_list->p_lock;
 		spin_lock_bh(lock);
@@ -892,7 +893,7 @@ static int sprdwl_handle_to_send_list(struct sprdwl_intf *intf,
 					  SPRDWL_AC_MAX,
 					  coex_bt_on);
 		sprdwl_handle_tx_return(tx_msg, list, credit, ret);
-		if (0 != ret) {
+		if (ret != 0) {
 			wl_err("%s, %d: tx return err!\n",
 				   __func__, __LINE__);
 			tx_msg->xmit_msg_list.failcount++;
@@ -1262,7 +1263,7 @@ int sprdwl_tx_msg_func(void *pdev, struct sprdwl_msg_buf *msg)
 #ifdef WMMAC_WFA_CERTIFICATION
 		qos_index = change_priority_if(intf->priv, &tid, &tos, msg->len);
 		wl_debug("%s qos_index: %d tid: %d, tos:%d\n", __func__, qos_index, tid, tos);
-		if (SPRDWL_AC_MAX == qos_index) {
+		if (qos_index == SPRDWL_AC_MAX) {
 			INIT_LIST_HEAD(&msg->list);
 			sprdwl_free_msg_buf(msg, msg->msglist);
 			return -EPERM;
@@ -1431,7 +1432,7 @@ int sprdwl_tx_init(struct sprdwl_intf *intf)
 	u8 i, j;
 	struct sprdwl_tx_msg *tx_msg = NULL;
 
-	tx_msg = kzalloc(sizeof(struct sprdwl_tx_msg), GFP_KERNEL);
+	tx_msg = kzalloc_obj(struct sprdwl_tx_msg, GFP_KERNEL);
 	if (!tx_msg) {
 		ret = -ENOMEM;
 		wl_err("%s kzalloc failed!\n", __func__);
@@ -1459,7 +1460,7 @@ int sprdwl_tx_init(struct sprdwl_intf *intf)
 	}
 
 	for (i = 0; i < SPRDWL_MODE_MAX; i++) {
-		tx_msg->tx_list[i] = kzalloc(sizeof(struct tx_t), GFP_KERNEL);
+		tx_msg->tx_list[i] = kzalloc_obj(struct tx_t, GFP_KERNEL);
 		if (!tx_msg->tx_list[i])
 			goto err_txlist;
 		qos_init(tx_msg->tx_list[i]);
@@ -1574,10 +1575,12 @@ unsigned int do_csum(const unsigned char *buff, int len)
 			buff += 2;
 		}
 		if (len >= 4) {
-			const unsigned char *end = buff + ((unsigned)len & ~3);
+			const unsigned intchar *end = buff + ((unsigned)len & ~3);
 			unsigned int carry = 0;
+
 			do {
 				unsigned int w = *(unsigned int *) buff;
+
 				buff += 4;
 				result += carry;
 				result += w;

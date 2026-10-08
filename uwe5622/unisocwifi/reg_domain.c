@@ -323,7 +323,7 @@ sprd_freq_reg_info_regd(u32 center_freq,
 
 		/*
 		 * We only need to know if one frequency rule was
-		 * was in center_freq's band, that's enough, so lets
+		 * in center_freq's band, that's enough, so lets
 		 * not overwrite it once found
 		 */
 		if (!band_rule_found)

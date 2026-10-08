@@ -71,7 +71,7 @@ struct rfkill_rk_data {
 	int irq_req;
 };
 
-static struct rfkill_rk_data *g_rfkill = NULL;
+static struct rfkill_rk_data *g_rfkill;
 
 static const char bt_name[] =
 #if defined(CONFIG_BCM4330)
@@ -219,7 +219,6 @@ static void rfkill_rk_delay_sleep_bt(struct work_struct *work)
 {
 	struct rfkill_rk_data *rfkill = NULL;
 
-	DBG("Enter %s\n", __func__);
 
 	rfkill = container_of(work, struct rfkill_rk_data,
 			      bt_sleep_delay_work.work);
@@ -233,7 +232,6 @@ void rfkill_rk_sleep_bt(bool sleep)
 	struct rfkill_rk_gpio *wake;
 	bool ret;
 
-	DBG("Enter %s\n", __func__);
 
 	if (!rfkill) {
 		LOG("*** RFKILL is empty???\n");
@@ -259,7 +257,7 @@ void rfkill_rk_sleep_bt(bool sleep)
 }
 EXPORT_SYMBOL(rfkill_rk_sleep_bt);
 
-static int bt_power_state = 0;
+static int bt_power_state;
 int rfkill_get_bt_power_state(int *power, bool *toggle)
 {
 	struct rfkill_rk_data *mrfkill = g_rfkill;
@@ -287,7 +285,6 @@ static int rfkill_rk_set_power(void *data, bool blocked)
 	int wifi_power = 0;
 	bool toggle = false;
 
-	DBG("Enter %s\n", __func__);
 
 	DBG("Set blocked:%d\n", blocked);
 
@@ -389,7 +386,6 @@ static int rfkill_rk_pm_prepare(struct device *dev)
 	struct rfkill_rk_irq *wake_host_irq;
 	struct pinctrl *pinctrl = rfkill->pdata->pinctrl;
 
-	DBG("Enter %s\n", __func__);
 
 	if (!rfkill)
 		return 0;
@@ -429,7 +425,6 @@ static void rfkill_rk_pm_complete(struct device *dev)
 	struct rfkill_rk_gpio *rts;
 	struct pinctrl *pinctrl = rfkill->pdata->pinctrl;
 
-	DBG("Enter %s\n", __func__);
 
 	if (!rfkill)
 		return;
@@ -587,8 +582,8 @@ static int bluetooth_platdata_parse_dt(struct device *dev,
 #endif //CONFIG_OF
 
 static const struct proc_ops bluesleep_lpm = {
-        .proc_read      = bluesleep_read_proc_lpm,
-        .proc_write     = bluesleep_write_proc_lpm,
+	.proc_read      = bluesleep_read_proc_lpm,
+	.proc_write     = bluesleep_write_proc_lpm,
 };
 
 static const struct proc_ops bluesleep_btwrite = {
@@ -603,7 +598,6 @@ static int rfkill_rk_probe(struct platform_device *pdev)
 	int ret = 0;
 	struct proc_dir_entry *ent;
 
-	DBG("Enter %s\n", __func__);
 
 	if (!pdata) {
 #ifdef CONFIG_OF
@@ -740,7 +734,6 @@ static int rfkill_rk_remove(struct platform_device *pdev)
 {
 	struct rfkill_rk_data *rfkill = platform_get_drvdata(pdev);
 
-	LOG("Enter %s\n", __func__);
 
 	rfkill_unregister(rfkill->rfkill_dev);
 	rfkill_destroy(rfkill->rfkill_dev);
@@ -795,7 +788,7 @@ static struct platform_driver rfkill_rk_driver = {
 		.name = "rfkill_bt",
 		.owner = THIS_MODULE,
 		.pm = &rfkill_rk_pm_ops,
-        .of_match_table = of_match_ptr(bt_platdata_of_match),
+	.of_match_table = of_match_ptr(bt_platdata_of_match),
 	},
 };
 
@@ -803,7 +796,6 @@ static int __init rfkill_rk_init(void)
 {
 	int err;
 
-	LOG("Enter %s\n", __func__);
 	err = rfkill_wlan_init();
 	if (err)
 		return err;
@@ -812,7 +804,6 @@ static int __init rfkill_rk_init(void)
 
 static void __exit rfkill_rk_exit(void)
 {
-	LOG("Enter %s\n", __func__);
 	platform_driver_unregister(&rfkill_rk_driver);
 	rfkill_wlan_exit();
 }

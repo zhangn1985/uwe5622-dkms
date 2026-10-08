@@ -44,9 +44,8 @@ int sprdwl_cfg80211_join_ibss(struct wiphy *wiphy,
 
 	struct sprdwl_vif *vif = netdev_priv(ndev);
 
-	wl_ndev_log(L_DBG, ndev, "%s enter\n", __func__);
 
-	if (SPRDWL_MODE_IBSS != vif->mode) {
+	if (vif->mode != SPRDWL_MODE_IBSS) {
 		wl_ndev_log(L_ERR, ndev, "%s invalid mode: %d\n", __func__,
 			   vif->mode);
 		return -EINVAL;
@@ -150,9 +149,8 @@ int sprdwl_cfg80211_leave_ibss(struct wiphy *wiphy,
 	enum sm_state old_state = vif->sm_state;
 	int ret = 0;
 
-	wl_ndev_log(L_DBG, ndev, "%s enter\n", __func__);
 
-	if (SPRDWL_MODE_IBSS != vif->mode) {
+	if (vif->mode != SPRDWL_MODE_IBSS) {
 		wl_ndev_log(L_ERR, ndev, "%s invalid mode: %d\n", __func__,
 			   vif->mode);
 		return -EINVAL;

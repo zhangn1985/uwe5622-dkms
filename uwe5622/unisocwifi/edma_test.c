@@ -35,7 +35,7 @@ static unsigned int chn_tx_fail[8];
 struct edma_test_cmd_header {
 	u16 subcmd;
 	u16 len;
-	u8 data[0];
+	u8 data[];
 } __packed;
 
 struct task_struct *task_array[PCIE_CHANNEL_PAIR];
@@ -45,7 +45,6 @@ void edma_transceive_test_init(void)
 {
 	int i, err;
 
-	wl_err("Enter %s\n", __func__);
 
 	for (i = 0; i < PCIE_CHANNEL_PAIR; i++) {
 		task_array[i] = kthread_create(edma_transceive_test_exec,
@@ -57,14 +56,12 @@ void edma_transceive_test_init(void)
 		}
 	}
 
-	wl_err("Exit %s\n", __func__);
 }
 
 void edma_transceive_test_deinit(void)
 {
 	int i;
 
-	wl_err("Enter %s\n", __func__);
 
 	for (i = 0; i < PCIE_CHANNEL_PAIR; i++) {
 		if (!IS_ERR_OR_NULL(task_array[i])) {
@@ -75,7 +72,6 @@ void edma_transceive_test_deinit(void)
 		}
 	}
 
-	wl_err("Exit %s\n", __func__);
 }
 
 int do_tx(int channel)
@@ -169,7 +165,6 @@ void edma_transceive_test_run(int pairs)
 	struct sprdwl_intf *intf = (struct sprdwl_intf *)g_intf_ops.intf;
 	struct sprdwl_priv *priv = intf->priv;
 
-	wl_info("Enter %s\n", __func__);
 
 	memset(task_array, 0, sizeof(struct task_struct *)*PCIE_CHANNEL_PAIR);
 	memset(chn_tx_dentry, 0, sizeof(struct dentry *)*PCIE_CHANNEL_PAIR);
@@ -183,7 +178,7 @@ void edma_transceive_test_run(int pairs)
 		task_array[i] = kthread_create(edma_transceive_test_exec,
 								(unsigned long *)loop,
 								"edma_transceive_%d", i);
-		chn_tx_dentry[i] = debugfs_create_file(tx_name[i], S_IRUSR, priv->debugfs, (unsigned long *)loop, &pcie_debug_fops);
+		chn_tx_dentry[i] = debugfs_create_file(tx_name[i], 0400, priv->debugfs, (unsigned long *)loop, &pcie_debug_fops);
 		loop++;
 		if (IS_ERR(task_array[i])) {
 			err = PTR_ERR(task_array[i]);
@@ -196,14 +191,12 @@ void edma_transceive_test_run(int pairs)
 		}
 	}
 
-	wl_info("Exit %s\n", __func__);
 }
 
 void edma_transceive_test_stop(void)
 {
 	int i;
 
-	wl_info("Enter %s\n", __func__);
 
 	for (i = 0; i < PCIE_CHANNEL_PAIR; i++) {
 		if (!IS_ERR_OR_NULL(task_array[i])) {
@@ -220,7 +213,6 @@ void edma_transceive_test_stop(void)
 		}
 	}
 
-	wl_info("Exit %s\n", __func__);
 }
 
 int edma_transceive_test_exec(void *args)
@@ -229,7 +221,6 @@ int edma_transceive_test_exec(void *args)
 	int ret = 0;
 	//struct sched_param param;
 
-	wl_err("Enter %s\n", __func__);
 
 	while (1) {
 		if (kthread_should_stop()) {
@@ -249,7 +240,6 @@ int edma_transceive_test_exec(void *args)
 		msleep(1);
 	}
 
-	wl_err("Exit %s\n", __func__);
 
 	return 0;
 }
@@ -331,7 +321,6 @@ void edma_transceive_test_trigger(char *cmd)
 		return;
 	}
 
-	wl_err("Enter %s\n", __func__);
 
 	if (pairs <= 0 || pairs > PCIE_CHANNEL_PAIR) {
 		wl_err("%s, Invalid chn pairs(%ld), use default val(8)\n",
@@ -365,5 +354,4 @@ void edma_transceive_test_trigger(char *cmd)
 		break;
 	}
 
-	wl_err("Exit %s\n", __func__);
 }

@@ -59,17 +59,17 @@
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)
 #define CHAN2G(_channel, _freq, _flags)                                 \
 {									\
-	.band                   = NL80211_BAND_2GHZ,    		\
-	.center_freq            = (_freq),              		\
-	.hw_value               = (_channel),           		\
-	.flags                  = (_flags),             		\
-	.max_antenna_gain       = 0,                    		\
-	.max_power              = 30,                   		\
+	.band                   = NL80211_BAND_2GHZ,		\
+	.center_freq            = (_freq),			\
+	.hw_value               = (_channel),			\
+	.flags                  = (_flags),			\
+	.max_antenna_gain       = 0,				\
+	.max_power              = 30,				\
 }
 #else
-#define CHAN2G(_channel, _freq, _flags)  				\
+#define CHAN2G(_channel, _freq, _flags)				\
 {									\
-	.band                   = IEEE80211_BAND_2GHZ,  		\
+	.band                   = IEEE80211_BAND_2GHZ,		\
 	.center_freq		= (_freq),				\
 	.hw_value		= (_channel),				\
 	.flags			= (_flags),				\
@@ -79,9 +79,9 @@
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)
-#define CHAN5G(_channel, _flags) 					\
+#define CHAN5G(_channel, _flags)					\
 {									\
-	.band                   = NL80211_BAND_5GHZ,            	\
+	.band                   = NL80211_BAND_5GHZ,		\
 	.center_freq		= 5000 + (5 * (_channel)),		\
 	.hw_value		= (_channel),				\
 	.flags			= (_flags),				\
@@ -91,12 +91,12 @@
 #else
 #define CHAN5G(_channel, _flags)                                        \
 {									\
-	.band                   = IEEE80211_BAND_5GHZ,          	\
-	.center_freq            = 5000 + (5 * (_channel)),      	\
-	.hw_value               = (_channel),                   	\
-	.flags                  = (_flags),                     	\
-	.max_antenna_gain       = 0,                            	\
-	.max_power              = 30,                           	\
+	.band                   = IEEE80211_BAND_5GHZ,		\
+	.center_freq            = 5000 + (5 * (_channel)),	\
+	.hw_value               = (_channel),			\
+	.flags                  = (_flags),			\
+	.max_antenna_gain       = 0,				\
+	.max_power              = 30,				\
 }
 #endif
 
@@ -763,7 +763,6 @@ static int sprdwl_cfg80211_set_default_key(struct wiphy *wiphy,
 {
 	struct sprdwl_vif *vif = netdev_priv(ndev);
 
-	wl_debug("%s:enter\n", __func__);
 	if (key_index > 3) {
 		wl_ndev_log(L_ERR, ndev, "%s invalid key index: %d\n", __func__,
 			   key_index);
@@ -779,7 +778,6 @@ static int sprdwl_cfg80211_set_rekey(struct wiphy *wiphy,
 {
 	struct sprdwl_vif *vif = netdev_priv(ndev);
 
-	wl_info("%s:enter:\n", __func__);
 	return sprdwl_set_rekey_data(vif->priv, vif->ctx_id, data);
 }
 
@@ -835,7 +833,6 @@ static int sprdwl_cfg80211_start_ap(struct wiphy *wiphy,
 	u8 *head, *tail;
 	int head_len, tail_len;
 
-	wl_ndev_log(L_DBG, ndev, "%s\n", __func__);
 
 #ifdef ACS_SUPPORT
 	if ((vif->mode == SPRDWL_MODE_AP) &&
@@ -972,7 +969,6 @@ static int sprdwl_cfg80211_change_beacon(struct wiphy *wiphy,
 	struct sprdwl_vif *vif = netdev_priv(ndev);
 	struct cfg80211_beacon_data *beacon = &params->beacon;
 
-	wl_ndev_log(L_DBG, ndev, "%s\n", __func__);
 #ifdef DFS_MASTER
 	/*send beacon tail ie if needed*/
 	if (beacon->tail_len)
@@ -988,7 +984,7 @@ static int sprdwl_cfg80211_change_beacon(struct wiphy *wiphy,
 	return sprdwl_change_beacon(vif, beacon);
 }
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,19, 2))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 2))
 static int sprdwl_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *ndev, unsigned int link_id)
 #else
 static int sprdwl_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *ndev)
@@ -997,7 +993,6 @@ static int sprdwl_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *ndev)
 #ifdef DFS_MASTER
 	struct sprdwl_vif *vif = netdev_priv(ndev);
 #endif
-	wl_ndev_log(L_DBG, ndev, "%s\n", __func__);
 #ifdef DFS_MASTER
 	sprdwl_abort_cac(vif);
 #endif
@@ -1116,7 +1111,7 @@ static int sprdwl_cfg80211_get_station(struct wiphy *wiphy,
 		sinfo->txrate.mcs = rate->mcs;
 
 		if ((rate->flags & RATE_INFO_FLAGS_VHT_MCS) &&
-			(0 != rate->nss)) {
+			(rate->nss != 0)) {
 			sinfo->txrate.nss = rate->nss;
 		}
 	} else {
@@ -1171,7 +1166,7 @@ static int sprdwl_cfg80211_get_station(struct wiphy *wiphy,
 		sinfo->txrate.mcs = rate->mcs;
 
 		if ((rate->flags & RATE_INFO_FLAGS_VHT_MCS) &&
-			(0 != rate->nss)) {
+			(rate->nss != 0)) {
 			sinfo->txrate.nss = rate->nss;
 		}
 	} else {
@@ -1378,7 +1373,6 @@ void sprdwl_scan_timeout(unsigned long data)
 		.aborted = true,
 	};
 #endif
-	wl_ndev_log(L_DBG, priv->scan_vif->ndev, "%s\n", __func__);
 
 	spin_lock_bh(&priv->scan_lock);
 	if (priv->scan_request) {
@@ -1419,6 +1413,7 @@ static int sprdwl_cfg80211_scan(struct wiphy *wiphy,
 	static int old_mac_flag;
 #endif
 	struct sprdwl_intf *intf;
+
 	intf = (struct sprdwl_intf *)(priv->hw_priv);
 
 #ifndef CP2_RESET_SUPPORT
@@ -1501,7 +1496,7 @@ static int sprdwl_cfg80211_scan(struct wiphy *wiphy,
 		if (vif->mode == SPRDWL_MODE_AP) {
 			struct sprdwl_survey_info *info = NULL;
 
-			if ((0 == i) && (!list_empty(&vif->survey_info_list))) {
+			if ((i == 0) && (!list_empty(&vif->survey_info_list))) {
 				wl_ndev_log(L_ERR, vif->ndev,
 					   "%s survey info list is not empty!\n",
 					   __func__);
@@ -1740,6 +1735,7 @@ static int sprdwl_cfg80211_sched_scan_stop(struct wiphy *wiphy,
 void sprdwl_disconnect_handle(struct sprdwl_vif *vif)
 {
 	u16 reason_code = 0;
+
 	if ((vif->sm_state == SPRDWL_CONNECTED) ||
 			(vif->sm_state == SPRDWL_DISCONNECTING)) {
 		cfg80211_disconnected(vif->ndev, reason_code,
@@ -1785,6 +1781,7 @@ static int sprdwl_cfg80211_disconnect(struct wiphy *wiphy,
 #endif
 #ifdef STA_SOFTAP_SCC_MODE
 	struct sprdwl_intf *intf = (struct sprdwl_intf *)vif->priv->hw_priv;
+
 	intf->sta_home_channel = 0;
 #endif
 
@@ -1851,7 +1848,7 @@ static int sprdwl_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev,
 			 random_mac_flag = SPRDWL_CONNECT_RANDOM_ADDR;
 			 ret = wlan_cmd_set_rand_mac(vif->priv, vif->ctx_id,
 						   random_mac_flag, vif->random_mac);
-			 if (ret)
+			if (ret)
 				 netdev_info(ndev, "Set random mac failed!\n");
 		}
 	}
@@ -2077,7 +2074,6 @@ static int sprdwl_cfg80211_set_pmksa(struct wiphy *wiphy,
 {
 	struct sprdwl_vif *vif = netdev_priv(ndev);
 
-	wl_ndev_log(L_DBG, ndev, "%s\n", __func__);
 
 	return sprdwl_pmksa(vif->priv, vif->ctx_id, pmksa->bssid,
 				pmksa->pmkid, SPRDWL_SUBCMD_SET);
@@ -2089,7 +2085,6 @@ static int sprdwl_cfg80211_del_pmksa(struct wiphy *wiphy,
 {
 	struct sprdwl_vif *vif = netdev_priv(ndev);
 
-	wl_ndev_log(L_DBG, ndev, "%s\n", __func__);
 
 	return sprdwl_pmksa(vif->priv, vif->ctx_id, pmksa->bssid,
 				pmksa->pmkid, SPRDWL_SUBCMD_DEL);
@@ -2100,7 +2095,6 @@ static int sprdwl_cfg80211_flush_pmksa(struct wiphy *wiphy,
 {
 	struct sprdwl_vif *vif = netdev_priv(ndev);
 
-	wl_ndev_log(L_DBG, ndev, "%s\n", __func__);
 
 	return sprdwl_pmksa(vif->priv, vif->ctx_id, vif->bssid, NULL,
 				SPRDWL_SUBCMD_FLUSH);
@@ -2119,7 +2113,7 @@ void sprdwl_report_fake_probe(struct wiphy *wiphy, u8 *ie, size_t ielen)
 	u32 freq;
 	s32 signal;
 
-	if (0 == local_mac_ind) {
+	if (local_mac_ind == 0) {
 		if ((ielen+IEEE80211_MAX_SSID_LEN) < SPRDWL_MAX_IE_LEN) {
 			/*add SSID IE*/
 			ie = ie + *(ie+1) + 2;
@@ -2146,7 +2140,7 @@ void sprdwl_report_fake_probe(struct wiphy *wiphy, u8 *ie, size_t ielen)
 		signal = -20;
 		channel = ieee80211_get_channel(wiphy, freq);
 		bss = cfg80211_inform_bss(wiphy, channel,
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0))
+#if (KERNEL_VERSION(3, 18, 0) <= LINUX_VERSION_CODE)
 					  CFG80211_BSS_FTYPE_UNKNOWN,
 #endif
 					  fake_bssid, 0, capability,
@@ -2267,7 +2261,7 @@ void sprdwl_report_scan_result(struct sprdwl_vif *vif, u16 chan, s16 rssi,
 			? "proberesp" : "beacon   ", mgmt->bssid, chan, signal);
 
 	bss = cfg80211_inform_bss(wiphy, channel,
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0))
+#if (KERNEL_VERSION(3, 18, 0) <= LINUX_VERSION_CODE)
 				  CFG80211_BSS_FTYPE_UNKNOWN,
 #endif
 				  mgmt->bssid, tsf, capability, beacon_interval,
@@ -2400,7 +2394,7 @@ void sprdwl_report_connection(struct sprdwl_vif *vif,
 			   conn_info->signal);
 
 		bss = cfg80211_inform_bss(wiphy, channel,
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0))
+#if (KERNEL_VERSION(3, 18, 0) <= LINUX_VERSION_CODE)
 					  CFG80211_BSS_FTYPE_UNKNOWN,
 #endif
 					  mgmt->bssid, tsf,
@@ -2451,7 +2445,7 @@ void sprdwl_report_connection(struct sprdwl_vif *vif,
 #endif
 		channel = ieee80211_get_channel(wiphy, freq);
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0))
+#if (KERNEL_VERSION(3, 15, 0) <= LINUX_VERSION_CODE)
 		cfg80211_ibss_joined(vif->ndev, conn_info->bssid, channel, GFP_KERNEL);
 #else
 		cfg80211_ibss_joined(vif->ndev, conn_info->bssid, GFP_KERNEL);
@@ -2735,6 +2729,7 @@ static int sprdwl_cfg80211_mgmt_tx(struct wiphy *wiphy,
 			int subtype = ((*buf) & IEEE80211_FCTL_STYPE) >> 4;
 			int action = *(buf + MAC_LEN);
 			int action_subtype = *(buf + ACTION_SUBTYPE_OFFSET);
+
 			if (type == IEEE80211_FTYPE_MGMT && subtype == ACTION_TYPE &&
 				action == PUB_ACTION && action_subtype == 1 &&
 				buf[4] == 0x00 && buf[5] == 0x01 && buf[6] == 0x02 &&
@@ -2800,7 +2795,6 @@ static void sprdwl_cfg80211_mgmt_frame_register(struct wiphy *wiphy,
 
 void sprdwl_report_remain_on_channel_expired(struct sprdwl_vif *vif)
 {
-	wl_ndev_log(L_DBG, vif->ndev, "%s\n", __func__);
 
 	cfg80211_remain_on_channel_expired(&vif->wdev, vif->listen_cookie,
 					   &vif->listen_channel, GFP_KERNEL);
@@ -2883,7 +2877,6 @@ static int sprdwl_cfg80211_start_p2p_device(struct wiphy *wiphy,
 {
 	struct sprdwl_vif *vif = container_of(wdev, struct sprdwl_vif, wdev);
 
-	wl_ndev_log(L_DBG, vif->ndev, "%s\n", __func__);
 
 	return sprdwl_init_fw(vif);
 }
@@ -2893,7 +2886,6 @@ static void sprdwl_cfg80211_stop_p2p_device(struct wiphy *wiphy,
 {
 	struct sprdwl_vif *vif = container_of(wdev, struct sprdwl_vif, wdev);
 
-	wl_ndev_log(L_DBG, vif->ndev, "%s\n", __func__);
 
 	sprdwl_uninit_fw(vif);
 
@@ -2984,7 +2976,6 @@ static int sprdwl_cfg80211_tdls_mgmt(struct wiphy *wiphy,
 		wl_err("%s, %d, error action_code%d\n", __func__, __LINE__, action_code);
 		dev_kfree_skb(tdls_skb);
 		return -ENOMEM;
-		break;
 	}
 
 	ret = sprdwl_tdls_mgmt(vif, tdls_skb);
@@ -3054,7 +3045,6 @@ static void sprdwl_cfg80211_tdls_cancel_chan_switch(struct wiphy *wiphy,
 {
 	struct sprdwl_vif *vif = netdev_priv(ndev);
 
-	wl_ndev_log(L_DBG, ndev, "%s\n", __func__);
 	sprdwl_cancel_tdls_channel_switch(vif->priv, vif->ctx_id, addr);
 }
 #endif
@@ -3097,7 +3087,6 @@ int sprdwl_cfg80211_update_ft_ies(struct wiphy *wiphy, struct net_device *ndev,
 {
 	struct sprdwl_vif *vif = netdev_priv(ndev);
 
-	wl_ndev_log(L_DBG, ndev, "%s\n", __func__);
 
 	return sprdwl_set_roam_offload(vif->priv, vif->ctx_id,
 					   SPRDWL_ROAM_OFFLOAD_SET_FTIE,
@@ -3110,7 +3099,6 @@ static int sprdwl_cfg80211_set_qos_map(struct wiphy *wiphy,
 {
 	struct sprdwl_vif *vif = netdev_priv(ndev);
 
-	wl_ndev_log(L_DBG, ndev, "%s\n", __func__);
 
 	return sprdwl_set_qos_map(vif->priv, vif->ctx_id, (void *)qos_map);
 }
@@ -3123,7 +3111,6 @@ static int sprdwl_cfg80211_add_tx_ts(struct wiphy *wiphy,
 {
 	struct sprdwl_vif *vif = netdev_priv(ndev);
 
-	wl_ndev_log(L_DBG, ndev, "%s\n", __func__);
 
 	return sprdwl_add_tx_ts(vif->priv, vif->ctx_id, tsid, peer,
 				user_prio, admitted_time);
@@ -3135,7 +3122,6 @@ static int sprdwl_cfg80211_del_tx_ts(struct wiphy *wiphy,
 {
 	struct sprdwl_vif *vif = netdev_priv(ndev);
 
-	wl_ndev_log(L_DBG, ndev, "%s\n", __func__);
 
 	return sprdwl_del_tx_ts(vif->priv, vif->ctx_id, tsid, peer);
 }
@@ -3545,7 +3531,7 @@ void sprdwl_reg_notify(struct wiphy *wiphy,
 	}
 
 #ifdef CP2_RESET_SUPPORT
-	if (NL80211_REGDOM_SET_BY_COUNTRY_IE == request->initiator)
+	if (request->initiator == NL80211_REGDOM_SET_BY_COUNTRY_IE)
 		memcpy(&priv->sync.request, request, sizeof(struct regulatory_request));
 #endif
 
@@ -3595,7 +3581,7 @@ void sprdwl_reg_notify(struct wiphy *wiphy,
 	}
 
 	rd_size = sizeof(struct sprdwl_ieee80211_regdomain) +
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0))
+#if (KERNEL_VERSION(3, 15, 0) <= LINUX_VERSION_CODE)
 		n_rules * sizeof(struct ieee80211_reg_rule);
 #else
 		n_rules * sizeof(struct unisoc_reg_rule);
@@ -3644,7 +3630,7 @@ void sprdwl_reg_notify(struct wiphy *wiphy,
 
 				memcpy(&rd->reg_rules[i], reg_rule,
 					   sizeof(struct ieee80211_reg_rule));
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 15, 0))
+#if (KERNEL_VERSION(3, 15, 0) > LINUX_VERSION_CODE)
 				rd->reg_rules[i].dfs_cac_ms = 0;
 #endif
 				i++;
@@ -3673,7 +3659,6 @@ static void sprdwl_ht_cap_update(struct ieee80211_sta_ht_cap *ht_info,
 {
 	struct wiphy_sec2_t *sec2 = &priv->wiphy_sec2;
 
-	wl_info("%s enter:\n", __func__);
 	ht_info->ht_supported = true;
 	/*set Max A-MPDU length factor*/
 	if (sec2->ampdu_para) {
@@ -3695,7 +3680,6 @@ static void sprdwl_vht_cap_update(struct ieee80211_sta_vht_cap *vht_cap,
 {
 	struct wiphy_sec2_t *sec2 = &priv->wiphy_sec2;
 
-	wl_debug("%s enter:\n", __func__);
 	vht_cap->vht_supported = true;
 	if (sec2->vht_cap_info)
 		vht_cap->cap = sec2->vht_cap_info;
@@ -3708,7 +3692,7 @@ void sprdwl_setup_wiphy(struct wiphy *wiphy, struct sprdwl_priv *priv)
 	struct wiphy_sec2_t *sec2 = NULL;
 	struct ieee80211_sta_vht_cap *vht_info = NULL;
 	struct ieee80211_sta_ht_cap *ht_info = NULL;
-#if !defined (CONFIG_CFG80211_INTERNAL_REGDB) || defined(CUSTOM_REGDOMAIN)
+#if !defined(CONFIG_CFG80211_INTERNAL_REGDB) || defined(CUSTOM_REGDOMAIN)
 	const struct ieee80211_regdomain *pRegdom;
 	char alpha2[2];
 #endif
@@ -3859,8 +3843,8 @@ void sprdwl_setup_wiphy(struct wiphy *wiphy, struct sprdwl_priv *priv)
 		wl_info("\tIEEE802.11d supported\n");
 		wiphy->reg_notifier = sprdwl_reg_notify;
 
-#if !defined (CONFIG_CFG80211_INTERNAL_REGDB) || defined(CUSTOM_REGDOMAIN)
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 14, 0))
+#if !defined(CONFIG_CFG80211_INTERNAL_REGDB) || defined(CUSTOM_REGDOMAIN)
+#if (KERNEL_VERSION(3, 14, 0) <= LINUX_VERSION_CODE)
 	wiphy->regulatory_flags |= REGULATORY_CUSTOM_REG;
 #else
 	wiphy->flags |= WIPHY_FLAG_CUSTOM_REGULATORY;

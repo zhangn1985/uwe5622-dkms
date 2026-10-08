@@ -371,7 +371,7 @@ static int sprdwl_cmd_lock(struct sprdwl_cmd *cmd)
 #endif
 
 #ifdef UNISOC_WIFI_PS
-	if (SPRDWL_PS_SUSPENDED == intf->suspend_mode) {
+	if (intf->suspend_mode == SPRDWL_PS_SUSPENDED) {
 		reinit_completion(&intf->suspend_completed);
 		wait_for_completion(&intf->suspend_completed);
 		wl_info("wait for completion\n");
@@ -426,7 +426,7 @@ struct sprdwl_msg_buf *__sprdwl_cmd_getbuf(struct sprdwl_priv *priv,
 		   (cmd_id != WIFI_CMD_GET_INFO) &&
 		   (cmd_id != WIFI_CMD_OPEN) &&
 		   (cmd_id != WIFI_CMD_SET_REGDOM)) {
-			   return NULL;
+			return NULL;
 		}
 	}
 #endif
@@ -575,6 +575,7 @@ int sprdwl_cmd_send_recv(struct sprdwl_priv *priv,
 	struct sprdwl_vif *vif;
 	struct sprdwl_intf *intf;
 	struct sprdwl_tx_msg *tx_msg;
+
 	intf = (struct sprdwl_intf *)(priv->hw_priv);
 	tx_msg = (struct sprdwl_tx_msg *)intf->sprdwl_tx;
 
@@ -761,7 +762,6 @@ void sprdwl_download_ini(struct sprdwl_priv *priv)
 	struct wifi_conf_sec1_t *sec1;
 	struct wifi_conf_sec2_t *sec2;
 
-	wl_debug("%s enter:", __func__);
 	/*if ini file has been download already, return*/
 	if (sprdwl_get_ini_status(priv)) {
 		wl_err("RF ini download already, skip!\n");
@@ -782,8 +782,8 @@ void sprdwl_download_ini(struct sprdwl_priv *priv)
 	}
 
 	wl_info("total config len:%ld,sec1 len:%ld, sec2 len:%ld\n",
-		(long unsigned int)sizeof(wifi_data), (long unsigned int)sizeof(*sec1),
-		(long unsigned int)sizeof(*sec2));
+		(unsigned long)sizeof(wifi_data), (unsigned long)sizeof(*sec1),
+		(unsigned long)sizeof(*sec2));
 	/*devide wifi_conf into sec1 and sec2 since it's too large*/
 	sec1 = (struct wifi_conf_sec1_t *)wifi_data;
 	sec2 = (struct wifi_conf_sec2_t *)(&wifi_data->tx_scale);
@@ -1065,7 +1065,7 @@ int sprdwl_open_fw(struct sprdwl_priv *priv, u8 *vif_ctx_id,
 		wl_err("%s, %d, mac_addr error!\n", __func__, __LINE__);
 
 	p->reserved = 0;
-	if (0 != wfa_cap) {
+	if (wfa_cap != 0) {
 		p->reserved = wfa_cap;
 		wfa_cap = 0;
 	}
@@ -1136,7 +1136,7 @@ int sprdwl_add_key(struct sprdwl_priv *priv, u8 vif_ctx_id, const u8 *key_data,
 	p->cypher_type = cypher_type;
 	p->key_len = key_len;
 	if (key_seq) {
-		if (SPRDWL_CIPHER_WAPI == cypher_type)
+		if (cypher_type == SPRDWL_CIPHER_WAPI)
 			memcpy(p->keyseq, key_seq, WAPI_PN_SIZE);
 		else
 			memcpy(p->keyseq, key_seq, 8);
@@ -1213,7 +1213,7 @@ int sprdwl_set_rekey_data(struct sprdwl_priv *priv, u8 vif_ctx_id,
 	 memcpy(p->kek, data->kek, NL80211_KEK_LEN);
 	 memcpy(p->kck, data->kck, NL80211_KCK_LEN);
 	 memcpy(p->replay_ctr, data->replay_ctr, NL80211_REPLAY_CTR_LEN);
-	 return sprdwl_cmd_send_recv(priv, msg, CMD_WAIT_TIMEOUT, NULL, NULL);
+	return sprdwl_cmd_send_recv(priv, msg, CMD_WAIT_TIMEOUT, NULL, NULL);
 }
 
 int sprdwl_set_ie(struct sprdwl_priv *priv, u8 vif_ctx_id, u8 type,
@@ -1588,7 +1588,7 @@ int sprdwl_gscan_subcmd(struct sprdwl_priv *priv, u8 vif_ctx_id,
 	if (data != NULL) {
 		p->data_len = len;
 		memcpy(p->data, data, len);
-	} else{
+	} else {
 		p->data_len = 0;
 	}
 	return sprdwl_cmd_send_recv(priv, msg, CMD_WAIT_TIMEOUT, r_buf, r_len);
@@ -2513,7 +2513,7 @@ int sprdwl_cmd_host_wakeup_fw(struct sprdwl_priv *priv, u8 ctx_id)
 	ret =  sprdwl_cmd_send_recv(priv, msg, CMD_WAIT_TIMEOUT,
 					&r_buf, &r_len);
 
-	if (!ret && (1 == r_buf)) {
+	if (!ret && (r_buf == 1)) {
 		intf->fw_awake = 1;
 		tx_up(tx_msg);
 	} else {
@@ -2545,14 +2545,14 @@ static int handle_rsp_status_err(u8 cmd_id, s8 status)
 
 	switch (cmd_id) {
 	case WIFI_CMD_DOWNLOAD_INI:
-		 if ((SPRDWL_CMD_STATUS_CRC_ERROR == status) ||
-			(SPRDWL_CMD_STATUS_INI_INDEX_ERROR == status) ||
-			(SPRDWL_CMD_STATUS_LENGTH_ERROR == status))
+		if ((status == SPRDWL_CMD_STATUS_CRC_ERROR) ||
+			(status == SPRDWL_CMD_STATUS_INI_INDEX_ERROR) ||
+			(status == SPRDWL_CMD_STATUS_LENGTH_ERROR))
 			flag = -1;
-		 break;
+		break;
 	default:
 		 flag = 0;
-		 break;
+		break;
 	}
 
 	return flag;
@@ -2630,7 +2630,7 @@ unsigned short sprdwl_rx_rsp_process(struct sprdwl_priv *priv, u8 *msg)
 	atomic_dec(&cmd->refcnt);
 	wl_debug("cmd->refcnt=%x\n", atomic_read(&cmd->refcnt));
 
-	if (0 != handle_flag)
+	if (handle_flag != 0)
 		wlan_set_assert(priv, SPRDWL_MODE_NONE, hdr->cmd_id, HANDLE_FLAG_ERROR);
 
 	return plen;
@@ -3063,9 +3063,9 @@ void sprdwl_event_tdls(struct sprdwl_vif *vif, u8 *data, u16 len)
 	ether_addr_copy(&peer[0], &report_tdls->mac[0]);
 	oper = report_tdls->tdls_sub_cmd_mgmt;
 
-	if (SPRDWL_TDLS_TEARDOWN == oper)
+	if (oper == SPRDWL_TDLS_TEARDOWN)
 		oper = NL80211_TDLS_TEARDOWN;
-	else if (SPRDWL_TDLS_UPDATE_PEER_INFOR == oper)
+	else if (oper == SPRDWL_TDLS_UPDATE_PEER_INFOR)
 		sprdwl_event_tdls_flow_count(vif, data, len);
 	else {
 		oper = NL80211_TDLS_SETUP;
@@ -3113,7 +3113,7 @@ void sprdwl_event_suspend_resume(struct sprdwl_vif *vif, u8 *data, u16 len)
 	struct sprdwl_tx_msg *tx_msg = (struct sprdwl_tx_msg *)intf->sprdwl_tx;
 
 	suspend_resume = (struct sprdwl_event_suspend_resume *)data;
-	if ((1 == suspend_resume->status) &&
+	if ((suspend_resume->status == 1) &&
 		(intf->suspend_mode == SPRDWL_PS_RESUMING)) {
 		intf->suspend_mode = SPRDWL_PS_RESUMED;
 		tx_up(tx_msg);
@@ -3201,7 +3201,7 @@ void sprdwl_wfd_mib_cnt(struct sprdwl_vif *vif, u8 *data, u16 len)
 
 	if (busy_cnt > 8)
 		wfd_rate = wfd->sum_tx_throughput;
-	else{
+	else {
 		if (tx_cnt)
 			wfd_rate = wfd->sum_tx_throughput + wfd->sum_tx_throughput * (1 / tx_cnt) * ((10 - busy_cnt) / 10) / 2;
 	}

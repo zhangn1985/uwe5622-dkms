@@ -317,7 +317,7 @@ unsigned int qos_match_q(void *skb, int data_offset)
 	qos_head_type_t data_type = SPRDWL_AC_BE;
 	unsigned char tos = 0;
 
-	if (0 == g_qos_enable)
+	if (g_qos_enable == 0)
 		return SPRDWL_AC_BE;
 	/* vo vi bk be*/
 	eh =
@@ -374,7 +374,7 @@ unsigned int get_tid_qosindex(void *skb, int data_offset, unsigned char *tid, un
 	int priority;
 	struct ether_header *eh;
 
-	if (0 == g_qos_enable)
+	if (g_qos_enable == 0)
 		return SPRDWL_AC_BE;
 	/* vo vi bk be*/
 	eh =
@@ -403,7 +403,7 @@ void qos_wfq(struct tx_t *qos)
 			t++;
 		}
 	}
-	if (0 == t)
+	if (t == 0)
 		return;
 	for (i = 0; i < t; i++)
 		weight += wfq_table[t][i];
@@ -424,10 +424,10 @@ void qos_fq(struct tx_t *qos)
 			t++;
 		}
 	}
-	if (0 == t)
+	if (t == 0)
 		return;
 	/* vi & bk*/
-	if ((2 == t) && (1 == q[0]) && (2 == q[1])) {
+	if ((2 == t) && (1 == q[0]) && (q[1] == 2)) {
 		qos->going[SPRDWL_AC_VI] = fd_special_table[0][0];
 		qos->going[SPRDWL_AC_BE] = fd_special_table[0][1];
 
@@ -440,7 +440,7 @@ void qos_fq(struct tx_t *qos)
 		return;
 	}
 	/*bk & be*/
-	if ((2 == t) && (2 == q[0]) && (3 == q[1])) {
+	if ((2 == t) && (2 == q[0]) && (q[1] == 3)) {
 		qos->going[2] = fd_special_table[1][0];
 		qos->going[3] = fd_special_table[1][1];
 
@@ -477,22 +477,22 @@ int qos_fq_ratio(struct tx_t *qos)
 			}
 		}
 	}
-	if (0 == t)
+	if (t == 0)
 		return t;
 	/*vi & vo, two streams coexist based on WFA spec*/
-	if ((2 == t) && (0 == q[0]) && (1 == q[1])) {
+	if ((2 == t) && (0 == q[0]) && (q[1] == 1)) {
 		qos->ratio = fd_ratio_table[0];
 		qos->ac_index = SPRDWL_AC_VO;
 		return t;
 	}
 	/* vi & be*/
-	if ((2 == t) && (1 == q[0]) && (2 == q[1])) {
+	if ((2 == t) && (1 == q[0]) && (q[1] == 2)) {
 		qos->ratio = fd_ratio_table[1];
 		qos->ac_index = SPRDWL_AC_VI;
 		return t;
 	}
 	/*be & bk*/
-	if ((2 == t) && (2 == q[0]) && (3 == q[1])) {
+	if ((2 == t) && (2 == q[0]) && (q[1] == 3)) {
 		qos->ratio = fd_ratio_table[2];
 		qos->ac_index = SPRDWL_AC_BE;
 		return t;
@@ -507,7 +507,7 @@ void qos_sched(struct tx_t *qos, struct qos_list **q, int *num)
 {
 	int round, j;
 
-	if (0 == g_qos_enable) {
+	if (g_qos_enable == 0) {
 		*q = &qos->q_list[SPRDWL_AC_BE];
 		for (j = 0; j < MAX_LUT_NUM; j++)
 			*num += get_list_num(&qos->q_list[SPRDWL_AC_BE].p_list[j].head_list);
@@ -515,8 +515,8 @@ void qos_sched(struct tx_t *qos, struct qos_list **q, int *num)
 	}
 
 	for (round = 0;  round < 4; round++) {
-		if ((SPRDWL_AC_VO == qos->index) &&
-			(0 == qos->going[SPRDWL_AC_VO]))
+		if ((qos->index == SPRDWL_AC_VO) &&
+			(qos->going[SPRDWL_AC_VO] == 0))
 			/*qos_fq(qos);*/
 			qos_wfq(qos);
 		if (qos->going[qos->index] > 0)
@@ -729,7 +729,7 @@ unsigned int change_priority_if(struct sprdwl_priv *priv, unsigned char *tid, un
 	int match_index = 0;
 	unsigned char priority = *tos;
 
-	if (1 == g_qos_enable) {
+	if (g_qos_enable == 1) {
 		ac = map_priority_to_edca_ac(*tid);
 		while (ac != 0) {
 			if (!!(priv->wmmac.ac[ac].aci_aifsn & WMM_AC_ACM)) {

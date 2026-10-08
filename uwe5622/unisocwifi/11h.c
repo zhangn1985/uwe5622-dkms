@@ -107,7 +107,6 @@ int sprdwl_cfg80211_start_radar_detection(struct wiphy *wiphy,
 	struct sprdwl_vif *vif = netdev_priv(ndev);
 	struct sprdwl_radar_params radar_params;
 
-	wl_debug("%s enter:\n", __func__);
 	radar_params.chan_num = chandef->chan->hw_value;
 	radar_params.chan_width = chandef->width;
 	radar_params.cac_time_ms = cac_time_ms;
@@ -226,7 +225,6 @@ void sprdwl_send_dfs_cmd(struct sprdwl_vif *vif, void *data, int len)
 {
 	struct sprdwl_msg_buf *msg;
 
-	wl_debug("%s:enter\n", __func__);
 	msg = sprdwl_cmd_getbuf(vif->priv, len, vif->ctx_id,
 				SPRDWL_HEAD_RSP, WIFI_CMD_RADAR_DETECT);
 	memcpy(msg->data, data, len);

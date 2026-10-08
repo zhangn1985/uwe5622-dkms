@@ -176,6 +176,7 @@ static struct sk_buff *sprdwl_fill_pppoe_llc_header(struct sk_buff *skb)
 
 	if (unlikely(skb_headroom(skb) < LLC_HEADER_LEN)) {
 		struct sk_buff *skb2 = NULL;
+
 		skb2 = skb_realloc_headroom(skb, LLC_HEADER_LEN);
 		if (!skb2) {
 			kfree_skb(skb);
@@ -340,7 +341,6 @@ static void sprdwl_uninit(struct net_device *ndev)
 
 static int sprdwl_open(struct net_device *ndev)
 {
-	wl_ndev_log(L_DBG, ndev, "%s\n", __func__);
 #ifdef DFS_MASTER
 	netif_carrier_off(ndev);
 #endif
@@ -354,7 +354,6 @@ static int sprdwl_close(struct net_device *ndev)
 {
 	struct sprdwl_vif *vif = netdev_priv(ndev);
 
-	wl_ndev_log(L_DBG, ndev, "%s\n", __func__);
 
 	sprdwl_scan_done(vif, true);
 	sprdwl_sched_scan_done(vif, true);
@@ -375,7 +374,6 @@ static void sprdwl_tx_timeout(struct net_device *ndev, unsigned int txqueue)
 static void sprdwl_tx_timeout(struct net_device *ndev)
 #endif
 {
-	wl_ndev_log(L_DBG, ndev, "%s\n", __func__);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 7, 0)
 	ndev->trans_start = jiffies;
 #else
@@ -434,13 +432,14 @@ static int sprdwl_priv_cmd(struct net_device *ndev, struct ifreq *ifr)
 	if (!ifr->ifr_data)
 		return -EINVAL;
 #ifdef CONFIG_COMPAT
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0))
+#if (KERNEL_VERSION(4, 6, 0) <= LINUX_VERSION_CODE)
 	if (in_compat_syscall())
 #else
 	if (is_compat_task())
 #endif
 	{
 		struct compat_android_wifi_priv_cmd compat_priv_cmd;
+
 		if (copy_from_user(&compat_priv_cmd, ifr->ifr_data,
 					sizeof(struct compat_android_wifi_priv_cmd))) {
 			return -EFAULT;
@@ -1275,7 +1274,7 @@ void acs_scan_result(struct sprdwl_vif *vif, u16 chan,
 	info = find_survey_info(vif, chan);
 	if (info) {
 		if (!find_bssid(info, mgmt->bssid)) {
-			bssid = kmalloc(sizeof(*bssid), GFP_KERNEL);
+			bssid = kmalloc_obj(*bssid, GFP_KERNEL);
 			if (bssid) {
 				ether_addr_copy(bssid->bssid, mgmt->bssid);
 				list_add_tail(&bssid->list, &info->bssid_list);
@@ -1351,7 +1350,7 @@ static struct sprdwl_vif *sprdwl_register_wdev(struct sprdwl_priv *priv,
 	struct sprdwl_vif *vif;
 	struct wireless_dev *wdev;
 
-	vif = kzalloc(sizeof(*vif), GFP_KERNEL);
+	vif = kzalloc_obj(*vif, GFP_KERNEL);
 	if (!vif)
 		return ERR_PTR(-ENOMEM);
 
@@ -1394,7 +1393,7 @@ static struct sprdwl_vif *sprdwl_register_netdev(struct sprdwl_priv *priv,
 	struct sprdwl_vif *vif;
 	int ret;
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 17, 0))
+#if (KERNEL_VERSION(3, 17, 0) <= LINUX_VERSION_CODE)
 	ndev = alloc_netdev(sizeof(*vif), name, NET_NAME_UNKNOWN, ether_setup);
 #else
 	ndev = alloc_netdev(sizeof(*vif), name, ether_setup);
@@ -1563,6 +1562,7 @@ int sprdwl_core_init(struct device *dev, struct sprdwl_priv *priv)
 	struct wiphy *wiphy = priv->wiphy;
 	struct wireless_dev *wdev;
 	int ret;
+
 	ret = sprdwl_sync_version(priv);
 	if (ret) {
 		wl_err("SYNC CMD ERROR!!\n");
