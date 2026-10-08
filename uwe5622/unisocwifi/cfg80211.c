@@ -984,7 +984,7 @@ static int sprdwl_cfg80211_change_beacon(struct wiphy *wiphy,
 	return sprdwl_change_beacon(vif, beacon);
 }
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 2))
+#if (KERNEL_VERSION(5, 19, 2) <= LINUX_VERSION_CODE)
 static int sprdwl_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *ndev, unsigned int link_id)
 #else
 static int sprdwl_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *ndev)

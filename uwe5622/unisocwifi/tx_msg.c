@@ -1575,7 +1575,7 @@ unsigned int do_csum(const unsigned char *buff, int len)
 			buff += 2;
 		}
 		if (len >= 4) {
-			const unsigned intchar *end = buff + ((unsigned)len & ~3);
+			const unsigned char * end = buff + ((unsigned)len & ~3);
 			unsigned int carry = 0;
 
 			do {

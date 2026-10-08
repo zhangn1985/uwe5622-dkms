@@ -451,11 +451,11 @@ sprdwl_sm_state_to_conn_state(enum sm_state sm_state)
 {
        switch (sm_state) {
        case SPRDWL_CONNECTING:
-	       return WIFI_ASSOCIATING;
+	return WIFI_ASSOCIATING;
        case SPRDWL_CONNECTED:
-	       return WIFI_ASSOCIATED;
+	return WIFI_ASSOCIATED;
        default:
-	       return WIFI_DISCONNECTED;
+	return WIFI_DISCONNECTED;
        }
 }
 

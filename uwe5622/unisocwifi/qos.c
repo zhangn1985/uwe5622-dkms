@@ -427,7 +427,7 @@ void qos_fq(struct tx_t *qos)
 	if (t == 0)
 		return;
 	/* vi & bk*/
-	if ((2 == t) && (1 == q[0]) && (q[1] == 2)) {
+	if ((t == 2) && (q[0] == 1) && (q[1] == 2)) {
 		qos->going[SPRDWL_AC_VI] = fd_special_table[0][0];
 		qos->going[SPRDWL_AC_BE] = fd_special_table[0][1];
 
@@ -440,7 +440,7 @@ void qos_fq(struct tx_t *qos)
 		return;
 	}
 	/*bk & be*/
-	if ((2 == t) && (2 == q[0]) && (q[1] == 3)) {
+	if ((t == 2) && (q[0] == 2) && (q[1] == 3)) {
 		qos->going[2] = fd_special_table[1][0];
 		qos->going[3] = fd_special_table[1][1];
 
@@ -480,19 +480,19 @@ int qos_fq_ratio(struct tx_t *qos)
 	if (t == 0)
 		return t;
 	/*vi & vo, two streams coexist based on WFA spec*/
-	if ((2 == t) && (0 == q[0]) && (q[1] == 1)) {
+	if ((t == 2) && (q[0] == 0) && (q[1] == 1)) {
 		qos->ratio = fd_ratio_table[0];
 		qos->ac_index = SPRDWL_AC_VO;
 		return t;
 	}
 	/* vi & be*/
-	if ((2 == t) && (1 == q[0]) && (q[1] == 2)) {
+	if ((t == 2) && (q[0] == 1) && (q[1] == 2)) {
 		qos->ratio = fd_ratio_table[1];
 		qos->ac_index = SPRDWL_AC_VI;
 		return t;
 	}
 	/*be & bk*/
-	if ((2 == t) && (2 == q[0]) && (q[1] == 3)) {
+	if ((t == 2) && (q[0] == 2) && (q[1] == 3)) {
 		qos->ratio = fd_ratio_table[2];
 		qos->ac_index = SPRDWL_AC_BE;
 		return t;

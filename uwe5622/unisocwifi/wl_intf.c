@@ -48,7 +48,7 @@ void sprdwl_hex_dump(unsigned char *name,
 	int i, p = 0, ret;
 	unsigned char buf[255] = {0};
 
-	if ((NULL == data) || (0 == len) || (name == NULL))
+	if ((data == NULL) || (len == 0) || (name == NULL))
 		return;
 
 	sprintf(buf, "sprdwl %s hex dump(len = %d)", name, len);

@@ -325,7 +325,7 @@ static void get_cmd_par(char *str, struct nvm_cali_cmd *cmd)
 		if (-1 != bufType) {
 			tmp[j] = '\0';
 
-			if ((1 == bufType) && (flag == 0)) {
+			if ((bufType == 1) && (flag == 0)) {
 				strcpy(cmd->itm, tmp);
 				flag = 1;
 			} else {
@@ -371,7 +371,7 @@ static int wifi_nvm_buf_operate(char *pBuf, int file_len, void *p_data)
 	struct wifi_conf_t *conf;
 	struct nvm_name_table *pTable = NULL;
 
-	if ((NULL == pBuf) || (file_len == 0))
+	if ((pBuf == NULL) || (file_len == 0))
 		return -1;
 
 	cmd = kzalloc_obj(struct nvm_cali_cmd, GFP_KERNEL);
