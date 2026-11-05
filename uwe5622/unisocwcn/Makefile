@@ -111,20 +111,6 @@ ccflags-y += -DCONFIG_WCN_SLP
 ccflags-y += -DCONFIG_WCN_SWD
 export CONFIG_WCN_SWD = y
 endif
-ifeq ($(CONFIG_WCN_PCIE),y)
-ccflags-y += -DCONFIG_WCN_PCIE
-endif
-ifeq ($(CONFIG_WCN_SIPC),y)
-ccflags-y += -DCONFIG_WCN_SIPC
-endif
-ifeq ($(CONFIG_WCN_USB),y)
-ccflags-y += -DCONFIG_WCN_USB
-endif
-
-ifeq ($(CONFIG_WCN_GNSS),y)
-ccflags-y += -DCONFIG_WCN_GNSS
-endif
-
 ccflags-y += -DCONFIG_WCN_BOOT
 ccflags-y += -DCONFIG_WCN_UTILS
 
@@ -373,15 +359,6 @@ $(MODULE_NAME)-y += wcn_bus.o \
 
 $(MODULE_NAME)-$(CONFIG_WCN_SWD) += platform/wcn_swd_dp.o
 
-$(MODULE_NAME)-$(CONFIG_WCN_USB) += \
-			usb/wcn_usb.o \
-			usb/wcn_usb_rx_tx.o \
-			usb/wcn_usb_store.o \
-			usb/wcn_usb_io.o \
-			usb/wcn_usb_test.o \
-			usb/wcn_usb_download.o \
-			platform/usb_boot.o
-
 $(MODULE_NAME)-$(CONFIG_WCN_SDIO) += \
 			sdio/sdiohal_main.o \
 			sdio/sdiohal_common.o \
@@ -394,13 +371,6 @@ $(MODULE_NAME)-$(CONFIG_WCN_SDIO) += \
 			sleep/slp_sdio.o \
 			sleep/slp_test.o \
 			platform/mem_pd_mgr.o
-
-$(MODULE_NAME)-$(CONFIG_WCN_GNSS) += \
-			platform/gnss/gnss_common_ctl.o \
-			platform/gnss/gnss_pmnotify_ctl.o \
-			platform/gnss/gnss_dbg.o \
-			platform/gnss/gnss_dump.o \
-
 KDIR ?= $(ANDROID_PRODUCT_OUT)/obj/KERNEL_OBJ
 ARCH ?= arm
 CROSS_COMPILE ?= arm-histbv310-linux-
