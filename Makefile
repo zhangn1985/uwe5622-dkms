@@ -4,7 +4,8 @@ export CONFIG_WLAN_UWE5622=m
 export CONFIG_SPRDWL_NG=m
 export CONFIG_UNISOC_WIFI_PS=y
 
-KDIR := /usr/lib/modules/$(kernelver)/build
+KERNELRELEASE ?= $(if $(kernelver),$(kernelver),$(shell uname -r))
+KDIR ?= /usr/lib/modules/$(KERNELRELEASE)/build
 PWD  := $(shell pwd)
 
 default:
