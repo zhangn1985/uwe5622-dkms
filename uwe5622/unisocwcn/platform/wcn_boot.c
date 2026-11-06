@@ -3977,6 +3977,7 @@ static const struct of_device_id marlin_match_table[] = {
 	{.compatible = "unisoc,uwe_bsp",},
 	{ },
 };
+MODULE_DEVICE_TABLE(of, marlin_match_table);
 
 static struct platform_driver marlin_driver = {
 	.driver = {

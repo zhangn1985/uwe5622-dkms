@@ -860,6 +860,7 @@ static const struct of_device_id mtty_match_table[] = {
 	{ .compatible = "sprd,mtty", },
 	{ },
 };
+MODULE_DEVICE_TABLE(of, mtty_match_table);
 #endif
 static struct platform_driver mtty_driver = {
 	.driver = {
