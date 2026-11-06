@@ -38,7 +38,6 @@ ifneq ($(TARGET_BUILD_VARIANT),user)
 ccflags-y += -DWL_CONFIG_DEBUG
 endif
 ccflags-y += -DSPLIT_STACK
-ccflags-y += -DOTT_UWE
 #ccflags-y += -DCP2_RESET_SUPPORT
 ifeq ($(UNISOC_STA_SOFTAP_SCC_MODE),y)
 ccflags-y += -DSTA_SOFTAP_SCC_MODE

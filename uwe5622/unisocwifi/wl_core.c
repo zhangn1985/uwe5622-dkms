@@ -16,6 +16,7 @@
  */
 
 #include <linux/platform_device.h>
+#include <linux/mfd/core.h>
 #include <linux/utsname.h>
 #include <linux/debugfs.h>
 #include <linux/version.h>
@@ -589,6 +590,9 @@ static int sprdwl_probe(struct platform_device *pdev)
 	int ret;
 	u8 i;
 
+	if (!mfd_get_cell(pdev))
+		return -ENODEV;
+
 #ifdef CP2_RESET_SUPPORT
 	marlin_reset_callback_register(MARLIN_WIFI, &wifi_reset_notifier);
 #endif
@@ -697,6 +701,7 @@ err_if_init:
 err_core_create:
 	kfree(intf);
 err:
+	stop_marlin(MARLIN_WIFI);
 	return ret;
 }
 
@@ -736,34 +741,9 @@ static struct platform_driver sprdwl_driver = {
 	}
 };
 
-#ifdef OTT_UWE
-static struct platform_device *unisoc_pdev;
-static int __init unisoc_wlan_init(void)
-{
-	int ret;
-
-	ret = platform_driver_register(&sprdwl_driver);
-	if (!ret) {
-		unisoc_pdev = platform_device_alloc("unisoc_wifi", -1);
-		if (platform_device_add(unisoc_pdev) != 0)
-			wl_err("register platform device unisoc wifi failed\n");
-	}
-
-	return ret;
-}
-
-static void __exit unisoc_wlan_exit(void)
-{
-    platform_driver_unregister(&sprdwl_driver);
-    platform_device_del(unisoc_pdev);
-}
-
-module_init(unisoc_wlan_init);
-module_exit(unisoc_wlan_exit);
-#else
 module_platform_driver(sprdwl_driver);
-#endif
 
 MODULE_DESCRIPTION("Spreadtrum Wireless LAN Driver");
 MODULE_AUTHOR("Spreadtrum WCN Division");
 MODULE_LICENSE("GPL");
+MODULE_ALIAS("platform:unisoc_wifi");

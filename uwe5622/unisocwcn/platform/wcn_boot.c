@@ -19,6 +19,7 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/mfd/syscon.h>
+#include <linux/mfd/core.h>
 #include <linux/gpio.h>
 #include <linux/gpio/consumer.h>
 #include <linux/of.h>
@@ -3705,8 +3706,22 @@ static void marlin_power_wq(struct work_struct *work)
 
 }
 static void marlin_reset_notify_init(void);
+static void marlin_remove(struct platform_device *pdev);
+
+static const struct mfd_cell marlin_cells[] = {
+	{
+		.name = "unisoc_wifi",
+		.of_compatible = "sprd,unisoc-wifi",
+	},
+	{
+		.name = "mtty",
+		.of_compatible = "sprd,mtty",
+	},
+};
+
 static int marlin_probe(struct platform_device *pdev)
 {
+int ret;
 #ifdef CONFIG_WCN_PMIC
 	struct device_node *regmap_np;
 	struct platform_device *pdev_regmap = NULL;
@@ -3796,11 +3811,19 @@ static int marlin_probe(struct platform_device *pdev)
 
 	WCN_INFO("marlin_probe ok!\n");
 
-	return 0;
+	ret = mfd_add_devices(&pdev->dev, PLATFORM_DEVID_NONE,
+			      marlin_cells, ARRAY_SIZE(marlin_cells),
+			      NULL, 0, NULL);
+	if (ret)
+		marlin_remove(pdev);
+
+	return ret;
 }
 
 static void marlin_remove(struct platform_device *pdev)
 {
+	mfd_remove_devices(&pdev->dev);
+
 #if (defined(CONFIG_BT_WAKE_HOST_EN) && defined(CONFIG_AW_BOARD))
 	marlin_unregistsr_bt_wake();
 #endif

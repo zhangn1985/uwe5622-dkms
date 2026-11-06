@@ -35,6 +35,7 @@
 #include <linux/interrupt.h>
 #include <linux/workqueue.h>
 #include <linux/version.h>
+#include <linux/mfd/core.h>
 
 #include <marlin_platform.h>
 #include "tty.h"
@@ -77,6 +78,7 @@ struct mtty_device {
 	/*struct tasklet_struct rx_task;*/
 	struct work_struct bt_rx_work;
 	struct workqueue_struct *bt_rx_workqueue;
+	bool sysfs_created;
 };
 
 static struct mtty_device *mtty_dev;
@@ -585,7 +587,7 @@ error:
 
 static inline void mtty_destroy_pdata(struct mtty_init_data **init)
 {
-#if (defined CONFIG_OF) && !(defined OTT_UWE)
+#ifndef OTT_UWE
 	struct mtty_init_data *pdata = *init;
 
 	kfree(pdata);
@@ -641,6 +643,10 @@ static int  mtty_probe(struct platform_device *pdev)
 								pdev->dev.platform_data;
 	struct mtty_device *mtty;
 	int rval = 0;
+	bool sysfs_created = false;
+
+	if (!mfd_get_cell(pdev))
+		return -ENODEV;
 
 #ifdef OTT_UWE
 	static struct mtty_init_data mtty_driver_data = {
@@ -656,6 +662,12 @@ static int  mtty_probe(struct platform_device *pdev)
 					rval);
 			return rval;
 		}
+	}
+	if (!pdata) {
+		pdata = kzalloc(sizeof(*pdata), GFP_KERNEL);
+		if (!pdata)
+			return -ENOMEM;
+		pdata->name = "ttyBT";
 	}
 #endif
 
@@ -688,27 +700,60 @@ static int  mtty_probe(struct platform_device *pdev)
 		create_singlethread_workqueue("SPRDBT_RX_QUEUE");
 	if (!mtty->bt_rx_workqueue) {
 		pr_err("%s SPRDBT_RX_QUEUE create failed", __func__);
-		return -ENOMEM;
+		rval = -ENOMEM;
+		goto err_tty;
 	}
 	INIT_WORK(&mtty->bt_rx_work, mtty_rx_work_queue);
 
 	mtty_dev = mtty;
-
-//#ifdef KERNEL_VERSION_414
-	if (sysfs_create_group(&pdev->dev.kobj,
-			&bluetooth_group)) {
-		pr_err("%s failed to create bluetooth tty attributes.\n", __func__);
-	}
-//#endif
-
-	rfkill_bluetooth_init(pdev);
-	bluesleep_init();
-	woble_init();
-	sprdwcn_bus_chn_init(&bt_rx_ops);
-	sprdwcn_bus_chn_init(&bt_tx_ops);
+	rval = bluesleep_init();
+	if (rval)
+		goto err_workqueue;
+	rval = woble_init();
+	if (rval)
+		goto err_bluesleep;
+	rval = sprdwcn_bus_chn_init(&bt_rx_ops);
+	if (rval)
+		goto err_bluesleep;
+	rval = sprdwcn_bus_chn_init(&bt_tx_ops);
+	if (rval)
+		goto err_rx_channel;
 	sema_init(&sem_id, BT_TX_POOL_SIZE - 1);
 
+	rval = sysfs_create_group(&pdev->dev.kobj, &bluetooth_group);
+	if (rval) {
+		pr_err("%s failed to create bluetooth tty attributes.\n", __func__);
+	} else {
+		sysfs_created = true;
+		mtty->sysfs_created = true;
+	}
+
+	rval = rfkill_bluetooth_init(pdev);
+	if (rval)
+		goto err_channels;
+
 	return 0;
+
+err_channels:
+	if (sysfs_created)
+		sysfs_remove_group(&pdev->dev.kobj, &bluetooth_group);
+	sprdwcn_bus_chn_deinit(&bt_tx_ops);
+err_rx_channel:
+	sprdwcn_bus_chn_deinit(&bt_rx_ops);
+err_bluesleep:
+	mtty_dev = NULL;
+	bluesleep_exit();
+err_workqueue:
+	mtty_dev = NULL;
+	flush_workqueue(mtty->bt_rx_workqueue);
+	destroy_workqueue(mtty->bt_rx_workqueue);
+	err_tty:
+	platform_set_drvdata(pdev, NULL);
+	mtty_tty_driver_exit(mtty);
+	kfree(mtty->port);
+	mtty_destroy_pdata(&mtty->pdata);
+	kfree(mtty);
+	return rval;
 }
 
 int marlin_sdio_write(const unsigned char *buf, int count)
@@ -787,7 +832,16 @@ static void  mtty_shutdown(struct platform_device *pdev)
 static void mtty_remove(struct platform_device *pdev)
 {
 	struct mtty_device *mtty = platform_get_drvdata(pdev);
+	unsigned long power_state;
 
+	rfkill_bluetooth_remove(pdev);
+	power_state = marlin_get_power_state();
+	if (test_bit(MARLIN_BLUETOOTH, &power_state))
+		stop_marlin(MARLIN_BLUETOOTH);
+	mtty_dev = NULL;
+
+	if (mtty->sysfs_created)
+		sysfs_remove_group(&pdev->dev.kobj, &bluetooth_group);
 	mtty_tty_driver_exit(mtty);
 	sprdwcn_bus_chn_deinit(&bt_rx_ops);
 	sprdwcn_bus_chn_deinit(&bt_tx_ops);
@@ -798,9 +852,6 @@ static void mtty_remove(struct platform_device *pdev)
 	/*tasklet_kill(&mtty->rx_task);*/
 	kfree(mtty);
 	platform_set_drvdata(pdev, NULL);
-//#ifdef KERNEL_VERSION_414
-	sysfs_remove_group(&pdev->dev.kobj, &bluetooth_group);
-//#endif
 	bluesleep_exit();
 }
 
@@ -855,3 +906,4 @@ module_platform_driver(mtty_driver);
 
 MODULE_AUTHOR("Unisoc wcn bt");
 MODULE_DESCRIPTION("Unisoc marlin tty driver");
+MODULE_ALIAS("platform:mtty");
