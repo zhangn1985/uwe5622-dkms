@@ -21,6 +21,7 @@
 #include <linux/irq.h>
 #include <linux/kthread.h>
 #include <linux/module.h>
+#include <linux/mfd/core.h>
 #include <linux/gpio/consumer.h>
 #include <linux/of.h>
 #include <linux/of_device.h>
@@ -102,6 +103,14 @@ static void sdiohal_card_unlock(struct sdiohal_data_t *p_data)
 struct sdiohal_data_t *sdiohal_get_data(void)
 {
 	return sdiohal_data;
+}
+
+bool sdiohal_is_ready(void)
+{
+	struct sdiohal_data_t *p_data = sdiohal_get_data();
+
+	return p_data && p_data->sdio_func[FUNC_1] &&
+		WCN_CARD_EXIST(&p_data->xmit_cnt);
 }
 
 unsigned char sdiohal_get_tx_mode(void)
@@ -1312,7 +1321,7 @@ static int sdiohal_host_irq_init(struct gpio_desc *irq_gpio)
 		     "low" : "high"));
 #else
 	if (!irq_gpio)
-		return ret;
+		return -EINVAL;
 
 	ret = gpiod_direction_input(irq_gpio);
 	if (ret < 0) {
@@ -1321,6 +1330,8 @@ static int sdiohal_host_irq_init(struct gpio_desc *irq_gpio)
 	}
 
 	p_data->irq_num = gpiod_to_irq(irq_gpio);
+	if (p_data->irq_num < 0)
+		return p_data->irq_num;
 	p_data->irq_trigger_type = IRQF_TRIGGER_HIGH;
 #endif
 
@@ -1341,6 +1352,8 @@ static int sdiohal_get_dev_func(struct sdio_func *func)
 	if (func->num == 1) {
 		p_data->sdio_func[FUNC_0] = kmemdup(func, sizeof(*func),
 							 GFP_KERNEL);
+		if (!p_data->sdio_func[FUNC_0])
+			return -ENOMEM;
 		p_data->sdio_func[FUNC_0]->num = 0;
 		p_data->sdio_func[FUNC_0]->max_blksize = SDIOHAL_BLK_SIZE;
 	}
@@ -1381,14 +1394,14 @@ static struct mmc_host *sdiohal_dev_get_host(struct device_node *np_node)
 }
 #endif
 
-static int sdiohal_parse_dt(void)
+static int sdiohal_parse_dt(struct device *dev)
 {
 	struct sdiohal_data_t *p_data = sdiohal_get_data();
 #ifdef CONFIG_WCN_PARSE_DTS
 	struct device_node *np;
 	struct device_node *sdio_node;
 
-	np = of_find_node_by_name(NULL, "uwe-bsp");
+	np = dev->of_node;
 	if (!np) {
 		sdiohal_err("dts node not found");
 		return -1;
@@ -1439,8 +1452,12 @@ static int sdiohal_parse_dt(void)
 		p_data->gpio_num = fwnode_gpiod_get_index(of_fwnode_handle(np),
 							  "sdio-ext-int", 0,
 							  GPIOD_IN, "sdiohal");
-		if (IS_ERR(p_data->gpio_num))
+		if (IS_ERR(p_data->gpio_num)) {
+			int ret = PTR_ERR(p_data->gpio_num);
+
 			p_data->gpio_num = NULL;
+			return ret;
+		}
 	}
 #else /* else of CONFIG_WCN_PARSE_DTS */
 	p_data->gpio_num = 0;
@@ -1659,9 +1676,12 @@ static int sdiohal_resume(struct device *dev)
 		/* Enable Function 1 */
 		sdio_claim_host(p_data->sdio_func[FUNC_1]);
 		ret = sdio_enable_func(p_data->sdio_func[FUNC_1]);
-		sdio_set_block_size(p_data->sdio_func[FUNC_1],
-				    SDIOHAL_BLK_SIZE);
-		p_data->sdio_func[FUNC_1]->max_blksize = SDIOHAL_BLK_SIZE;
+		if (!ret) {
+			ret = sdio_set_block_size(p_data->sdio_func[FUNC_1],
+						  SDIOHAL_BLK_SIZE);
+			if (ret)
+				sdio_disable_func(p_data->sdio_func[FUNC_1]);
+		}
 		sdio_release_host(p_data->sdio_func[FUNC_1]);
 		if (ret < 0) {
 			sdiohal_err("enable func1 err!!! ret is %d\n", ret);
@@ -1776,6 +1796,7 @@ int sdiohal_runtime_get(void)
 		sdiohal_err("%s line %d not have card\n", __func__, __LINE__);
 		return -ENODEV;
 	}
+	atomic_set(&p_data->xmit_start, 1);
 
 	if (!p_data->pwrseq) {
 		if (p_data->irq_type == SDIOHAL_RX_INBAND_IRQ) {
@@ -1960,6 +1981,18 @@ static int sdiohal_probe(struct sdio_func *func,
 	int ret;
 	struct mmc_host *host = func->card->host;
 
+	if (func->num != 1)
+		return -ENODEV;
+	if (!func->dev.of_node ||
+	    !of_device_is_compatible(func->dev.of_node, "unisoc,uwe5622"))
+		return -ENODEV;
+	if (p_data)
+		return -EBUSY;
+	ret = marlin_core_init(&func->dev);
+	if (ret)
+		return ret;
+	p_data = sdiohal_get_data();
+
 	sdiohal_info("%s: func->class=%x, vendor=0x%04x, device=0x%04x, func_num=0x%04x, clock=%d\n",
 		     __func__, func->class, func->vendor, func->device,
 		     func->num, host->ios.clock);
@@ -1979,7 +2012,7 @@ static int sdiohal_probe(struct sdio_func *func,
 	ret = sdiohal_get_dev_func(func);
 	if (ret < 0) {
 		sdiohal_err("get func err\n");
-		return ret;
+		goto err_core;
 	}
 
 	sdiohal_debug("get func ok:0x%p card:0x%p host_mmc:0x%p\n",
@@ -1989,7 +2022,8 @@ static int sdiohal_probe(struct sdio_func *func,
 	p_data->sdio_dev_host = p_data->sdio_func[FUNC_1]->card->host;
 	if (p_data->sdio_dev_host == NULL) {
 		sdiohal_err("get host failed!!!");
-		return -1;
+		ret = -ENODEV;
+		goto err_func;
 	}
 	sdiohal_debug("get host ok!!!");
 
@@ -2005,7 +2039,7 @@ static int sdiohal_probe(struct sdio_func *func,
 		sdio_release_host(p_data->sdio_func[FUNC_1]);
 		if (ret < 0) {
 			sdiohal_err("enable func1 err!!! ret is %d\n", ret);
-			return ret;
+			goto err_func;
 		}
 		sdiohal_debug("enable func1 ok\n");
 
@@ -2027,7 +2061,7 @@ static int sdiohal_probe(struct sdio_func *func,
 		if (ret != 0) {
 			sdiohal_err("request irq err gpio is %d\n",
 				    p_data->irq_num);
-			return ret;
+			goto err_disable_func;
 		}
 
 		disable_irq(p_data->irq_num);
@@ -2050,15 +2084,36 @@ static int sdiohal_probe(struct sdio_func *func,
 		scan_card_notify();
 
 	sdiohal_debug("rescan callback:%p\n", scan_card_notify);
+	ret = marlin_add_children(&func->dev);
+	if (ret) {
+		if (p_data->irq_type == SDIOHAL_RX_EXTERNAL_IRQ &&
+		    p_data->irq_num > 0)
+			free_irq(p_data->irq_num, &func->dev);
+		goto err_disable_func;
+	}
 	sdiohal_info("probe ok\n");
 
 	return 0;
+
+err_disable_func:
+	if (!p_data->pwrseq) {
+		sdio_claim_host(func);
+		sdio_disable_func(func);
+		sdio_release_host(func);
+	}
+err_func:
+	atomic_set(&p_data->xmit_start, 0);
+err_core:
+	marlin_core_remove(&func->dev);
+	return ret;
 }
 
 static void sdiohal_remove(struct sdio_func *func)
 {
 	struct sdiohal_data_t *p_data = sdiohal_get_data();
+	int xmit_count;
 
+	mfd_remove_devices(&func->dev);
 
 #ifdef CONFIG_HISI_BOARD
 	sdiohal_set_card_present(0);
@@ -2066,6 +2121,12 @@ static void sdiohal_remove(struct sdio_func *func)
 
 	if (WCN_CARD_EXIST(&p_data->xmit_cnt))
 		atomic_add(SDIOHAL_REMOVE_CARD_VAL, &p_data->xmit_cnt);
+	atomic_set(&p_data->xmit_start, 0);
+	do {
+		xmit_count = atomic_read(&p_data->xmit_cnt);
+		if (xmit_count > SDIOHAL_REMOVE_CARD_VAL)
+			usleep_range(1000, 2000);
+	} while (xmit_count > SDIOHAL_REMOVE_CARD_VAL);
 
 	complete(&p_data->remove_done);
 
@@ -2076,27 +2137,48 @@ static void sdiohal_remove(struct sdio_func *func)
 	} else if ((p_data->irq_type == SDIOHAL_RX_EXTERNAL_IRQ) &&
 		(p_data->irq_num > 0))
 		free_irq(p_data->irq_num, &func->dev);
+	if (!p_data->pwrseq) {
+		sdio_claim_host(func);
+		sdio_disable_func(func);
+		sdio_release_host(func);
+	}
+	marlin_core_remove(&func->dev);
 }
 
-static void sdiohal_launch_thread(void)
+static void sdiohal_shutdown(struct sdio_func *func)
+{
+	marlin_core_shutdown(&func->dev);
+}
+
+static int sdiohal_launch_thread(void)
 {
 	struct sdiohal_data_t *p_data = sdiohal_get_data();
+	int ret;
 
 	p_data->tx_thread =
 		kthread_create(sdiohal_tx_thread, NULL, "sdiohal_tx_thread");
-	if (p_data->tx_thread)
-		wake_up_process(p_data->tx_thread);
-	else {
+	if (IS_ERR(p_data->tx_thread)) {
+		ret = PTR_ERR(p_data->tx_thread);
+		p_data->tx_thread = NULL;
 		sdiohal_err("create sdiohal_tx_thread fail\n");
-		return;
+		return ret;
 	}
+	wake_up_process(p_data->tx_thread);
 
 	p_data->rx_thread =
 	    kthread_create(sdiohal_rx_thread, NULL, "sdiohal_rx_thread");
-	if (p_data->rx_thread)
-		wake_up_process(p_data->rx_thread);
-	else
+	if (IS_ERR(p_data->rx_thread)) {
+		ret = PTR_ERR(p_data->rx_thread);
+		p_data->rx_thread = NULL;
 		sdiohal_err("creat sdiohal_rx_thread fail\n");
+		p_data->exit_flag = 1;
+		sdiohal_tx_up();
+		kthread_stop(p_data->tx_thread);
+		p_data->tx_thread = NULL;
+		return ret;
+	}
+	wake_up_process(p_data->rx_thread);
+	return 0;
 }
 
 static void sdiohal_stop_thread(void)
@@ -2125,16 +2207,19 @@ static const struct sdio_device_id sdiohal_ids[] = {
 	{SDIO_DEVICE(0, 0)},
 	{},
 };
+MODULE_DEVICE_TABLE(sdio, sdiohal_ids);
 
 static struct sdio_driver sdiohal_driver = {
 	.probe = sdiohal_probe,
 	.remove = sdiohal_remove,
+	.shutdown = sdiohal_shutdown,
 	.name = "sdiohal",
 	.id_table = sdiohal_ids,
 	.drv = {
 		.pm = &sdiohal_pm_ops,
 	},
 };
+module_sdio_driver(sdiohal_driver);
 
 #define WCN_SDIO_CARD_REMOVED	BIT(4)
 void sdiohal_remove_card(void)
@@ -2317,7 +2402,7 @@ void sdiohal_register_scan_notify(void *func)
 	scan_card_notify = func;
 }
 
-int sdiohal_init(void)
+int sdiohal_init(struct device *dev)
 {
 	struct sdiohal_data_t *p_data;
 	int ret = 0;
@@ -2335,18 +2420,24 @@ int sdiohal_init(void)
 	atomic_set(&p_data->xmit_cnt, SDIOHAL_REMOVE_CARD_VAL);
 	sdiohal_data = p_data;
 
-	if (sdiohal_parse_dt() < 0)
-		return -1;
+	ret = sdiohal_parse_dt(dev);
+	if (ret < 0)
+		goto err_data;
 
 	ret = sdiohal_misc_init();
 	if (ret != 0) {
 		sdiohal_err("sdiohal_misc_init error :%d\n", ret);
-		return -1;
+		goto err_data;
 	}
 
-	sdiohal_launch_thread();
-	if (p_data->irq_type == SDIOHAL_RX_EXTERNAL_IRQ)
-		sdiohal_host_irq_init(p_data->gpio_num);
+	ret = sdiohal_launch_thread();
+	if (ret)
+		goto err_misc;
+	if (p_data->irq_type == SDIOHAL_RX_EXTERNAL_IRQ) {
+		ret = sdiohal_host_irq_init(p_data->gpio_num);
+		if (ret)
+			goto err_threads;
+	}
 	p_data->flag_init = true;
 
 #ifdef CONFIG_DEBUG_FS
@@ -2357,6 +2448,17 @@ int sdiohal_init(void)
 	sdiohal_info("sdiohal_init ok\n");
 
 	return 0;
+
+err_threads:
+	sdiohal_stop_thread();
+err_misc:
+	sdiohal_misc_deinit();
+err_data:
+	if (p_data->gpio_num)
+		gpiod_put(p_data->gpio_num);
+	kfree(p_data);
+	sdiohal_data = NULL;
+	return ret;
 }
 
 void sdiohal_exit(void)
@@ -2369,18 +2471,16 @@ void sdiohal_exit(void)
 #ifdef CONFIG_DEBUG_FS
 	sdiohal_debug_deinit();
 #endif
-	if (WCN_CARD_EXIST(&p_data->xmit_cnt)) {
-		sdiohal_info("Already exist card!\n");
-		sdiohal_remove_card();
-	}
-	if ((p_data->irq_type == SDIOHAL_RX_EXTERNAL_IRQ) &&
-		(p_data->irq_num > 0)) {
+	if (p_data->gpio_num) {
 		gpiod_put(p_data->gpio_num);
 		p_data->gpio_num = NULL;
 	}
 	sdiohal_stop_thread();
 	sdiohal_misc_deinit();
 	if (sdiohal_data) {
+		kfree(sdiohal_data->sdio_func[FUNC_0]);
+		sdiohal_data->sdio_func[FUNC_0] = NULL;
+		sdiohal_data->sdio_func[FUNC_1] = NULL;
 		sdiohal_data->sdio_dev_host = NULL;
 		kfree(sdiohal_data);
 		sdiohal_data = NULL;

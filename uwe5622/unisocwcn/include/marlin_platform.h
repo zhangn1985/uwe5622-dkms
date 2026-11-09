@@ -22,6 +22,12 @@
 #include <linux/types.h>
 #include <linux/notifier.h>
 
+struct device;
+int marlin_core_init(struct device *dev);
+int marlin_add_children(struct device *dev);
+void marlin_core_remove(struct device *dev);
+void marlin_core_shutdown(struct device *dev);
+
 #define FALSE								(0)
 #define TRUE								(1)
 

@@ -18,10 +18,9 @@ void sdiohal_driver_unregister(void)
 
 }
 
-static int sdio_preinit(void)
+static int sdio_preinit(struct device *dev)
 {
-	sdiohal_init();
-	return 0;
+	return sdiohal_init(dev);
 }
 
 static void sdio_preexit(void)
@@ -112,7 +111,7 @@ static int sdio_runtime_put(void)
 
 static int sdio_rescan(void)
 {
-	return sdiohal_scan_card();
+	return -EOPNOTSUPP;
 }
 
 static void sdio_register_rescan_cb(void *func)

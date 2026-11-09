@@ -498,8 +498,9 @@ void sdiohal_mbuf_list_check(int channel, struct mbuf_t *head,
 			     struct mbuf_t *tail, int num,
 			     const char *func, bool dir, int loglevel);
 
-int sdiohal_init(void);
+int sdiohal_init(struct device *dev);
 void sdiohal_exit(void);
+bool sdiohal_is_ready(void);
 int sdiohal_list_push(int chn, struct mbuf_t *head,
 		      struct mbuf_t *tail, int num);
 int sdiohal_list_direct_write(int channel, struct mbuf_t *head,

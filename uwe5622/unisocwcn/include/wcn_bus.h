@@ -1,6 +1,8 @@
 #ifndef __WCN_BUS_H__
 #define __WCN_BUS_H__
 
+struct device;
+
 #define CHN_MAX_NUM 32
 
 #ifdef CONFIG_WCN_SDIO
@@ -113,7 +115,7 @@ struct bus_puh_t {
 }; /* 32bits public header */
 
 struct sprdwcn_bus_ops {
-	int (*preinit)(void);
+	int (*preinit)(struct device *dev);
 	void (*deinit)(void);
 
 	int (*chn_init)(struct mchn_ops_t *ops);
@@ -198,14 +200,14 @@ int sprdwcn_bus_get_hif_type(void)
 }
 
 static inline
-int sprdwcn_bus_preinit(void)
+int sprdwcn_bus_preinit(struct device *dev)
 {
 	struct sprdwcn_bus_ops *bus_ops = get_wcn_bus_ops();
 
 	if (!bus_ops || !bus_ops->preinit)
 		return 0;
 
-	return bus_ops->preinit();
+	return bus_ops->preinit(dev);
 }
 
 static inline
