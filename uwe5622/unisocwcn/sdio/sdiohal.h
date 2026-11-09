@@ -512,6 +512,7 @@ int sdiohal_aon_readb(unsigned int addr, unsigned char *val);
 int sdiohal_aon_writeb(unsigned int addr, unsigned char val);
 int sdiohal_writel(unsigned int system_addr, void *buf);
 int sdiohal_readl(unsigned int system_addr, void *buf);
+void sdiohal_log_cis_ids(void);
 void sdiohal_dump_aon_reg(void);
 
 /* for dumpmem */

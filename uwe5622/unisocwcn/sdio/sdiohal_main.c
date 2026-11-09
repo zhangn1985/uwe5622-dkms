@@ -1081,6 +1081,100 @@ int sdiohal_aon_writeb(unsigned int addr, unsigned char val)
 	return err;
 }
 
+static int sdiohal_read_cis_id(struct sdio_func *func, unsigned int number,
+			       u16 *vendor, u16 *device)
+{
+	unsigned int pointer = 0, offset, scanned = 0;
+	u8 value, code, length, id[4];
+	int error;
+
+	for (offset = 0; offset < 3; offset++) {
+		value = sdio_f0_readb(func, SDIO_FBR_BASE(number) +
+				     SDIO_FBR_CIS + offset, &error);
+		if (error)
+			return error;
+		pointer |= (unsigned int)value << (offset * 8);
+	}
+
+	if (!pointer || pointer > 0x1ffff)
+		return -EINVAL;
+
+	while (scanned < 1024 && pointer <= 0x1ffff) {
+		code = sdio_f0_readb(func, pointer++, &error);
+		if (error)
+			return error;
+		scanned++;
+		if (code == 0xff)
+			return -ENODATA;
+		if (code == 0x00)
+			continue;
+		if (pointer > 0x1ffff || scanned >= 1024)
+			return -EOVERFLOW;
+
+		length = sdio_f0_readb(func, pointer++, &error);
+		if (error)
+			return error;
+		scanned++;
+		if (length == 0xff)
+			return -ENODATA;
+		if (length > 1024 - scanned || length > 0x20000 - pointer)
+			return -EOVERFLOW;
+		if (code == 0x20) {
+			if (length < sizeof(id))
+				return -EINVAL;
+			for (offset = 0; offset < sizeof(id); offset++) {
+				id[offset] = sdio_f0_readb(func, pointer + offset,
+							 &error);
+				if (error)
+					return error;
+			}
+			*vendor = id[0] | (id[1] << 8);
+			*device = id[2] | (id[3] << 8);
+			return 0;
+		}
+		pointer += length;
+		scanned += length;
+	}
+
+	return -EOVERFLOW;
+}
+
+void sdiohal_log_cis_ids(void)
+{
+	struct sdiohal_data_t *p_data = sdiohal_get_data();
+	struct sdio_func *func;
+	u16 vendor, device;
+	int error;
+
+	if (!p_data || sdiohal_card_lock(p_data, __func__)) {
+		sdiohal_err("post-boot CIS check: SDIO card unavailable\n");
+		return;
+	}
+	func = p_data->sdio_func[FUNC_1];
+	if (!func) {
+		sdiohal_err("post-boot CIS check: SDIO function unavailable\n");
+		goto out_unlock;
+	}
+
+	sdiohal_resume_check();
+	sdio_claim_host(func);
+	sdiohal_info("post-boot SDIO function %u cached ID=%04x:%04x class=%02x\n",
+		     func->num, func->vendor, func->device, func->class);
+	error = sdiohal_read_cis_id(func, 0, &vendor, &device);
+	if (error)
+		sdiohal_info("post-boot common CIS MANFID unavailable: %d\n", error);
+	else
+		sdiohal_info("post-boot common CIS MANFID=%04x:%04x\n", vendor, device);
+	error = sdiohal_read_cis_id(func, func->num, &vendor, &device);
+	if (error)
+		sdiohal_info("post-boot function CIS MANFID unavailable: %d\n", error);
+	else
+		sdiohal_info("post-boot function CIS MANFID=%04x:%04x\n", vendor, device);
+	sdio_release_host(func);
+out_unlock:
+	sdiohal_card_unlock(p_data);
+}
+
 unsigned long long sdiohal_get_rx_total_cnt(void)
 {
 	struct sdiohal_data_t *p_data = sdiohal_get_data();

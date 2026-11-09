@@ -38,6 +38,9 @@
 
 #include "wcn_gnss.h"
 #include "rf/rf.h"
+#ifdef CONFIG_WCN_SDIO
+#include "../sdio/sdiohal.h"
+#endif
 #include "../sleep/sdio_int.h"
 #include "../sleep/slp_mgr.h"
 #include "mem_pd_mgr.h"
@@ -2938,6 +2941,9 @@ static void pre_btwifi_download_sdio(struct work_struct *work)
 #endif
 		sprdwcn_bus_runtime_get();
 
+#ifdef CONFIG_WCN_SDIO
+		sdiohal_log_cis_ids();
+#endif
 #ifndef CONFIG_WCND
 		get_cp2_version();
 #ifndef CONFIG_CPLOG_DEBUG
