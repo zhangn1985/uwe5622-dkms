@@ -751,7 +751,7 @@ static int sprdwl_down_ini_cmd(struct sprdwl_priv *priv,
 	return ret;
 }
 
-void sprdwl_download_ini(struct sprdwl_priv *priv)
+int sprdwl_download_ini(struct sprdwl_priv *priv)
 {
 #define SEC1	1
 #define SEC2	2
@@ -765,20 +765,20 @@ void sprdwl_download_ini(struct sprdwl_priv *priv)
 	/*if ini file has been download already, return*/
 	if (sprdwl_get_ini_status(priv)) {
 		wl_err("RF ini download already, skip!\n");
-		return;
+		return 0;
 	}
 
 	wifi_data = kzalloc(sizeof(struct wifi_conf_t), GFP_KERNEL);
+	if (!wifi_data)
+		return -ENOMEM;
 	/*init INI data struct */
 	/*got ini data from file*/
-	ret = get_wifi_config_param(wifi_data);
+	ret = get_wifi_config_param(&((struct sprdwl_intf *)priv->hw_priv)->pdev->dev,
+				    wifi_data);
 	if (ret) {
 		wl_err("load ini data failed, return\n");
 		kfree(wifi_data);
-		wlan_set_assert(priv, SPRDWL_MODE_NONE,
-				WIFI_CMD_DOWNLOAD_INI,
-				LOAD_INI_DATA_FAILED);
-		return;
+		return ret;
 	}
 
 	wl_info("total config len:%ld,sec1 len:%ld, sec2 len:%ld\n",
@@ -796,7 +796,7 @@ void sprdwl_download_ini(struct sprdwl_priv *priv)
 		wlan_set_assert(priv, SPRDWL_MODE_NONE,
 				WIFI_CMD_DOWNLOAD_INI,
 				DOWNLOAD_INI_DATA_FAILED);
-		return;
+		return ret;
 	}
 
 	wl_info("download the second section of config file\n");
@@ -807,7 +807,7 @@ void sprdwl_download_ini(struct sprdwl_priv *priv)
 		wlan_set_assert(priv, SPRDWL_MODE_NONE,
 				WIFI_CMD_DOWNLOAD_INI,
 				DOWNLOAD_INI_DATA_FAILED);
-		return;
+		return ret;
 	}
 
 	if (wifi_data->rf_config.rf_data_len) {
@@ -821,11 +821,12 @@ void sprdwl_download_ini(struct sprdwl_priv *priv)
 			wlan_set_assert(priv, SPRDWL_MODE_NONE,
 					WIFI_CMD_DOWNLOAD_INI,
 					DOWNLOAD_INI_DATA_FAILED);
-			return;
+			return ret;
 		}
 	}
 
 	kfree(wifi_data);
+	return 0;
 }
 
 int sprdwl_get_fw_info(struct sprdwl_priv *priv)

@@ -176,6 +176,6 @@ struct wifi_conf_t {
 	struct rf_config_t rf_config;
 };
 
-int get_wifi_config_param(struct wifi_conf_t *p);
+int get_wifi_config_param(struct device *dev, struct wifi_conf_t *p);
 unsigned int marlin_get_wcn_chipid(void);
 #endif

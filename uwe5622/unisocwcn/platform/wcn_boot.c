@@ -222,6 +222,7 @@ struct wcn_clock_info {
 };
 
 struct marlin_device {
+	struct device *dev;
 	struct wcn_clock_info clk_xtal_26m;
 	int coexist;
 	int wakeup_ap;
@@ -247,6 +248,7 @@ struct marlin_device {
 	struct mutex power_lock;
 	struct completion carddetect_done;
 	struct completion download_done;
+	int download_result;
 	struct completion gnss_download_done;
 	unsigned long power_state;
 	char *write_buffer;
@@ -983,11 +985,16 @@ struct marlin_firmware {
 static int marlin_request_firmware(struct marlin_firmware **mfirmware_p)
 {
 	struct marlin_firmware *mfirmware;
+#if defined(CONFIG_RK_BOARD) && defined(CONFIG_WCN_SDIO)
+	const struct firmware *firmware;
+	int ret;
+#else
 #ifndef CONFIG_WCN_DOWNLOAD_FIRMWARE_FROM_HEX
 	unsigned char load_fw_cnt = 0;
 	const void *buffer;
 	const struct firmware *firmware;
 	int ret = 0;
+#endif
 #endif
 
 	*mfirmware_p = NULL;
@@ -995,6 +1002,23 @@ static int marlin_request_firmware(struct marlin_firmware **mfirmware_p)
 	if (!mfirmware)
 		return -ENOMEM;
 
+#if defined(CONFIG_RK_BOARD) && defined(CONFIG_WCN_SDIO)
+	if (marlin_dev->btwf_path[0] == '/') {
+		dev_err(marlin_dev->dev, "firmware name must be relative: %s\n",
+			marlin_dev->btwf_path);
+		kfree(mfirmware);
+		return -EINVAL;
+	}
+	ret = request_firmware(&firmware, marlin_dev->btwf_path, marlin_dev->dev);
+	if (ret) {
+		kfree(mfirmware);
+		return ret;
+	}
+	mfirmware->priv = firmware;
+	mfirmware->data = firmware->data;
+	mfirmware->size = firmware->size;
+	mfirmware->is_from_fs = true;
+#else
 #ifdef CONFIG_WCN_PARSE_DTS
 	marlin_dev->is_btwf_in_sysfs = 1;
 #endif
@@ -1081,7 +1105,14 @@ load_fw:
 	}
 
 #endif /* CONFIG_WCN_DOWNLOAD_FIRMWARE_FROM_HEX */
+#endif
 
+	if (mfirmware->size < sizeof(functionmask)) {
+		if (mfirmware->is_from_fs)
+			release_firmware(mfirmware->priv);
+		kfree(mfirmware);
+		return -EINVAL;
+	}
 	memcpy(functionmask, mfirmware->data, 8);
 	if ((functionmask[0] == 0x00) && (functionmask[1] == 0x00)) {
 		mfirmware->data += 8;
@@ -1097,12 +1128,20 @@ load_fw:
 
 static int marlin_firmware_parse_image(struct marlin_firmware *mfirmware)
 {
-	int offset = 0;
-	int size = 0;
-	int old_mfirmware_size = mfirmware->size;
+	size_t offset = 0;
+	size_t size = 0;
+	size_t old_mfirmware_size = mfirmware->size;
+
+	if (mfirmware->size < sizeof(struct head))
+		return -EINVAL;
 
 	if (bin_magic_is(mfirmware->data, IMG_HEAD_MAGIC)) {
 		const struct imageinfo *info;
+		unsigned int count = marlin_fw_get_img_count(mfirmware->data);
+
+		if (count > (mfirmware->size - sizeof(struct head)) /
+			    sizeof(struct imageinfo))
+			return -EINVAL;
 
 		WCN_INFO("%s imagepack is %s type,need parse it\n",
 			 __func__, IMG_HEAD_MAGIC);
@@ -1111,24 +1150,42 @@ static int marlin_firmware_parse_image(struct marlin_firmware *mfirmware)
 			WCN_ERR("marlin:%s imginfo is NULL\n", __func__);
 			return -1;
 		}
+		if (mfirmware->is_from_fs &&
+		    (info->offset > mfirmware->size ||
+		     info->size > mfirmware->size - info->offset))
+			return -EINVAL;
 		mfirmware->size = info->size;
 		mfirmware->data += info->offset;
 		offset = info->offset;
 		size = info->size;
 	} else if (bin_magic_is(mfirmware->data, IMG_HEAD_MAGIC_COMBINE)) {
 		/* cal the combin size */
-		int img_count;
+		unsigned int img_count, index;
 		const struct combin_img_info *img_info;
-		int img_real_size = 0;
+		size_t img_real_size = 0;
 
 		WCN_INFO("%s imagepack is %s type,need parse it\n",
 			 __func__, IMG_HEAD_MAGIC_COMBINE);
 
 		img_count = marlin_fw_get_img_count(mfirmware->data);
+		if (!img_count || img_count >
+		    (mfirmware->size - sizeof(struct head)) / sizeof(*img_info))
+			return -EINVAL;
 		img_info = marlin_firmware_get_combin_info(mfirmware->data);
 
-		img_real_size =
-		img_info[img_count - 1].size + img_info[img_count - 1].offset;
+		if (mfirmware->is_from_fs) {
+			for (index = 0; index < img_count; index++) {
+				if (img_info[index].offset > mfirmware->size ||
+				    img_info[index].size >
+					mfirmware->size - img_info[index].offset)
+					return -EINVAL;
+				img_real_size = max(img_real_size,
+					(size_t)img_info[index].offset + img_info[index].size);
+			}
+		} else {
+			img_real_size = (size_t)img_info[img_count - 1].size +
+				img_info[img_count - 1].offset;
+		}
 
 		mfirmware->size = img_real_size;
 		size = img_real_size;
@@ -1211,11 +1268,17 @@ static int marlin_firmware_write(struct marlin_firmware *mfirmware)
 	const struct combin_img_info *imginfoe;
 	int err;
 
+	if (mfirmware->size < sizeof(struct head))
+		return -EINVAL;
+
 	if (bin_magic_is(mfirmware->data, IMG_HEAD_MAGIC_COMBINE)) {
 		WCN_INFO("marlin %s imagepack is WCNE type,need parse it\n",
 			__func__);
 
 		combin_img_count = marlin_fw_get_img_count(mfirmware->data);
+		if (combin_img_count <= 0 || combin_img_count >
+		    (mfirmware->size - sizeof(struct head)) / sizeof(*imginfoe))
+			return -EINVAL;
 		imginfoe = marlin_firmware_get_combin_info(mfirmware->data);
 		if (!imginfoe) {
 			WCN_ERR("marlin:%s imginfo is NULL\n", __func__);
@@ -1223,8 +1286,8 @@ static int marlin_firmware_write(struct marlin_firmware *mfirmware)
 		}
 
 		for (i = 0; i < combin_img_count; i++) {
-			if (imginfoe[i].size + imginfoe[i].offset >
-					mfirmware->size) {
+			if (imginfoe[i].offset > mfirmware->size ||
+			    imginfoe[i].size > mfirmware->size - imginfoe[i].offset) {
 				WCN_ERR("%s memory crossover\n", __func__);
 				return -1;
 			}
@@ -1597,6 +1660,10 @@ static int marlin_parse_dt(struct device *dev)
 
 	ret = of_property_read_string(np, "unisoc,btwf-file-name",
 					  (const char **)&marlin_dev->btwf_path);
+#if defined(CONFIG_RK_BOARD) && defined(CONFIG_WCN_SDIO)
+	if (ret)
+		marlin_dev->btwf_path = WCN_FW_NAME;
+#endif
 	if (!ret)
 		strcpy(BTWF_FIRMWARE_PATH, marlin_dev->btwf_path);
 	else
@@ -2902,6 +2969,8 @@ static void btwifi_download_fdl_firmware(void)
 
 static void pre_btwifi_download_sdio(struct work_struct *work)
 {
+	int ret;
+
 #ifdef CONFIG_WCN_USB
 #ifdef CONFIG_SYS_REBOOT_NOT_REPOWER_USBCHIP
 	/*
@@ -2922,16 +2991,19 @@ static void pre_btwifi_download_sdio(struct work_struct *work)
 #endif
 	wcn_get_chip_name();
 
-	if (btwifi_download_firmware() == 0 &&
-		marlin_start_run() == 0) {
+	ret = btwifi_download_firmware();
+	if (!ret)
+		ret = marlin_start_run();
+	if (!ret) {
 		check_cp_clock_mode();
 		marlin_write_cali_data();
 		/* check_cp_ready must be in front of mem_pd_save_bin,
 		 * save bin task is scheduled after verify.
 		 */
-		if (check_cp_ready() != 0) {
+		ret = check_cp_ready();
+		if (ret) {
 			sprdwcn_bus_set_carddump_status(true);
-			return;
+			goto out;
 		}
 #ifdef CONFIG_MEM_PD
 		mem_pd_save_bin();
@@ -2950,8 +3022,10 @@ static void pre_btwifi_download_sdio(struct work_struct *work)
 		switch_cp2_log(false);
 #endif
 #endif
-		complete(&marlin_dev->download_done);
 	}
+out:
+	marlin_dev->download_result = ret;
+	complete(&marlin_dev->download_done);
 }
 
 /* for example: wifipa bound XTLEN3 */
@@ -3193,13 +3267,16 @@ void marlin_schedule_download_wq(void)
 		msecs_to_jiffies(POWERUP_WAIT_MS));
 	if (!timeleft) {
 		WCN_ERR("marlin download timeout\n");
-	}
+	} else if (marlin_dev->download_result)
+		WCN_ERR("marlin download failed: %d\n", marlin_dev->download_result);
 
 }
 
 static int marlin_set_power(int subsys, int val)
 {
 	unsigned long timeleft;
+	int ret = -EIO;
+	bool chip_powered = false;
 
 	WCN_DEBUG("mutex_lock\n");
 	mutex_lock(&marlin_dev->power_lock);
@@ -3228,10 +3305,12 @@ static int marlin_set_power(int subsys, int val)
 		marlin_dev->first_power_on_flag++;
 		if (marlin_dev->first_power_on_flag == 1) {
 			WCN_INFO("the first power on start\n");
-			if (chip_power_on(subsys) < 0) {
+			ret = chip_power_on(subsys);
+			if (ret < 0) {
 				WCN_ERR("chip power on fail\n");
 				goto out;
 			}
+			chip_powered = true;
 			set_wifipa_status(subsys, val);
 			set_bit(subsys, &marlin_dev->power_state);
 #ifdef CONFIG_WCN_GNSS
@@ -3253,8 +3332,13 @@ static int marlin_set_power(int subsys, int val)
 				msecs_to_jiffies(POWERUP_WAIT_MS));
 			if (!timeleft) {
 				WCN_ERR("marlin download timeout\n");
+				ret = -ETIMEDOUT;
+				cancel_work_sync(&marlin_dev->download_wq);
 				goto out;
 			}
+			ret = marlin_dev->download_result;
+			if (ret)
+				goto out;
 			marlin_dev->download_finish_flag = 1;
 			WCN_INFO("then marlin download finished and run ok\n");
 			marlin_dev->first_power_on_flag = 2;
@@ -3333,10 +3417,12 @@ static int marlin_set_power(int subsys, int val)
 		/* 5. when GNSS close, marlin close.no module to power on */
 		else {
 			WCN_INFO("no module to power on, start to power on\n");
-			if (chip_power_on(subsys) < 0) {
+			ret = chip_power_on(subsys);
+			if (ret < 0) {
 				WCN_ERR("chip power on fail\n");
 				goto out;
 			}
+			chip_powered = true;
 			set_wifipa_status(subsys, val);
 			set_bit(subsys, &marlin_dev->power_state);
 
@@ -3349,8 +3435,13 @@ static int marlin_set_power(int subsys, int val)
 					msecs_to_jiffies(POWERUP_WAIT_MS));
 				if (!timeleft) {
 					WCN_ERR("marlin download timeout\n");
+					ret = -ETIMEDOUT;
+					cancel_work_sync(&marlin_dev->download_wq);
 					goto out;
 				}
+				ret = marlin_dev->download_result;
+				if (ret)
+					goto out;
 				marlin_dev->download_finish_flag = 1;
 
 				WCN_INFO("marlin dl finished and run ok\n");
@@ -3379,8 +3470,13 @@ static int marlin_set_power(int subsys, int val)
 					<= 0) {
 
 					WCN_ERR("marlin download timeout\n");
+					ret = -ETIMEDOUT;
+					cancel_work_sync(&marlin_dev->download_wq);
 					goto out;
 				}
+				ret = marlin_dev->download_result;
+				if (ret)
+					goto out;
 				marlin_dev->download_finish_flag = 1;
 				WCN_INFO("BTWF download finished and run ok\n");
 #ifdef CONFIG_WCN_GNSS
@@ -3453,20 +3549,23 @@ static int marlin_set_power(int subsys, int val)
 	return 0;
 
 out:
-	sprdwcn_bus_runtime_put();
+	if (marlin_dev->first_power_on_flag == 1)
+		marlin_dev->first_power_on_flag = 0;
+	if (marlin_dev->download_finish_flag) {
+		sprdwcn_bus_runtime_put();
+		marlin_dev->download_finish_flag = 0;
+	}
 #ifdef CONFIG_MEM_PD
 	mem_pd_poweroff_deinit();
 #endif
 	sprdwcn_bus_driver_unregister();
-	marlin_clk_enable(false);
-	marlin_digital_power_enable(false);
-	marlin_analog_power_enable(false);
-	chip_reset_release(0);
+	if (chip_powered)
+		chip_power_off(subsys);
 	marlin_dev->power_state = 0;
 	WCN_DEBUG("mutex_unlock\n");
 	mutex_unlock(&marlin_dev->power_lock);
 
-	return -1;
+	return ret ? ret : -EIO;
 
 check_power_state_notify:
 	power_state_notify_or_not(subsys, val);
@@ -3533,6 +3632,12 @@ int is_first_power_on(enum marlin_sub_sys subsys)
 		return 0;	/* not the first */
 }
 EXPORT_SYMBOL_GPL(is_first_power_on);
+
+void marlin_wifi_ini_failed(void)
+{
+	marlin_dev->wifi_need_download_ini_flag = 0;
+}
+EXPORT_SYMBOL_GPL(marlin_wifi_ini_failed);
 
 int cali_ini_need_download(enum marlin_sub_sys subsys)
 {
@@ -3706,6 +3811,7 @@ int marlin_core_init(struct device *dev)
 			sizeof(struct marlin_device), GFP_KERNEL);
 	if (!marlin_dev)
 		return -ENOMEM;
+	marlin_dev->dev = dev;
 	dev_set_drvdata(dev, marlin_dev);
 	marlin_dev->write_buffer = devm_kzalloc(dev,
 			PACKET_SIZE, GFP_KERNEL);
@@ -3973,5 +4079,6 @@ static const struct dev_pm_ops marlin_pm_ops = {
 };
 
 MODULE_LICENSE("GPL v2");
+MODULE_FIRMWARE(WCN_FW_NAME);
 MODULE_DESCRIPTION("Spreadtrum  WCN Marlin Driver");
 MODULE_AUTHOR("Yufeng Yang <yufeng.yang@spreadtrum.com>");

@@ -951,7 +951,7 @@ int sprdwl_api_available_check(struct sprdwl_priv *priv,
 		struct sprdwl_msg_buf *msg);
 int need_compat_operation(struct sprdwl_priv *priv, u8 cmd_id);
 /*driver & fw API sync function end*/
-void sprdwl_download_ini(struct sprdwl_priv *priv);
+int sprdwl_download_ini(struct sprdwl_priv *priv);
 int sprdwl_get_fw_info(struct sprdwl_priv *priv);
 int sprdwl_set_regdom(struct sprdwl_priv *priv, u8 *regdom, u32 len);
 int sprdwl_set_rts(struct sprdwl_priv *priv, u16 rts_threshold);

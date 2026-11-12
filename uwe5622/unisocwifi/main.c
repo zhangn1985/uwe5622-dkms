@@ -15,6 +15,8 @@
  * GNU General Public License for more details.
  */
 
+#include <marlin_platform.h>
+
 #include "sprdwl.h"
 #include "npi.h"
 #include "cfg80211.h"
@@ -1568,7 +1570,11 @@ int sprdwl_core_init(struct device *dev, struct sprdwl_priv *priv)
 		wl_err("SYNC CMD ERROR!!\n");
 		goto out;
 	}
-	sprdwl_download_ini(priv);
+	ret = sprdwl_download_ini(priv);
+	if (ret) {
+		marlin_wifi_ini_failed();
+		goto out;
+	}
 	sprdwl_tcp_ack_init(priv);
 	sprdwl_get_fw_info(priv);
 #ifdef RTT_SUPPORT

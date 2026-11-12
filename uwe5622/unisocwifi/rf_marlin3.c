@@ -1,6 +1,7 @@
 #include <linux/types.h>
 #include <linux/kernel.h>
 #include <linux/device.h>
+#include <linux/firmware.h>
 #include <linux/string.h>
 #include <linux/uaccess.h>
 #include <linux/fs.h>
@@ -17,12 +18,6 @@
 #include <marlin_platform.h>
 
 #include "sprdwl.h"
-
-#ifdef CUSTOMIZE_WIFI_CFG_PATH
-#define WIFI_BOARD_CFG_PATH CUSTOMIZE_WIFI_CFG_PATH
-#else
-#define WIFI_BOARD_CFG_PATH "/lib/firmware"
-#endif
 
 #define CF_TAB(NAME, MEM_OFFSET, TYPE) \
 	{ NAME, (size_t)(&(((struct wifi_conf_t *)(0))->MEM_OFFSET)), TYPE}
@@ -375,6 +370,8 @@ static int wifi_nvm_buf_operate(char *pBuf, int file_len, void *p_data)
 		return -1;
 
 	cmd = kzalloc_obj(struct nvm_cali_cmd, GFP_KERNEL);
+	if (!cmd)
+		return -ENOMEM;
 	for (i = 0, p = 0; i < file_len; i++) {
 		if (('\n' == *(pBuf + i)) ||
 			('\r' == *(pBuf + i)) ||
@@ -399,75 +396,42 @@ static int wifi_nvm_buf_operate(char *pBuf, int file_len, void *p_data)
 	return 0;
 }
 
-static int wifi_nvm_parse(const char *path, void *p_data)
+static int wifi_nvm_parse(struct device *dev, const char *name, void *p_data)
 {
-	unsigned char *p_buf = NULL;
-	unsigned int read_len, buffer_len;
-	struct file *file;
-	char *buffer = NULL;
-	loff_t file_size = 0;
-	loff_t offset = 0;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
-	loff_t file_offset = 0;
-#endif
-	int ret = 0;
+	const struct firmware *firmware;
+	char *buffer;
+	int ret;
 
-	file = filp_open(path, O_RDONLY, 0);
-	if (IS_ERR(file)) {
-		pr_err("open file %s error\n", path);
-		return -1;
+	ret = request_firmware(&firmware, name, dev);
+	if (ret)
+		return ret;
+	if (!firmware->size) {
+		ret = -EINVAL;
+		goto out_release;
 	}
-
-	file_size = vfs_llseek(file, 0, SEEK_END);
-	buffer_len = 0;
-	buffer = vmalloc(file_size);
-	p_buf = buffer;
+	if (firmware->size >= INT_MAX) {
+		ret = -EFBIG;
+		goto out_release;
+	}
+	buffer = kmemdup_nul(firmware->data, firmware->size, GFP_KERNEL);
 	if (!buffer) {
-		fput(file);
-		wl_err("no memory\n");
-		return -1;
+		ret = -ENOMEM;
+		goto out_release;
 	}
 
-	do {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
-		read_len = kernel_read(file, p_buf, file_size, &file_offset);
-#else
-		read_len = kernel_read(file, offset, p_buf, file_size);
-#endif
-		if (read_len > 0) {
-			buffer_len += read_len;
-			file_size -= read_len;
-			p_buf += read_len;
-			offset += read_len;
-		}
-	} while ((read_len > 0) && (file_size > 0));
-
-	fput(file);
-
-	wl_info("%s read %s data_len:0x%x\n", __func__, path, buffer_len);
-	ret = wifi_nvm_buf_operate(buffer, buffer_len, p_data);
-	vfree(buffer);
-	wl_info("%s(), ok!\n", __func__);
+	wl_info("%s read %s data_len:0x%zx\n", __func__, name, firmware->size);
+	ret = wifi_nvm_buf_operate(buffer, firmware->size + 1, p_data);
+	kfree(buffer);
+out_release:
+	release_firmware(firmware);
 	return ret;
 }
 
-int get_wifi_config_param(struct wifi_conf_t *p)
+int get_wifi_config_param(struct device *dev, struct wifi_conf_t *p)
 {
 	int ant = 0;
 	int chipid = 0;
-	char path_buf[256] = {0};
 	char conf_name[32] = {0};
-	size_t len;
-
-	len = strlen(WIFI_BOARD_CFG_PATH);
-	if (len > sizeof(path_buf) - sizeof(conf_name)) {
-		wl_err("WIFI_BOARD_CFG_PATH is too long: %s\n", WIFI_BOARD_CFG_PATH);
-		return -1;
-	}
-
-	strcpy(path_buf, WIFI_BOARD_CFG_PATH);
-	if (path_buf[len - 1] != '/')
-		path_buf[len] = '/';
 
 	ant = marlin_get_ant_num();
 	if (ant < 0) {
@@ -481,9 +445,12 @@ int get_wifi_config_param(struct wifi_conf_t *p)
 		return -1;
 	}
 
-	sprintf(conf_name, "wifi_%8x_%dant.ini", chipid, ant);
-	strcat(path_buf, conf_name);
+	snprintf(conf_name, sizeof(conf_name), "wifi_%8x_%dant.ini", chipid, ant);
 
-	pr_err("wifi ini path = %s\n", path_buf);
-	return wifi_nvm_parse(path_buf, (void *)p);
+	return wifi_nvm_parse(dev, conf_name, p);
 }
+
+MODULE_FIRMWARE("wifi_2355b000_1ant.ini");
+MODULE_FIRMWARE("wifi_2355b001_1ant.ini");
+MODULE_FIRMWARE("wifi_2355b002_1ant.ini");
+MODULE_FIRMWARE("wifi_2355b003_1ant.ini");

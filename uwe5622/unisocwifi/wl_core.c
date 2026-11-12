@@ -597,9 +597,10 @@ static int sprdwl_probe(struct platform_device *pdev)
 	marlin_reset_callback_register(MARLIN_WIFI, &wifi_reset_notifier);
 #endif
 
-	if (start_marlin(MARLIN_WIFI)) {
+	ret = start_marlin(MARLIN_WIFI);
+	if (ret) {
 		wl_err("%s power on chipset failed\n", __func__);
-		return -ENODEV;
+		return ret;
 	}
 
 	intf = kzalloc(sizeof(*intf), GFP_ATOMIC);
