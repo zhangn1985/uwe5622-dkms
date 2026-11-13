@@ -11,22 +11,6 @@ firmware_file := $(PWD)/fw/wcnmodem.bin
 firmware_target := $(PWD)/fw/wcnmodem.bin.hex
 
 #### Global configs for each item ######
-ifeq ($(CFG_HI_WIFI_DEVICE_UWE5621),y)
-export CONFIG_WCN_SDIO = y
-ccflags-y += -DCONFIG_CHECK_DRIVER_BY_CHIPID
-#ccflags-y += -DCONFIG_UWE5621
-BSP_CHIP_ID := uwe5621
-WCN_HW_TYPE := sdio
-endif
-
-ifeq ($(CFG_HI_WIFI_DEVICE_UWE5623),y)
-export CONFIG_WCN_SDIO = y
-ccflags-y += -DCONFIG_CHECK_DRIVER_BY_CHIPID
-#ccflags-y += -DCONFIG_UWE5623
-BSP_CHIP_ID := uwe5621
-WCN_HW_TYPE := sdio
-endif
-
 ifeq ($(CFG_AML_WIFI_DEVICE_UWE5622),y)
 export CONFIG_WCN_SDIO = y
 # export CONFIG_WCN_GNSS = y
@@ -96,66 +80,6 @@ ccflags-y += -I$(UNISOCWCN_DIR)/platform/
 ccflags-y += -I$(UNISOCWCN_DIR)/platform/rf/
 
 #### add cflag for Customer ######
-### ---------- Hisilicon start ---------- ###
-ifeq ($(CFG_HI_WIFI_DEVICE_UWE5621),y)
-#### add cflag ######
-ccflags-y += -DCONFIG_HISI_BOARD
-#ccflags-y += -DCONFIG_WCN_PARSE_DTS
-#ccflags-y += -DCONFIG_WCN_CHIPEN
-#ccflags-y += -DCONFIG_WCN_RESET
-#ccflags-y += -DCONFIG_WCN_POWER_UP_DOWN
-#ccflags-y += -DCONFIG_WCN_DOWNLOAD_FIRMWARE_FROM_HEX
-ccflags-y += -DCONFIG_BT_WAKE_HOST_EN
-#ccflags-y += -DCONFIG_WL_WAKE_HOST_EN
-ccflags-y += -DCONFIG_WCN_RESUME_POWER_DOWN
-#ccflags-y += -DCONFIG_WCN_RESUME_KEEPPWR_RESETSDIO
-#ccflags-y += -DCONFIG_WCN_CHECK_MODULE_VENDOR
-#ccflags-y += -DCONFIG_MEM_PD
-ifeq ($(CONFIG_WCN_SDIO),y)
-ifneq ($(TARGET_BUILD_VARIANT),user)
-ccflags-y += -DCONFIG_WCN_LOOPCHECK
-ccflags-y += -DCONFIG_CPLOG_DEBUG
-endif
-ccflags-y += -DCONFIG_SDIO_TX_ADMA_MODE
-ccflags-y += -DCONFIG_SDIO_RX_ADMA_MODE
-ccflags-y += -DCONFIG_SDIO_INBAND_INT
-#ccflags-y += -DCONFIG_SDIO_INBAND_POLLING
-ccflags-y += -DCONFIG_SDIO_BLKSIZE_512
-#ccflags-y += -DCONFIG_SDIO_PWRSEQ
-endif
-
-all_dependencies += install
-endif
-
-ifeq ($(CFG_HI_WIFI_DEVICE_UWE5623),y)
-#### add cflag ######
-ccflags-y += -DCONFIG_HISI_BOARD
-#ccflags-y += -DCONFIG_WCN_PARSE_DTS
-#ccflags-y += -DCONFIG_WCN_CHIPEN
-#ccflags-y += -DCONFIG_WCN_RESET
-#ccflags-y += -DCONFIG_WCN_POWER_UP_DOWN
-#ccflags-y += -DCONFIG_WCN_DOWNLOAD_FIRMWARE_FROM_HEX
-ccflags-y += -DCONFIG_BT_WAKE_HOST_EN
-#ccflags-y += -DCONFIG_WL_WAKE_HOST_EN
-ccflags-y += -DCONFIG_WCN_RESUME_POWER_DOWN
-#ccflags-y += -DCONFIG_WCN_RESUME_KEEPPWR_RESETSDIO
-#ccflags-y += -DCONFIG_WCN_CHECK_MODULE_VENDOR
-ifneq ($(TARGET_BUILD_VARIANT),user)
-ccflags-y += -DCONFIG_WCN_LOOPCHECK
-ccflags-y += -DCONFIG_CPLOG_DEBUG
-endif
-#ccflags-y += -DCONFIG_MEM_PD
-ccflags-y += -DCONFIG_SDIO_TX_ADMA_MODE
-ccflags-y += -DCONFIG_SDIO_RX_ADMA_MODE
-ccflags-y += -DCONFIG_SDIO_INBAND_INT
-#ccflags-y += -DCONFIG_SDIO_INBAND_POLLING
-ccflags-y += -DCONFIG_SDIO_BLKSIZE_512
-#ccflags-y += -DCONFIG_SDIO_PWRSEQ
-
-all_dependencies += install
-endif
-
-### ---------- Hisilicon end ---------- ###
 
 ### ---------- Amlogic start ---------- ###
 ifeq ($(CFG_AML_WIFI_DEVICE_UWE5621),y)

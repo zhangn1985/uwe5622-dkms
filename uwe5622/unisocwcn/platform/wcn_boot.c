@@ -70,17 +70,7 @@ extern void extern_bt_set_enable(int is_on);
 extern void extern_wifi_set_enable(int is_on);
 #endif
 
-#ifdef CONFIG_HISI_BOARD
-#include "vendor/hisilicon/hi_drv_gpio.h"
 
-/* reset pin connect with gpio4_2 */
-#define RTL_REG_RST_GPIO	(4*8 + 2)
-
-enum hi_GPIO_DIR_E {
-	HI_DIR_OUT = 0,
-	HI_DIR_IN  = 1,
-};
-#endif
 
 #ifdef CONFIG_AW_BOARD
 #include <linux/pm_wakeirq.h>
@@ -1902,7 +1892,7 @@ static void marlin_send_sdio_config_to_cp_vendor(void)
 {
 	union wcn_sdiohal_config sdio_cfg = {0};
 
-#if (defined(CONFIG_HISI_BOARD) || defined(CONFIG_AML_BOARD) ||\
+#if (defined(CONFIG_AML_BOARD) ||\
 	defined(CONFIG_RK_BOARD) || defined(CONFIG_AW_BOARD))
 	/* Vendor config */
 
@@ -1958,14 +1948,7 @@ static void marlin_send_sdio_config_to_cp_vendor(void)
 	if (marlin_get_bt_wl_wake_host_en() & BIT(BT_WAKE_HOST)) {
 		sdio_cfg.cfg.bt_wake_host_en = 1;
 		WCN_DEBUG("sdio_config bt_wake_host:[en]\n");
-#if defined(CONFIG_HISI_BOARD)
-		/*
-		 * Hisi only support wakeup by:
-		 * high level - low level for 200ms -high level
-		 */
-		sdio_cfg.cfg.bt_wake_host_trigger_type = 0;
-		WCN_INFO("sdio_config bt_wake_host trigger:[low]\n");
-#elif defined(CONFIG_AML_BOARD)
+#if defined(CONFIG_AML_BOARD)
 		if (wifi_irq_trigger_level() == GPIO_IRQ_LOW) {
 			sdio_cfg.cfg.bt_wake_host_trigger_type = 0;
 			WCN_INFO("sdio_config bt_wake_host trigger:[low]\n");
@@ -2038,14 +2021,7 @@ static void marlin_send_sdio_config_to_cp_vendor(void)
 	if (marlin_get_bt_wl_wake_host_en() & BIT(WL_WAKE_HOST)) {
 		sdio_cfg.cfg.wl_wake_host_en = 1;
 		WCN_DEBUG("sdio_config wl_wake_host:[en]\n");
-#if defined(CONFIG_HISI_BOARD)
-		/*
-		 * Hisi only support wakeup by:
-		 * high level - low level for 200ms -high level
-		 */
-		sdio_cfg.cfg.wl_wake_host_trigger_type = 0;
-		WCN_INFO("sdio_config wl_wake_host trigger:[low]\n");
-#elif defined(CONFIG_AML_BOARD)
+#if defined(CONFIG_AML_BOARD)
 		if (wifi_irq_trigger_level() == GPIO_IRQ_LOW) {
 			sdio_cfg.cfg.wl_wake_host_trigger_type = 0;
 			WCN_INFO("sdio_config wl_wake_host trigger:[low]\n");
@@ -2064,13 +2040,7 @@ static void marlin_send_sdio_config_to_cp_vendor(void)
 	 * WL_WAKEUP_HOST level dyration time per 10ms,
 	 * example: 0:0ms; 3:30ms; 20:200ms
 	 */
-#if defined(CONFIG_HISI_BOARD)
-	/*
-	 * Hisi only support wakeup by:
-	 * high level - low level for 200ms -high level
-	 */
-	sdio_cfg.cfg.wake_host_level_duration_10ms = 20;
-#elif defined(CONFIG_AML_BOARD)
+#if defined(CONFIG_AML_BOARD)
 	/* wakeup level for 30ms */
 	sdio_cfg.cfg.wake_host_level_duration_10ms = 3;
 #else
@@ -2476,30 +2446,6 @@ static int marlin_reset_by_128_bit(void)
 #endif
 #endif
 
-#ifdef CONFIG_HISI_BOARD
-static unsigned int hi_gpio_set_value(unsigned int gpio, unsigned int value)
-{
-	int status;
-
-
-	status = HI_DRV_GPIO_SetDirBit(gpio, HI_DIR_OUT);
-	if (status != HI_SUCCESS) {
-		WCN_ERR("gpio(%d) HI_DRV_GPIO_SetDirBit HI_DIR_OUT failed\n",
-			gpio);
-		return status;
-	}
-	mdelay(RESET_DELAY);
-	status = HI_DRV_GPIO_WriteBit(gpio, value);
-	if (status != HI_SUCCESS) {
-		WCN_ERR("gpio(%d) HI_DRV_GPIO_WriteBit value(%d) failed\n",
-			gpio, value);
-		return status;
-	}
-
-	return HI_SUCCESS;
-}
-#endif
-
 static int marlin_reset(int val)
 {
 #ifndef CONFIG_CHECK_DRIVER_BY_CHIPID
@@ -2511,13 +2457,6 @@ static int marlin_reset(int val)
 #else /*CONFIG_CHECK_DRIVER_BY_CHIPID*/
 	if (wcn_get_chip_model() == WCN_CHIP_MARLIN3E)
 		marlin_reset_by_128_bit();
-#endif
-
-#ifdef CONFIG_HISI_BOARD
-	/* As for Hisi platform, repull reset pin to reset wcn chip. */
-	hi_gpio_set_value(RTL_REG_RST_GPIO, 0);
-	mdelay(RESET_DELAY);
-	hi_gpio_set_value(RTL_REG_RST_GPIO, 1);
 #endif
 
 	if (marlin_dev->reset) {

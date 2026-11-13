@@ -37,9 +37,7 @@
 #include "sdiohal.h"
 #include "wcn_glb.h"
 
-#ifdef CONFIG_HISI_BOARD
-#include "mach/hardware.h"
-#endif
+
 
 #ifdef CONFIG_AML_BOARD
 #include <linux/amlogic/aml_gpio_consumer.h>
@@ -1862,24 +1860,6 @@ void sdiohal_reset(bool full_reset)
 }
 #endif
 
-#ifdef CONFIG_HISI_BOARD
-#define REG_BASE_CTRL __io_address(0xf8a20008)
-void sdiohal_set_card_present(bool enable)
-{
-	u32 regval;
-
-	sdiohal_info("%s enable:%d\n", __func__, enable);
-
-	/*set card_detect low to detect card*/
-	regval = readl(REG_BASE_CTRL);
-	if (enable)
-		regval |= 0x1;
-	else
-		regval &= ~0x1;
-	writel(regval, REG_BASE_CTRL);
-}
-#endif
-
 static int sdiohal_probe(struct sdio_func *func,
 	const struct sdio_device_id *id)
 {
@@ -2018,10 +1998,6 @@ static void sdiohal_remove(struct sdio_func *func)
 	int xmit_count;
 
 	mfd_remove_devices(&func->dev);
-
-#ifdef CONFIG_HISI_BOARD
-	sdiohal_set_card_present(0);
-#endif
 
 	if (WCN_CARD_EXIST(&p_data->xmit_cnt))
 		atomic_add(SDIOHAL_REMOVE_CARD_VAL, &p_data->xmit_cnt);
