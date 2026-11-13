@@ -652,14 +652,7 @@ static int sprdwl_probe(struct platform_device *pdev)
 		intf->rx_data_port = PCIE_RX_DATA_PORT;
 		intf->tx_cmd_port = PCIE_TX_CMD_PORT;
 		intf->tx_data_port = PCIE_TX_DATA_PORT;
-	} else if (priv->hw_type == SPRDWL_HW_USB) {
-		intf->hif_offset = 0;
-		intf->rx_cmd_port = USB_RX_CMD_PORT;
-		intf->rx_data_port = USB_RX_DATA_PORT;
-		intf->tx_cmd_port = USB_TX_CMD_PORT;
-		intf->tx_data_port = USB_TX_DATA_PORT;
 	}
-
 	ret = sprdwl_intf_init(priv, intf);
 	if (ret) {
 		wl_err("%s intf init failed: %d\n", __func__, ret);

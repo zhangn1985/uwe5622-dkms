@@ -87,9 +87,6 @@ enum sprdwl_hw_type get_hwintf_type(void)
 	case HW_TYPE_SIPC:
 		hw_type = SPRDWL_HW_SIPC;
 		break;
-	case HW_TYPE_USB:
-		hw_type = SPRDWL_HW_USB;
-		break;
 	default:
 		hw_type = SPRDWL_HW_SDIO;
 		break;
@@ -888,8 +885,7 @@ static int intf_rx_handle(int chn, struct mbuf_t *head,
 		__func__, chn, head, tail, num);
 
 	/*To process credit earlier*/
-	if (intf->priv->hw_type == SPRDWL_HW_SDIO ||
-		intf->priv->hw_type == SPRDWL_HW_USB) {
+	if (intf->priv->hw_type == SPRDWL_HW_SDIO) {
 		unsigned int i = 0;
 		struct mbuf_t *mbuf = NULL;
 
@@ -1565,10 +1561,6 @@ int sprdwl_intf_init(struct sprdwl_priv *priv, struct sprdwl_intf *intf)
 		g_intf_ops.hif_ops = pcie_hif_ops;
 		g_intf_ops.max_num =
 			sizeof(pcie_hif_ops)/sizeof(struct mchn_ops_t);
-	} else if (priv->hw_type == SPRDWL_HW_USB) {
-		g_intf_ops.hif_ops = usb_hif_ops;
-		g_intf_ops.max_num =
-			sizeof(usb_hif_ops)/sizeof(struct mchn_ops_t);
 	}
 
 	if (g_intf_ops.max_num < MAX_CHN_NUM) {
