@@ -81,66 +81,6 @@ ccflags-y += -I$(UNISOCWCN_DIR)/platform/rf/
 
 #### add cflag for Customer ######
 
-### ---------- Amlogic start ---------- ###
-ifeq ($(CFG_AML_WIFI_DEVICE_UWE5621),y)
-#### add cflag ######
-ccflags-y += -DCONFIG_AML_BOARD
-#ccflags-y += -DCONFIG_WCN_PARSE_DTS
-#ccflags-y += -DCONFIG_WCN_CHIPEN
-#ccflags-y += -DCONFIG_WCN_RESET
-ccflags-y += -DCONFIG_WCN_RESET_PIN_CONNECTED
-ccflags-y += -DCONFIG_WCN_POWER_UP_DOWN
-ccflags-y += -DCONFIG_WCN_DOWNLOAD_FIRMWARE_FROM_HEX
-ccflags-y += -DCONFIG_BT_WAKE_HOST_EN
-#ccflags-y += -DCONFIG_WL_WAKE_HOST_EN
-#ccflags-y += -DCONFIG_WCN_RESUME_POWER_DOWN
-#ccflags-y += -DCONFIG_WCN_RESUME_KEEPPWR_RESETSDIO
-#ccflags-y += -DCONFIG_WCN_CHECK_MODULE_VENDOR
-#ccflags-y += -DCONFIG_WCN_LOOPCHECK
-#ccflags-y += -DCONFIG_CPLOG_DEBUG
-#ccflags-y += -DCONFIG_MEM_PD
-#ccflags-y += -DCONFIG_SDIO_TX_ADMA_MODE
-#ccflags-y += -DCONFIG_SDIO_RX_ADMA_MODE
-# ccflags-y += -DCONFIG_SDIO_INBAND_INT
-ccflags-y += -DCONFIG_CUSTOMIZE_SDIO_IRQ_TYPE=2
-#ccflags-y += -DCONFIG_SDIO_INBAND_POLLING
-ccflags-y += -DCONFIG_SDIO_BLKSIZE_512
-#ccflags-y += -DCONFIG_SDIO_PWRSEQ
-
-driver_dependencies += $(firmware_target)
-endif
-
-ifeq ($(CFG_AML_WIFI_DEVICE_UWE5622),y)
-#### add cflag ######
-ccflags-y += -DCONFIG_AML_BOARD
-#ccflags-y += -DCONFIG_WCN_PARSE_DTS
-#ccflags-y += -DCONFIG_WCN_CHIPEN
-#ccflags-y += -DCONFIG_WCN_RESET
-#ccflags-y += -DCONFIG_WCN_RESET_PIN_CONNECTED
-ccflags-y += -DCONFIG_WCN_POWER_UP_DOWN
-#ccflags-y += -DCONFIG_WCN_DOWNLOAD_FIRMWARE_FROM_HEX
-#ccflags-y += -DCONFIG_BT_WAKE_HOST_EN
-#ccflags-y += -DCONFIG_WL_WAKE_HOST_EN
-#ccflags-y += -DCONFIG_WCN_RESUME_POWER_DOWN
-#ccflags-y += -DCONFIG_WCN_RESUME_KEEPPWR_RESETSDIO
-#ccflags-y += -DCONFIG_WCN_CHECK_MODULE_VENDOR
-#ccflags-y += -DCONFIG_WCN_LOOPCHECK
-#ifneq ($(TARGET_BUILD_VARIANT),user)
-#ccflags-y += -DCONFIG_CPLOG_DEBUG
-#endif
-#ccflags-y += -DCONFIG_MEM_PD
-#ccflags-y += -DCONFIG_SDIO_TX_ADMA_MODE
-#ccflags-y += -DCONFIG_SDIO_RX_ADMA_MODE
-#ccflags-y += -DCONFIG_SDIO_INBAND_INT
-#ccflags-y += -DCONFIG_SDIO_INBAND_POLLING
-ccflags-y += -DCONFIG_CUSTOMIZE_SDIO_IRQ_TYPE=3
-ccflags-y += -DCONFIG_SDIO_BLKSIZE_512
-#ccflags-y += -DCONFIG_SDIO_PWRSEQ
-
-driver_dependencies += $(firmware_target)
-endif
-### ---------- Amlogic end ---------- ###
-
 ### ---------- Rockchip start ---------- ###
 ifeq ($(CONFIG_RK_WIFI_DEVICE_UWE5621),y)
 #### add cflag ######

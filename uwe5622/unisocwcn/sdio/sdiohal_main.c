@@ -39,16 +39,6 @@
 
 
 
-#ifdef CONFIG_AML_BOARD
-#include <linux/amlogic/aml_gpio_consumer.h>
-
-extern int wifi_irq_num(void);
-extern int wifi_irq_trigger_level(void);
-extern void sdio_reinit(void);
-extern void sdio_clk_always_on(int on);
-extern void sdio_set_max_reqsz(unsigned int size);
-#endif
-
 #ifdef CONFIG_RK_BOARD
 extern int rockchip_wifi_set_carddetect(int val);
 #endif
@@ -1211,19 +1201,6 @@ static int sdiohal_host_irq_init(struct gpio_desc *irq_gpio)
 	struct sdiohal_data_t *p_data = sdiohal_get_data();
 	int ret = 0;
 
-
-#ifdef CONFIG_AML_BOARD
-	/* As for amlogic platform, gpio trigger type low will request fail. */
-	p_data->irq_num = wifi_irq_num();
-	if (wifi_irq_trigger_level() == GPIO_IRQ_LOW)
-		p_data->irq_trigger_type = IRQF_TRIGGER_LOW;
-	else
-		p_data->irq_trigger_type = IRQF_TRIGGER_HIGH;
-	sdiohal_info("%s sdio gpio irq num:%d, trigger_type:%s\n",
-		     __func__, p_data->irq_num,
-		     ((p_data->irq_trigger_type == IRQF_TRIGGER_LOW) ?
-		     "low" : "high"));
-#else
 	if (!irq_gpio)
 		return -EINVAL;
 
@@ -1237,7 +1214,6 @@ static int sdiohal_host_irq_init(struct gpio_desc *irq_gpio)
 	if (p_data->irq_num < 0)
 		return p_data->irq_num;
 	p_data->irq_trigger_type = IRQF_TRIGGER_HIGH;
-#endif
 
 	return ret;
 }
@@ -1768,12 +1744,10 @@ int sdiohal_runtime_put(void)
 		(p_data->irq_num > 0))
 		disable_irq(p_data->irq_num);
 
-#ifndef CONFIG_AML_BOARD
 	/* As for amlogic platform, NOT remove card
 	 * after chip power off. So won't probe again.
 	 */
 	atomic_set(&p_data->xmit_start, 0);
-#endif
 	xmit_cnt = atomic_read(&p_data->xmit_cnt);
 	while ((xmit_cnt > 0) &&
 		(xmit_cnt < SDIOHAL_REMOVE_CARD_VAL)) {
@@ -1882,18 +1856,6 @@ static int sdiohal_probe(struct sdio_func *func,
 	sdiohal_info("%s: func->class=%x, vendor=0x%04x, device=0x%04x, func_num=0x%04x, clock=%d\n",
 		     __func__, func->class, func->vendor, func->device,
 		     func->num, host->ios.clock);
-
-#ifdef CONFIG_AML_BOARD
-	if (p_data->irq_type == SDIOHAL_RX_INBAND_IRQ) {
-		/* disable auto clock, sdio clock will be always on. */
-		sdio_clk_always_on(1);
-	}
-	/*
-	 * setting sdio max request size to 512kB
-	 * to improve transmission efficiency.
-	 */
-	sdio_set_max_reqsz(0x80000);
-#endif
 
 	ret = sdiohal_get_dev_func(func);
 	if (ret < 0) {

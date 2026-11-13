@@ -60,18 +60,6 @@
 #include "../fw/firmware_hex.h"
 #endif
 
-#ifdef CONFIG_AML_BOARD
-#include <linux/amlogic/aml_gpio_consumer.h>
-
-extern int wifi_irq_trigger_level(void);
-#ifdef CONFIG_WCN_RESET_PIN_CONNECTED
-extern void extern_bt_set_enable(int is_on);
-#endif
-extern void extern_wifi_set_enable(int is_on);
-#endif
-
-
-
 #ifdef CONFIG_AW_BOARD
 #include <linux/pm_wakeirq.h>
 //extern void sunxi_wlan_set_power(int on);
@@ -1892,8 +1880,7 @@ static void marlin_send_sdio_config_to_cp_vendor(void)
 {
 	union wcn_sdiohal_config sdio_cfg = {0};
 
-#if (defined(CONFIG_AML_BOARD) ||\
-	defined(CONFIG_RK_BOARD) || defined(CONFIG_AW_BOARD))
+#if (defined(CONFIG_RK_BOARD) || defined(CONFIG_AW_BOARD))
 	/* Vendor config */
 
 	/* bit[0]: sdio_config_en:
@@ -1948,18 +1935,8 @@ static void marlin_send_sdio_config_to_cp_vendor(void)
 	if (marlin_get_bt_wl_wake_host_en() & BIT(BT_WAKE_HOST)) {
 		sdio_cfg.cfg.bt_wake_host_en = 1;
 		WCN_DEBUG("sdio_config bt_wake_host:[en]\n");
-#if defined(CONFIG_AML_BOARD)
-		if (wifi_irq_trigger_level() == GPIO_IRQ_LOW) {
-			sdio_cfg.cfg.bt_wake_host_trigger_type = 0;
-			WCN_INFO("sdio_config bt_wake_host trigger:[low]\n");
-		} else {
-			sdio_cfg.cfg.bt_wake_host_trigger_type = 3;
-			WCN_INFO("sdio_config bt_wake_host trigger:[high]\n");
-		}
-#else
 		sdio_cfg.cfg.bt_wake_host_trigger_type = 3;
 		WCN_INFO("sdio_config bt_wake_host trigger:[high]\n");
-#endif
 	}
 
 	/* bit[12:11]: sdio_irq_type:
@@ -1996,19 +1973,8 @@ static void marlin_send_sdio_config_to_cp_vendor(void)
 	 * 10:pubint gpio irq trigger type falling [NOT support]
 	 * 11:pubint gpio irq trigger type high
 	 */
-	if (sprdwcn_bus_get_irq_type() == 0) {
-#if defined(CONFIG_AML_BOARD)
-		if (wifi_irq_trigger_level() == GPIO_IRQ_LOW) {
-			sdio_cfg.cfg.sdio_irq_trigger_type = 0;
-			WCN_INFO("sdio_config sdio_irq trigger:[low]\n");
-		} else {
-			sdio_cfg.cfg.sdio_irq_trigger_type = 3;
-			WCN_INFO("sdio_config sdio_irq trigger:[high]\n");
-		}
-#endif
-	}
 
-	/*
+	 /*
 	 * bit[15]: wl_wake_host_en: 0: disable, 1: enable
 	 *
 	 * When bit[15] is 1, bit[17:16] region will be parsed:
@@ -2021,18 +1987,8 @@ static void marlin_send_sdio_config_to_cp_vendor(void)
 	if (marlin_get_bt_wl_wake_host_en() & BIT(WL_WAKE_HOST)) {
 		sdio_cfg.cfg.wl_wake_host_en = 1;
 		WCN_DEBUG("sdio_config wl_wake_host:[en]\n");
-#if defined(CONFIG_AML_BOARD)
-		if (wifi_irq_trigger_level() == GPIO_IRQ_LOW) {
-			sdio_cfg.cfg.wl_wake_host_trigger_type = 0;
-			WCN_INFO("sdio_config wl_wake_host trigger:[low]\n");
-		} else {
-			sdio_cfg.cfg.wl_wake_host_trigger_type = 3;
-			WCN_INFO("sdio_config wl_wake_host trigger:[high]\n");
-		}
-#else
 		sdio_cfg.cfg.wl_wake_host_trigger_type = 3;
 		WCN_INFO("sdio_config wl_wake_host trigger:[high]\n");
-#endif
 	}
 
 	/*
@@ -2040,12 +1996,7 @@ static void marlin_send_sdio_config_to_cp_vendor(void)
 	 * WL_WAKEUP_HOST level dyration time per 10ms,
 	 * example: 0:0ms; 3:30ms; 20:200ms
 	 */
-#if defined(CONFIG_AML_BOARD)
-	/* wakeup level for 30ms */
-	sdio_cfg.cfg.wake_host_level_duration_10ms = 3;
-#else
 	sdio_cfg.cfg.wake_host_level_duration_10ms = 2;
-#endif
 	WCN_INFO("sdio_config wake_host_level_duration_time:[%dms]\n",
 		 (sdio_cfg.cfg.wake_host_level_duration_10ms * 10));
 
@@ -2056,7 +2007,7 @@ static void marlin_send_sdio_config_to_cp_vendor(void)
 	 * 1: if BT_WAKEUP_HOST en, ONLY bt packets can wake host;
 	 *    if WL_WAKEUP_HOST en, ONLY wifi packets can wake host
 	 */
-#if (defined(CONFIG_AML_BOARD) || defined(CONFIG_RK_BOARD))
+#if (defined(CONFIG_RK_BOARD))
 	sdio_cfg.cfg.wake_host_data_separation = 1;
 	WCN_DEBUG("sdio_config wake_host_data_separation:[yes]\n");
 #else
@@ -2473,23 +2424,6 @@ static int chip_reset_release(int val)
 {
 	static unsigned int reset_count;
 
-#if (defined(CONFIG_AML_BOARD) && defined(CONFIG_WCN_RESET_PIN_CONNECTED))
-	/* As for amlogic platform,
-	 * 1. chipen pin connected with WL_EN pin, reset pin connected with
-	 * BT_EN pin. But amlogic iptv source code won't pull BT_EN(reset) pin.
-	 * Unisoc module will change reset pin NC defaultly. This means reset
-	 * pin will be disconnected with BT_EN pin.
-	 * 2. BT wake host will judge both BT_EN pin and BT_WAKE_HOST pin.
-	 */
-	if (val) {
-		if (reset_count == 0)
-			extern_bt_set_enable(1);
-		reset_count++;
-	} else {
-		extern_bt_set_enable(0);
-		reset_count--;
-	}
-#else
 	if (!marlin_dev->reset)
 		return 0;
 
@@ -2501,32 +2435,12 @@ static int chip_reset_release(int val)
 		gpiod_set_value_cansleep(marlin_dev->reset, 0);
 		reset_count--;
 	}
-#endif
 
 	return 0;
 }
 void marlin_chip_en(bool enable, bool reset)
 {
 	static unsigned int chip_en_count;
-
-#ifdef CONFIG_AML_BOARD
-	if (enable) {
-		if (chip_en_count == 0) {
-			extern_wifi_set_enable(0);
-			msleep(100);
-			extern_wifi_set_enable(1);
-			WCN_INFO("marlin chip en pull up\n");
-		}
-		chip_en_count++;
-	} else {
-		chip_en_count--;
-		if (chip_en_count == 0) {
-			extern_wifi_set_enable(0);
-			WCN_INFO("marlin chip en pull down\n");
-		}
-	}
-	return;
-#endif
 
 #ifdef CONFIG_AW_BOARD
 	if (enable) {
