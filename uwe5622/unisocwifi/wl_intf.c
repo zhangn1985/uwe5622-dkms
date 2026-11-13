@@ -84,9 +84,6 @@ enum sprdwl_hw_type get_hwintf_type(void)
 	case HW_TYPE_PCIE:
 		hw_type = SPRDWL_HW_PCIE;
 		break;
-	case HW_TYPE_SIPC:
-		hw_type = SPRDWL_HW_SIPC;
-		break;
 	default:
 		hw_type = SPRDWL_HW_SDIO;
 		break;

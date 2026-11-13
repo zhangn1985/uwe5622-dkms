@@ -14,7 +14,6 @@ struct device;
 enum wcn_hw_type {
 	HW_TYPE_SDIO = 0,
 	HW_TYPE_PCIE,
-	HW_TYPE_SIPC,
 	HW_TYPE_UNKNOWN
 };
 

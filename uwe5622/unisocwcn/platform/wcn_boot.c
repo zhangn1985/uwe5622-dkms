@@ -328,8 +328,6 @@ enum wcn_hw_type wcn_get_hw_if_type(void)
 	return HW_TYPE_SDIO;
 #elif defined(CONFIG_WCN_PCIE)
 	return HW_TYPE_PCIE;
-#elif defined(CONFIG_WCN_SIPC)
-	return HW_TYPE_SIPC;
 #else
 	return HW_TYPE_UNKNOWN;
 #endif
