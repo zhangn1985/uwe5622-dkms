@@ -682,11 +682,6 @@ static int sprdwl_probe(struct platform_device *pdev)
 	if (ret)
 		goto err_core_init;
 
-#if defined FPGA_LOOPBACK_TEST
-	intf->loopback_n = 0;
-	sprdwl_intf_tx_data_fpga_test(intf, NULL, 0);
-#endif
-
 	sprdwl_debugfs_init(intf);
 
 	return ret;

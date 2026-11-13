@@ -258,15 +258,6 @@ void *sprdwl_get_rx_data(struct sprdwl_intf *intf, void *pos, void **data,
 void sprdwl_free_rx_data(struct sprdwl_intf *intf,
 			 int chn, void *head, void *tail, int num);
 
-#if defined FPGA_LOOPBACK_TEST
-int sprdwl_intf_tx_data_fpga_test(struct sprdwl_intf *intf,
-				  unsigned char *data, int len);
-int sprdwl_intf_fill_msdu_dscr_test(struct sprdwl_priv *priv,
-				    struct sk_buff *skb,
-				    u8 type,
-				    u8 offset);
-#endif /* FPGA_LOOPBACK_TEST */
-
 void sprdwl_hex_dump(unsigned char *name,
 		     unsigned char *data, unsigned short len);
 struct sprdwl_peer_entry

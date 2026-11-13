@@ -79,23 +79,6 @@ int sprdwl_send_data(struct sprdwl_vif *vif, struct sprdwl_msg_buf *msg,
 	return ret;
 }
 
-#if defined FPGA_LOOPBACK_TEST
-int sprdwl_send_data_fpga_test(struct sprdwl_priv *priv,
-				struct sprdwl_msg_buf *msg,
-				struct sk_buff *skb, u8 type, u8 offset)
-{
-	int ret = 0;
-
-	sprdwl_intf_fill_msdu_dscr_test(priv, skb, type, offset);
-	msg->type = type;
-
-	sprdwl_fill_msg(msg, skb, skb->data, skb->len);
-	ret = sprdwl_intf_tx(priv, msg);
-
-	return ret;
-}
-#endif
-
 int sprdwl_send_cmd(struct sprdwl_priv *priv, struct sprdwl_msg_buf *msg)
 {
 	int ret;

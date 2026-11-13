@@ -99,7 +99,6 @@ int sprdwl_sdio_process_credit(void *pdev, void *data);
 int sprdwl_tx_init(struct sprdwl_intf *dev);
 void sprdwl_tx_deinit(struct sprdwl_intf *dev);
 int sprdwl_tx_filter_packet(struct sk_buff *skb, struct net_device *ndev);
-unsigned char sprdwl_find_index_using_addr(struct sprdwl_intf *dev);
 void sprdwl_dequeue_data_buf(struct sprdwl_msg_buf *msg_buf);
 void sprdwl_dequeue_data_list(struct mbuf_t *head, int num);
 void sprdwl_free_cmd_buf(struct sprdwl_msg_buf *msg_buf,

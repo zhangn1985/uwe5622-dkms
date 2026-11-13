@@ -294,21 +294,10 @@ static void sprdwl_rx_work_queue(struct work_struct *work)
 
 			switch (SPRDWL_HEAD_GET_TYPE(data)) {
 			case SPRDWL_TYPE_DATA:
-#if defined FPGA_LOOPBACK_TEST
-				if (intf->loopback_n < 500) {
-					unsigned char *r_buf;
-
-					r_buf = (unsigned char *)data;
-					sprdwl_intf_tx_data_fpga_test(intf,
-									  r_buf,
-									  len);
-				}
-#else
 				if (msg->len > SPRDWL_MAX_DATA_RXLEN)
 					wl_err("err rx data too long:%d > %d\n",
 						   len, SPRDWL_MAX_DATA_RXLEN);
 				sprdwl_rx_data_process(priv, data);
-#endif /* FPGA_LOOPBACK_TEST */
 				break;
 			case SPRDWL_TYPE_CMD:
 				if (msg->len > SPRDWL_MAX_CMD_RXLEN)

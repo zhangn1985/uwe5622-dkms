@@ -157,9 +157,6 @@ struct sprdwl_intf {
 	struct sprdwl_peer_entry peer_entry[MAX_LUT_NUM];
 	unsigned long tx_num[MAX_LUT_NUM];
 	unsigned char *skb_da;
-#if defined FPGA_LOOPBACK_TEST
-	int loopback_n;
-#endif
 
 	int hif_offset;
 	unsigned char rx_cmd_port;
