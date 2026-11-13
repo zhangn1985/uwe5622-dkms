@@ -15,14 +15,6 @@
 
 #include "sdiohal.h"
 
-/*
- * TCP_TEST_RX clear 0: TX send packets ceaselessly; set to 1:
- * RX received one or two big packets (depend on TCP_TEST_1VS2)
- * then TX send one short packet (1*100bytes)
- */
-#define TCP_TEST_RX 0
-#define TCP_TEST_1VS2 0
-
 #define SDIOHAL_WRITE_SIZE 64
 #define SDIOHAL_DIR_TX 1
 #define SDIOHAL_DIR_RX 0
@@ -111,20 +103,6 @@ int rx_pop_cnt;
 long sdiohal_log_level = SDIOHAL_NORMAL_LEVEL;
 #else
 long sdiohal_log_level;
-#endif
-
-#if TCP_TEST_RX
-struct completion tp_rx_completed;
-
-static void sdiohal_tp_rx_up(void)
-{
-	complete(&tp_rx_completed);
-}
-
-static void sdiohal_tp_rx_down(void)
-{
-	wait_for_completion(&tp_rx_completed);
-}
 #endif
 
 static int sdiohal_extract_num(char *p, int cur)
@@ -247,40 +225,6 @@ static int sdiohal_throughput_rx(void)
 {
 	return 0;
 }
-
-#if TCP_TEST_RX
-static int sdiohal_throughput_tx_thread(void *data)
-{
-	int i = 0, rx_pop_cnt_old = 0;
-
-	while (1) {
-		sdiohal_tp_rx_down();
-		rx_pop_cnt_old = rx_pop_cnt - rx_pop_cnt_old;
-		tp_tx_buf_cnt = 1;
-		tp_tx_buf_len = 100;
-		for (i = 0; i < rx_pop_cnt_old;
-		     i = i + (TCP_TEST_1VS2 ? 2 : 1))
-			sdiohal_throughput_tx_compute_time();
-	}
-
-	return 0;
-}
-
-static void sdiohal_launch_tp_tx_thread(void)
-{
-	struct task_struct *tx_thread = NULL;
-
-	init_completion(&tp_rx_completed);
-
-	tx_thread =
-		kthread_create(sdiohal_throughput_tx_thread,
-			       NULL, "sdiohal_tp_tx_thread");
-	if (tx_thread)
-		wake_up_process(tx_thread);
-	else
-		sdiohal_err("create sdiohal_tp_tx_thread fail\n");
-}
-#endif
 
 static void sdiohal_tx_send(int chn);
 
@@ -534,9 +478,7 @@ int at_list_tx_pop(int channel, struct mbuf_t *head,
 
 	sprdwcn_bus_list_free(channel, head, tail, num);
 
-#if (!TCP_TEST_RX)
 	sdiohal_throughput_tx_compute_time();
-#endif
 
 	return 0;
 }
@@ -554,10 +496,6 @@ int at_list_rx_pop(int channel, struct mbuf_t *head,
 
 	sprdwcn_bus_push_list(at_rx_ops.channel, head, tail, num);
 	rx_pop_cnt += num;
-
-#if TCP_TEST_RX
-	sdiohal_tp_rx_up();
-#endif
 
 	/* throughput test */
 	tp_rx_cnt += num;
@@ -1113,9 +1051,7 @@ static ssize_t at_cmd_write(struct file *filp,
 			sprdwcn_bus_chn_deinit(&at_tx_ops);
 			at_tx_ops.pool_size = TP_TX_POOL_SIZE;
 			sprdwcn_bus_chn_init(&at_tx_ops);
-#if TCP_TEST_RX
-			sdiohal_launch_tp_tx_thread();
-#endif
+
 			if (!sdiohal_throughput_tx_alloc()) {
 				sdiohal_log_level = 0;
 				sdiohal_throughput_tx();
