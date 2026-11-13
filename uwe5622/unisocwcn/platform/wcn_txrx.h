@@ -90,14 +90,6 @@ enum wcnbus_channel_t {
 	WCN_RING_RX = 4,
 	WCN_RSV_RX,
 };
-#elif defined(CONFIG_WCN_USB)
-enum wcnbus_channel_t {
-	WCN_AT_TX = 7,
-	WCN_LOOPCHECK_RX = 29,
-	WCN_AT_RX,
-	WCN_ASSERT_RX,
-	WCN_RING_RX = 24,
-};
 #else
 enum wcnbus_channel_t {
 	WCN_AT_TX = 0,

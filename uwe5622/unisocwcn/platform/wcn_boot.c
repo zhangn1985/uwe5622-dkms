@@ -367,8 +367,6 @@ enum wcn_hw_type wcn_get_hw_if_type(void)
 	return HW_TYPE_PCIE;
 #elif defined(CONFIG_WCN_SIPC)
 	return HW_TYPE_SIPC;
-#elif defined(CONFIG_WCN_USB)
-	return HW_TYPE_USB;
 #else
 	return HW_TYPE_UNKNOWN;
 #endif
@@ -398,9 +396,6 @@ unsigned int marlin_get_wcn_chipid(void)
 {
 	int ret;
 	static unsigned long chip_id;
-#ifdef CONFIG_WCN_USB
-	return MARLIN3E_AA_CHIPID;
-#endif
 	if (likely(chip_id))
 		return chip_id;
 
@@ -1220,48 +1215,6 @@ static int marlin_firmware_parse_image(struct marlin_firmware *mfirmware)
 	return 0;
 }
 
-#ifdef CONFIG_WCN_USB
-int marlin_firmware_write(struct marlin_firmware *fw)
-{
-	int i;
-	int img_count;
-	const struct combin_img_info *img_info;
-	int ret;
-
-	if (!bin_magic_is(fw->data, IMG_HEAD_MAGIC_COMBINE)) {
-		WCN_ERR("Marlin3 USB image must have maigc WCNE\n");
-		ret = marlin_firmware_download_usb(0x40500000, fw->data,
-				0x56F00, PACKET_SIZE);
-		if (ret) {
-			WCN_ERR("%s usb download error\n", __func__);
-			return -1;
-		}
-		marlin_firmware_download_exec_usb(WCN_USB_FW_ADDR);
-		return 0;
-	}
-
-	img_count = marlin_fw_get_img_count(fw->data);
-	img_info = marlin_firmware_get_combin_info(fw->data);
-
-	/* for every img_info */
-	for (i = 0; i < img_count; i++) {
-		if (img_info[i].size + img_info[i].offset > fw->size) {
-			WCN_ERR("%s memory crossover\n", __func__);
-			return -1;
-		}
-		ret = marlin_firmware_download_usb(img_info[i].addr,
-				fw->data + img_info[i].offset,
-				img_info[i].size, PACKET_SIZE);
-		if (ret) {
-			WCN_ERR("%s usb download error\n", __func__);
-			return -1;
-		}
-	}
-
-	marlin_firmware_download_exec_usb(WCN_USB_FW_ADDR);
-	return 0;
-}
-#else
 static int marlin_firmware_write(struct marlin_firmware *mfirmware)
 {
 	int i = 0;
@@ -1312,7 +1265,6 @@ static int marlin_firmware_write(struct marlin_firmware *mfirmware)
 
 	return 0;
 }
-#endif
 
 static void marlin_release_firmware(struct marlin_firmware *mfirmware)
 {
@@ -1383,16 +1335,6 @@ static int btwifi_download_firmware(void)
 		WCN_ERR("%s request firmware error\n", __func__);
 		goto OUT;
 	}
-
-#ifdef CONFIG_WCN_USB
-	/**
-	 * marlin3e chip romcode cause this:
-	 * if you didn't send start_usb command
-	 * then you can't read chip id and donwload code.
-	 * so, we must sent start_usb command in here.
-	 */
-#endif
-
 	ret = marlin_firmware_parse_image(mfirmware);
 	if (ret) {
 		WCN_ERR("%s firmware parse AA\\AB error\n", __func__);
@@ -2452,11 +2394,6 @@ static int check_cp_ready(void)
 {
 	int ret = 0;
 	int i = 0;
-
-#ifdef CONFIG_WCN_USB
-	return sprdwcn_check_cp_ready(SYNC_ADDR, 3000);
-#endif
-
 	do {
 		i++;
 		ret = sprdwcn_bus_direct_read(SYNC_ADDR,
@@ -2903,93 +2840,10 @@ static void pre_gnss_download_firmware(struct work_struct *work)
 
 }
 
-#if defined CONFIG_WCN_USB && defined CONFIG_SYS_REBOOT_NOT_REPOWER_USBCHIP
-static unsigned char fdl_hex_buf[] = {
-#include "../fw/usb_fdl.bin.hex"
-};
-
-#define FDL_HEX_SIZE sizeof(fdl_hex_buf)
-
-static int wcn_usb_fdl_download(void)
-{
-	int ret;
-	struct marlin_firmware *firmware;
-
-	firmware = kmalloc_obj(struct marlin_firmware, GFP_KERNEL);
-	if (!firmware)
-		return -ENOMEM;
-
-	WCN_INFO("marlin %s from wcnmodem.bin.hex start!\n", __func__);
-	firmware->data = fdl_hex_buf;
-	firmware->size = FDL_HEX_SIZE;
-	firmware->is_from_fs = 0;
-	firmware->priv = fdl_hex_buf;
-
-	ret = marlin_firmware_parse_image(firmware);
-	if (ret) {
-		WCN_ERR("%s firmware parse AA\\AB error\n", __func__);
-		goto OUT;
-	}
-
-	ret = marlin_firmware_write(firmware);
-	if (ret) {
-		WCN_ERR("%s firmware write error\n", __func__);
-		goto OUT;
-	}
-OUT:
-	marlin_release_firmware(firmware);
-
-	return ret;
-}
-
-static void btwifi_download_fdl_firmware(void)
-{
-	int ret;
-
-	marlin_firmware_download_start_usb();
-	wcn_get_chip_name();
-
-	if (wcn_usb_fdl_download()) {
-		WCN_INFO("fdl download err\n");
-		return;
-	}
-	msleep(100);
-
-	init_completion(&marlin_dev->carddetect_done);
-	marlin_reset(true);
-	mdelay(1);
-
-	ret = wait_for_completion_timeout(&marlin_dev->carddetect_done,
-		msecs_to_jiffies(CARD_DETECT_WAIT_MS));
-	if (ret == 0) {
-		WCN_ERR("first wait scan error!\n");
-		return;
-	}
-}
-#endif
-
 static void pre_btwifi_download_sdio(struct work_struct *work)
 {
 	int ret;
 
-#ifdef CONFIG_WCN_USB
-#ifdef CONFIG_SYS_REBOOT_NOT_REPOWER_USBCHIP
-	/*
-	 * Fix Bug 1349945.
-	 * Because the usb vbus can't be controlled on some platforms,
-	 * So, BT WIFI can't work after ap sys reboot, the reason is cp state is
-	 * not rebooted. So, wen need pull reset pin to reset cp.
-	 * But on cp init, set the reset_hold reg to keep iram for dump mem,
-	 * it's lead to the chip can't reset cache and power state. So that,
-	 * the chip can't work normal.
-	 * To solve this problem, we need a fdl to clear the reset_hold reg
-	 * before re-reset. After clear the reset_hold reg, then reset chip
-	 * again and normal boot system.
-	 */
-	btwifi_download_fdl_firmware();
-#endif
-	marlin_firmware_download_start_usb();
-#endif
 	wcn_get_chip_name();
 
 	ret = btwifi_download_firmware();
@@ -3982,12 +3836,6 @@ void marlin_core_shutdown(struct device *dev)
 		marlin_chip_en(false, false);
 	}
 
-#if (defined(CONFIG_HISI_BOARD) && defined(CONFIG_WCN_USB))
-	/* As for Hisi platform, repull reset pin to reset wcn chip. */
-	hi_gpio_set_value(RTL_REG_RST_GPIO, 0);
-	mdelay(RESET_DELAY);
-	hi_gpio_set_value(RTL_REG_RST_GPIO, 1);
-#endif
 	WCN_INFO("marlin_shutdown end\n");
 }
 

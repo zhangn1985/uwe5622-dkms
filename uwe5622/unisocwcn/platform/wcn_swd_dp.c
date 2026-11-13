@@ -61,27 +61,6 @@ static u32 sw_dio_in(void)
 
 	return bit;
 }
-#elif defined CONFIG_WCN_USB
-static void swd_ext_sel(bool enable)
-{
-}
-
-static void swclk_clr(void)
-{
-}
-
-static void swclk_set(void)
-{
-}
-
-static void sw_dio_out(u32 value)
-{
-}
-
-static u32 sw_dio_in(void)
-{
-	return 0;
-}
 #else
 static void swd_ext_sel(bool enable)
 {

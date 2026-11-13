@@ -38,14 +38,6 @@ static struct mchn_ops_t mdbg_ringc_ops = {
 	.pop_link = mdbg_log_read,
 	.push_link = mdbg_log_push,
 };
-#elif defined CONFIG_WCN_USB
-static struct mchn_ops_t mdbg_ringc_ops = {
-	.channel = WCN_RING_RX,
-	.inout = WCNBUS_RX,
-	.pool_size = 10,
-	.pop_link = mdbg_log_read,
-	.hif_type = HW_TYPE_USB,
-};
 #else
 static struct mchn_ops_t mdbg_ringc_ops = {
 	.channel = WCN_RING_RX,

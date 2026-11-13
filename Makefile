@@ -1,7 +1,6 @@
 export CONFIG_TTY_OVERY_SDIO=m
 export CONFIG_RK_WIFI_DEVICE_UWE5622=y
 export CONFIG_WLAN_UWE5622=m
-export CONFIG_SPRDWL_NG=m
 export CONFIG_UNISOC_WIFI_PS=y
 
 KERNELRELEASE ?= $(if $(kernelver),$(kernelver),$(shell uname -r))

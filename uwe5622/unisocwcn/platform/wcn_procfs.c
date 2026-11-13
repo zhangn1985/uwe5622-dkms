@@ -1110,36 +1110,24 @@ struct mchn_ops_t mdbg_proc_ops[MDBG_ASSERT_RX_OPS + 1] = {
 		.pool_size = 5,
 		.pop_link = mdbg_tx_cb,
 		.power_notify = mdbg_tx_power_notify,
-#ifdef CONFIG_WCN_USB
-		.hif_type = HW_TYPE_USB,
-#endif
 	},
 	{
 		.channel = WCN_LOOPCHECK_RX,
 		.inout = WCNBUS_RX,
 		.pool_size = 1,
 		.pop_link = mdbg_loopcheck_read,
-#ifdef CONFIG_WCN_USB
-		.hif_type = HW_TYPE_USB,
-#endif
 	},
 	{
 		.channel = WCN_AT_RX,
 		.inout = WCNBUS_RX,
 		.pool_size = 1,
 		.pop_link = mdbg_at_cmd_read,
-#ifdef CONFIG_WCN_USB
-		.hif_type = HW_TYPE_USB,
-#endif
 	},
 	{
 		.channel = WCN_ASSERT_RX,
 		.inout = WCNBUS_RX,
 		.pool_size = 1,
 		.pop_link = mdbg_assert_read,
-#ifdef CONFIG_WCN_USB
-		.hif_type = HW_TYPE_USB,
-#endif
 
 	},
 };
