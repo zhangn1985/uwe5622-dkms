@@ -60,21 +60,6 @@
 #include "../fw/firmware_hex.h"
 #endif
 
-#ifdef CONFIG_AW_BOARD
-#include <linux/pm_wakeirq.h>
-//extern void sunxi_wlan_set_power(int on);
-extern int sunxi_wlan_get_oob_irq(void);
-extern int sunxi_wlan_get_oob_irq_flags(void);
-
-struct gpio_config {
-	u32	gpio;
-	u32	mul_sel;
-	u32	pull;
-	u32	drv_level;
-	u32	data;
-};
-#endif
-
 #define WCN_FW_MAX_PATH_NUM	4
 /* path of cp2 firmware. */
 #ifdef CONFIG_CUSTOMIZE_UNISOC_FW_PATH
@@ -996,9 +981,6 @@ static int marlin_request_firmware(struct marlin_firmware **mfirmware_p)
 #ifdef CONFIG_WCN_PARSE_DTS
 	marlin_dev->is_btwf_in_sysfs = 1;
 #endif
-#ifdef CONFIG_AW_BOARD
-	marlin_dev->is_btwf_in_sysfs = 1;
-#endif
 
 #ifdef CONFIG_WCN_DOWNLOAD_FIRMWARE_FROM_HEX
 
@@ -1331,97 +1313,6 @@ OUT:
 	return ret;
 }
 
-#ifdef CONFIG_AW_BOARD
-static void marlin_bt_wake_int_en(void)
-{
-	enable_irq(marlin_dev->bt_wake_host_int_num);
-}
-
-static void marlin_bt_wake_int_dis(void)
-{
-	disable_irq(marlin_dev->bt_wake_host_int_num);
-}
-
-static irqreturn_t marlin_bt_wake_int_isr(int irq, void *para)
-{
-	static int bt_wake_cnt;
-
-	bt_wake_cnt++;
-	WCN_DEBUG("bt_wake_irq_cnt %d\n", bt_wake_cnt);
-	return IRQ_HANDLED;
-}
-
-static int marlin_registsr_bt_wake(struct device *dev)
-{
-	struct device_node *np;
-	int bt_wake_host_gpio, ret = 0;
-
-	np = of_find_compatible_node(NULL, NULL, "allwinner,sunxi-btlpm");
-	if (!np) {
-		WCN_ERR("dts node for bt_wake not found");
-		return -EINVAL;
-	}
-	bt_wake_host_gpio = of_get_named_gpio(np, "bt_hostwake", 0);
-	if (!gpio_is_valid(bt_wake_host_gpio)) {
-		WCN_ERR("bt_hostwake irq is invalid: %d\n",
-			bt_wake_host_gpio);
-		return -EINVAL;
-	}
-
-	ret = devm_gpio_request(dev, bt_wake_host_gpio,
-				"bt-wake-host-gpio");
-	if (ret) {
-		WCN_ERR("bt-wake-host-gpio request err: %d\n",
-			bt_wake_host_gpio);
-		return ret;
-	}
-
-	ret = gpio_direction_input(bt_wake_host_gpio);
-	if (ret < 0) {
-		WCN_ERR("%s, gpio-%d input set fail!\n", __func__,
-			bt_wake_host_gpio);
-		return ret;
-	}
-
-	marlin_dev->bt_wake_host_int_num = gpio_to_irq(bt_wake_host_gpio);
-
-	ret = device_init_wakeup(dev, true);
-	if (ret < 0) {
-		WCN_ERR("device init bt wakeup failed!\n");
-		return ret;
-	}
-
-	ret = dev_pm_set_wake_irq(dev,
-		marlin_dev->bt_wake_host_int_num);
-	if (ret < 0) {
-		WCN_ERR("can't enable wakeup src for bt_hostwake %d\n",
-			bt_wake_host_gpio);
-		return ret;
-	}
-
-	ret = request_irq(marlin_dev->bt_wake_host_int_num,
-			  marlin_bt_wake_int_isr,
-			  IRQF_TRIGGER_RISING |
-			  IRQF_NO_SUSPEND,
-			  "bt_wake_isr",
-			  NULL);
-	if (ret != 0) {
-		WCN_ERR("req bt_hostwake irq-%d err! ret=%d",
-			marlin_dev->bt_wake_host_int_num, ret);
-		return ret;
-	}
-	disable_irq(marlin_dev->bt_wake_host_int_num);
-
-	return 0;
-}
-
-static void marlin_unregistsr_bt_wake(void)
-{
-	disable_irq(marlin_dev->bt_wake_host_int_num);
-	free_irq(marlin_dev->bt_wake_host_int_num, NULL);
-}
-#endif
-
 static int marlin_parse_dt(struct device *dev)
 {
 #ifdef CONFIG_WCN_PARSE_DTS
@@ -1429,8 +1320,6 @@ static int marlin_parse_dt(struct device *dev)
 #endif
 #ifdef CONFIG_WCN_PARSE_DTS
 	struct device_node *np = dev->of_node;
-#elif defined CONFIG_AW_BOARD
-	struct device_node *np = NULL;
 #endif
 #ifdef CONFIG_WCN_PMIC
 	struct regmap *pmu_apb_gpr;
@@ -1633,11 +1522,6 @@ static int marlin_parse_dt(struct device *dev)
 #ifdef CONFIG_BT_WAKE_HOST_EN
 	WCN_INFO("wcn config bt wake host\n");
 	marlin_dev->bt_wl_wake_host_en |= BIT(BT_WAKE_HOST);
-#ifdef CONFIG_AW_BOARD
-	ret = marlin_registsr_bt_wake(dev);
-	if (ret)
-		return ret;
-#endif /* end of CONFIG_AW_BOARD */
 #endif /* end of CONFIG_BT_WAKE_HOST_EN */
 #endif /* end of CONFIG_WCN_PARSE_DTS */
 
@@ -1880,7 +1764,7 @@ static void marlin_send_sdio_config_to_cp_vendor(void)
 {
 	union wcn_sdiohal_config sdio_cfg = {0};
 
-#if (defined(CONFIG_RK_BOARD) || defined(CONFIG_AW_BOARD))
+#if (defined(CONFIG_RK_BOARD))
 	/* Vendor config */
 
 	/* bit[0]: sdio_config_en:
@@ -2441,22 +2325,6 @@ static int chip_reset_release(int val)
 void marlin_chip_en(bool enable, bool reset)
 {
 	static unsigned int chip_en_count;
-
-#ifdef CONFIG_AW_BOARD
-	if (enable) {
-		if (chip_en_count == 0) {
-			msleep(100);
-			WCN_INFO("marlin chip en dummy pull up -- need manually set GPIO\n");
-		}
-		chip_en_count++;
-	} else {
-		chip_en_count--;
-		if (chip_en_count == 0) {
-			WCN_INFO("marlin chip en dummy pull down -- need manually set GPIO\n");
-		}
-	}
-	return;
-#endif
 
 	/*
 	 * Incar board pull chipen gpio at pin control.
@@ -3347,11 +3215,6 @@ int cali_ini_need_download(enum marlin_sub_sys subsys)
 {
 	unsigned int pd_wifi_st = 0;
 
-#ifdef CONFIG_AW_BOARD
-	/*FIX SPCSS00757820, wifi-bt on/off frequently & quickly, ini need download but not*/
-	return 1;
-#endif
-
 #ifdef CONFIG_MEM_PD
 	pd_wifi_st = mem_pd_wifi_state();
 #endif
@@ -3631,9 +3494,6 @@ void marlin_core_remove(struct device *dev)
 {
 	mfd_remove_devices(dev);
 
-#if (defined(CONFIG_BT_WAKE_HOST_EN) && defined(CONFIG_AW_BOARD))
-	marlin_unregistsr_bt_wake();
-#endif
 	cancel_work_sync(&marlin_dev->download_wq);
 	cancel_work_sync(&marlin_dev->gnss_dl_wq);
 	cancel_delayed_work_sync(&marlin_dev->power_wq);
@@ -3690,17 +3550,6 @@ void marlin_core_shutdown(struct device *dev)
 	}
 
 	WCN_INFO("marlin_shutdown end\n");
-}
-
-static int marlin_suspend(struct device *dev)
-{
-
-#if (defined(CONFIG_BT_WAKE_HOST_EN) && defined(CONFIG_AW_BOARD))
-	/* enable wcn wake host irq. */
-	marlin_bt_wake_int_en();
-#endif
-
-	return 0;
 }
 
 int marlin_reset_register_notify(void *callback_func, void *para)
@@ -3761,20 +3610,6 @@ void marlin_reset_callback_unregister(u32 subsys, struct notifier_block *nb)
 }
 EXPORT_SYMBOL_GPL(marlin_reset_callback_unregister);
 
-static int marlin_resume(struct device *dev)
-{
-#if (defined(CONFIG_BT_WAKE_HOST_EN) && defined(CONFIG_AW_BOARD))
-	/* disable wcn wake host irq. */
-	marlin_bt_wake_int_dis();
-#endif
-
-	return 0;
-}
-
-static const struct dev_pm_ops marlin_pm_ops = {
-	.suspend = marlin_suspend,
-	.resume	= marlin_resume,
-};
 
 MODULE_LICENSE("GPL v2");
 MODULE_FIRMWARE(WCN_FW_NAME);

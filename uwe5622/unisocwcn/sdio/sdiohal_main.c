@@ -43,12 +43,6 @@
 extern int rockchip_wifi_set_carddetect(int val);
 #endif
 
-#ifdef CONFIG_AW_BOARD
-extern int sunxi_wlan_get_bus_index(void);
-extern int sunxi_wlan_get_oob_irq(void);
-extern int sunxi_wlan_get_oob_irq_flags(void);
-#endif
-
 #ifndef MMC_CAP2_SDIO_IRQ_NOTHREAD
 #define MMC_CAP2_SDIO_IRQ_NOTHREAD (1 << 17)
 #endif
@@ -1365,11 +1359,6 @@ static int sdiohal_parse_dt(struct device *dev)
 	sdio_node = of_parse_phandle(np, "sdhci-name", 0);
 	if (sdio_node == NULL)
 		sdiohal_info("not config sdio host node.");
-
-#if (defined(CONFIG_RK_BOARD) || defined(CONFIG_AW_BOARD))
-	/* will get host at sdiohal_probe */
-	return 0;
-#endif
 
 	p_data->sdio_dev_host = sdiohal_dev_get_host(sdio_node);
 	if (p_data->sdio_dev_host == NULL) {
