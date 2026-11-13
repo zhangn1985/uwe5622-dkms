@@ -188,7 +188,6 @@ void sdiohal_completion_init(void)
 
 	init_completion(&p_data->tx_completed);
 	init_completion(&p_data->rx_completed);
-	init_completion(&p_data->scan_done);
 }
 
 void sdiohal_lock_tx_ws(void)
@@ -247,24 +246,6 @@ void sdiohal_unlock_rx_ws(void)
 #endif
 }
 
-void sdiohal_lock_scan_ws(void)
-{
-#ifdef CONFIG_PM_SLEEP
-	struct sdiohal_data_t *p_data = sdiohal_get_data();
-
-	__pm_stay_awake(p_data->scan_ws);
-#endif
-}
-
-void sdiohal_unlock_scan_ws(void)
-{
-#ifdef CONFIG_PM_SLEEP
-	struct sdiohal_data_t *p_data = sdiohal_get_data();
-
-	__pm_relax(p_data->scan_ws);
-#endif
-}
-
 void sdiohal_wakelock_init(void)
 {
 #ifdef CONFIG_PM_SLEEP
@@ -272,7 +253,6 @@ void sdiohal_wakelock_init(void)
 	/*wakeup_source pointer*/
 	p_data->tx_ws = wakeup_source_register(NULL, "sdiohal_tx_wakelock");
 	p_data->rx_ws = wakeup_source_register(NULL, "sdiohal_rx_wakelock");
-	p_data->scan_ws = wakeup_source_register(NULL, "sdiohal_scan_wakelock");
 #endif
 }
 
@@ -283,7 +263,6 @@ void sdiohal_wakelock_deinit(void)
 	/*wakeup_source pointer*/
 	wakeup_source_unregister(p_data->tx_ws);
 	wakeup_source_unregister(p_data->rx_ws);
-	wakeup_source_unregister(p_data->scan_ws);
 #endif
 }
 

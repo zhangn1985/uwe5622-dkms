@@ -172,11 +172,8 @@ struct sprdwcn_bus_ops {
 
 	int (*rescan)(void);
 	void (*register_rescan_cb)(void *);
-	void (*remove_card)(void);
 	/* for module to know hif_type */
 	int (*get_hif_type)(void);
-	int (*driver_register)(void);
-	void (*driver_unregister)(void);
 	void (*allow_sleep)(enum slp_subsys subsys);
 	void (*sleep_wakeup)(enum slp_subsys subsys);
 
@@ -486,17 +483,6 @@ void sprdwcn_bus_register_rescan_cb(void *func)
 }
 
 static inline
-void sprdwcn_bus_remove_card(void)
-{
-	struct sprdwcn_bus_ops *bus_ops = get_wcn_bus_ops();
-
-	if (!bus_ops || !bus_ops->remove_card)
-		return;
-
-	bus_ops->remove_card();
-}
-
-static inline
 unsigned char sprdwcn_bus_get_tx_mode(void)
 {
 	struct sprdwcn_bus_ops *bus_ops = get_wcn_bus_ops();
@@ -560,28 +546,6 @@ void sprdwcn_bus_sleep_wakeup(enum slp_subsys subsys)
 		return;
 
 	bus_ops->sleep_wakeup(subsys);
-}
-
-static inline
-int sprdwcn_bus_driver_register(void)
-{
-	struct sprdwcn_bus_ops *bus_ops = get_wcn_bus_ops();
-
-	if (!bus_ops || !bus_ops->driver_register)
-		return 0;
-
-	return bus_ops->driver_register();
-}
-
-static inline
-void sprdwcn_bus_driver_unregister(void)
-{
-	struct sprdwcn_bus_ops *bus_ops = get_wcn_bus_ops();
-
-	if (!bus_ops || !bus_ops->driver_unregister)
-		return;
-
-	bus_ops->driver_unregister();
 }
 
 static inline

@@ -374,11 +374,8 @@ struct sdiohal_data_t {
 
 #ifdef CONFIG_PM_SLEEP
 	/*wakeup_source pointer*/
-	struct wakeup_source *scan_ws;
 #endif
 
-	struct completion scan_done;
-	struct completion remove_done;
 	unsigned int sdio_int_reg;
 #if SDIO_DUMP_CHANNEL_DATA
 	struct sdiohal_data_bak_t chntx_push_old;
@@ -415,9 +412,6 @@ void sdiohal_lock_tx_ws(void);
 void sdiohal_unlock_tx_ws(void);
 void sdiohal_lock_rx_ws(void);
 void sdiohal_unlock_rx_ws(void);
-void sdiohal_lock_scan_ws(void);
-void sdiohal_unlock_scan_ws(void);
-
 /* for api mutex */
 void sdiohal_callback_lock(struct mutex *mutex);
 void sdiohal_callback_unlock(struct mutex *mutex);
@@ -527,8 +521,6 @@ int sdiohal_runtime_get(void);
 int sdiohal_runtime_put(void);
 
 void sdiohal_register_scan_notify(void *func);
-int sdiohal_scan_card(void);
-void sdiohal_remove_card(void);
 
 #ifdef SDIO_RESET_DEBUG
 /* Some custome platform not export sdio_reset_comm symbol. */

@@ -8,16 +8,6 @@ static int sdio_get_hif_type(void)
 	return HW_TYPE_SDIO;
 }
 
-int sdiohal_driver_register(void)
-{
-	return 0;
-}
-
-void sdiohal_driver_unregister(void)
-{
-
-}
-
 static int sdio_preinit(struct device *dev)
 {
 	return sdiohal_init(dev);
@@ -119,11 +109,6 @@ static void sdio_register_rescan_cb(void *func)
 	return sdiohal_register_scan_notify(func);
 }
 
-static void sdio_remove_card(void)
-{
-	return sdiohal_remove_card();
-}
-
 static void sdiohal_cp_allow_sleep(enum slp_subsys subsys)
 {
 #ifdef CONFIG_WCN_SLP
@@ -168,14 +153,11 @@ static struct sprdwcn_bus_ops sdiohal_bus_ops = {
 
 	.register_rescan_cb = sdio_register_rescan_cb,
 	.rescan = sdio_rescan,
-	.remove_card = sdio_remove_card,
 	.get_tx_mode = sdiohal_get_tx_mode,
 	.get_rx_mode = sdiohal_get_rx_mode,
 	.get_irq_type = sdiohal_get_irq_type,
 	.get_blk_size = sdiohal_get_blk_size,
 	.get_hif_type = sdio_get_hif_type,
-	.driver_register = sdiohal_driver_register,
-	.driver_unregister = sdiohal_driver_unregister,
 	.allow_sleep = sdiohal_cp_allow_sleep,
 	.sleep_wakeup = sdiohal_cp_sleep_wakeup,
 };

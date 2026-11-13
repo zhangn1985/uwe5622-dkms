@@ -52,6 +52,10 @@
 #include "wcn_glb_reg.h"
 #include "wcn_glb.h"
 
+#ifdef CONFIG_WCN_SDIO
+#include "../sdio/sdiohal.h"
+#endif
+
 #ifdef CONFIG_WCN_DOWNLOAD_FIRMWARE_FROM_HEX
 #include "../fw/firmware_hex.h"
 #endif
@@ -3552,7 +3556,6 @@ out:
 #ifdef CONFIG_MEM_PD
 	mem_pd_poweroff_deinit();
 #endif
-	sprdwcn_bus_driver_unregister();
 	if (chip_powered)
 		chip_power_off(subsys);
 	marlin_dev->power_state = 0;

@@ -1972,8 +1972,6 @@ static int sdiohal_probe(struct sdio_func *func,
 
 		disable_irq(p_data->irq_num);
 	}
-	complete(&p_data->scan_done);
-
 	/* the card is nonremovable */
 	p_data->sdio_dev_host->caps |= MMC_CAP_NONREMOVABLE;
 #ifdef CONFIG_RK_BOARD
@@ -2033,8 +2031,6 @@ static void sdiohal_remove(struct sdio_func *func)
 		if (xmit_count > SDIOHAL_REMOVE_CARD_VAL)
 			usleep_range(1000, 2000);
 	} while (xmit_count > SDIOHAL_REMOVE_CARD_VAL);
-
-	complete(&p_data->remove_done);
 
 	if (p_data->irq_type == SDIOHAL_RX_INBAND_IRQ) {
 		sdio_claim_host(p_data->sdio_func[FUNC_1]);
@@ -2126,182 +2122,6 @@ static struct sdio_driver sdiohal_driver = {
 	},
 };
 module_sdio_driver(sdiohal_driver);
-
-#define WCN_SDIO_CARD_REMOVED	BIT(4)
-void sdiohal_remove_card(void)
-{
-	struct sdiohal_data_t *p_data = sdiohal_get_data();
-#ifdef CONFIG_AW_BOARD
-//	int wlan_bus_index = sunxi_wlan_get_bus_index();
-	/* don't need to remove sdio card. */
-	return;
-#endif
-
-#ifdef CONFIG_AML_BOARD
-	/* As for amlogic platform, don't need to remove sdio card. */
-	return;
-#endif
-
-	if (!WCN_CARD_EXIST(&p_data->xmit_cnt))
-		return;
-
-	atomic_add(SDIOHAL_REMOVE_CARD_VAL, &p_data->xmit_cnt);
-	sdiohal_lock_scan_ws();
-	sdiohal_resume_check();
-	while (atomic_read(&p_data->xmit_cnt) > SDIOHAL_REMOVE_CARD_VAL)
-		usleep_range(4000, 6000);
-
-	init_completion(&p_data->remove_done);
-
-#ifdef CONFIG_HISI_BOARD
-	sdiohal_set_card_present(0);
-#endif
-
-#ifdef CONFIG_RK_BOARD
-	//rockchip_wifi_set_carddetect(0);
-	return;
-#endif
-
-#ifdef CONFIG_AW_BOARD
-//	sunxi_mmc_rescan_card(wlan_bus_index);
-	return;
-#endif
-
-	p_data->sdio_dev_host->card->state |= WCN_SDIO_CARD_REMOVED;
-
-	/* enable remove the card */
-	p_data->sdio_dev_host->caps &= ~MMC_CAP_NONREMOVABLE;
-
-	if (wait_for_completion_timeout(&p_data->remove_done,
-					msecs_to_jiffies(5000)) == 0)
-		sdiohal_err("remove card time out\n");
-	else
-		sdiohal_info("remove card end\n");
-
-	sdio_unregister_driver(&sdiohal_driver);
-	sdiohal_unlock_scan_ws();
-}
-
-int sdiohal_scan_card(void)
-{
-	struct sdiohal_data_t *p_data = sdiohal_get_data();
-	int ret = 0;
-#ifdef CONFIG_AML_BOARD
-	struct sdio_func *func = p_data->sdio_func[FUNC_1];
-#endif
-#if 0
-	int wlan_bus_index;
-#endif
-
-	sdiohal_info("sdiohal_scan_card\n");
-
-#ifdef CONFIG_AML_BOARD
-	if (p_data->irq_type == SDIOHAL_RX_INBAND_IRQ)
-		sdio_clk_always_on(0);
-	/* As for amlogic platform, Not remove sdio card.
-	 * When system is booting up, amlogic platform will power
-	 * up and get wifi module sdio id to know which vendor.
-	 * Then power down. In order to not rescan sdio card,
-	 * reset and reinit sdio host and slave is needed.
-	 */
-	sdio_reinit();
-#endif
-
-	if (WCN_CARD_EXIST(&p_data->xmit_cnt)) {
-		sdiohal_info("Already exist card!, xmit_cnt=0x%x\n",
-			     atomic_read(&p_data->xmit_cnt));
-#ifdef CONFIG_AML_BOARD
-		/* As for amlogic platform, Not remove sdio card.
-		 * But will reset sdio host, sdio slave need to be reset.
-		 * If reset pin NC, don't need to reset sdio slave.
-		 */
-		if (p_data->sdio_dev_host != NULL)
-			mmc_power_restore_host(p_data->sdio_dev_host);
-		if (p_data->irq_type == SDIOHAL_RX_INBAND_IRQ) {
-			/* disable auto clock, sdio clock will be always on. */
-			sdio_clk_always_on(1);
-		}
-		/*
-		 * setting sdio max request size to 512kB
-		 * to improve transmission efficiency.
-		 */
-		sdio_set_max_reqsz(0x80000);
-
-		if (!p_data->pwrseq) {
-			/* Enable Function 1 */
-			sdio_claim_host(p_data->sdio_func[FUNC_1]);
-			ret = sdio_enable_func(p_data->sdio_func[FUNC_1]);
-			sdio_set_block_size(p_data->sdio_func[FUNC_1],
-					SDIOHAL_BLK_SIZE);
-			p_data->sdio_func[FUNC_1]->max_blksize =
-				SDIOHAL_BLK_SIZE;
-			sdio_release_host(p_data->sdio_func[FUNC_1]);
-			if (ret < 0) {
-				sdiohal_err("enable func1 err!!! ret is %d\n",
-					    ret);
-				return ret;
-			}
-			sdiohal_info("enable func1 ok\n");
-		} else
-			pm_runtime_put_noidle(&func->dev);
-		/* calling rescan callback to inform download */
-		if (scan_card_notify != NULL)
-			scan_card_notify();
-		sdiohal_info("scan end!\n");
-		return 0;
-#endif
-
-		sdiohal_remove_card();
-		msleep(100);
-	}
-
-#ifdef CONFIG_HISI_BOARD
-	/* only for hisi mv300 scan card mechanism */
-	sdiohal_set_card_present(1);
-#endif
-
-#ifdef CONFIG_RK_BOARD
-	//rockchip_wifi_set_carddetect(1);
-#endif
-
-#if 0
-	wlan_bus_index = sunxi_wlan_get_bus_index();
-	if (wlan_bus_index < 0) {
-		ret = wlan_bus_index;
-		sdiohal_err("%s sunxi_wlan_get_bus_index=%d err!",
-			    __func__, ret);
-		return ret;
-	}
-	sunxi_mmc_rescan_card(wlan_bus_index);
-#endif
-
-	sdiohal_lock_scan_ws();
-	sdiohal_resume_check();
-	init_completion(&p_data->scan_done);
-	ret = sdio_register_driver(&sdiohal_driver);
-	if (ret != 0) {
-		sdiohal_err("sdio_register_driver error :%d\n", ret);
-		return ret;
-	}
-	if (wait_for_completion_timeout(&p_data->scan_done,
-		msecs_to_jiffies(2500)) == 0) {
-		sdiohal_unlock_scan_ws();
-		sdio_unregister_driver(&sdiohal_driver);
-		sdiohal_err("wait scan card time out\n");
-		return -ENODEV;
-	}
-	if (!p_data->sdio_dev_host) {
-		sdiohal_unlock_scan_ws();
-		sdio_unregister_driver(&sdiohal_driver);
-		sdiohal_err("sdio_dev_host is NULL!\n");
-		return -ENODEV;
-	}
-
-	sdiohal_unlock_scan_ws();
-	sdiohal_info("scan end!\n");
-
-	return ret;
-}
 
 void sdiohal_register_scan_notify(void *func)
 {
