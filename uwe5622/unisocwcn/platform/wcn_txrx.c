@@ -12,7 +12,6 @@
 #include <wcn_bus.h>
 
 #include "bufring.h"
-#include "loopcheck.h"
 #include "wcn_glb.h"
 #include "wcn_procfs.h"
 
@@ -248,22 +247,6 @@ int mdbg_tx_cb(int channel, struct mbuf_t *head,
 	/* PCIe buf is witebuf[], not kmalloc, no need to free */
 	sprdwcn_bus_list_free(channel, head, tail, num);
 
-	return 0;
-}
-
-int mdbg_tx_power_notify(int chn, int flag)
-{
-	if (flag) {
-		WCN_DEBUG("%s resume\n", __func__);
-#ifdef CONFIG_WCN_LOOPCHECK
-		start_loopcheck();
-#endif
-	} else {
-		WCN_DEBUG("%s suspend\n", __func__);
-#ifdef CONFIG_WCN_LOOPCHECK
-		stop_loopcheck();
-#endif
-	}
 	return 0;
 }
 

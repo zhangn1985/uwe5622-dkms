@@ -87,10 +87,6 @@ void mdbg_assert_interface(char *str)
 	}
 #endif
 
-#ifdef CONFIG_WCN_LOOPCHECK
-	stop_loopcheck();
-#endif
-
 	strscpy_pad(mdbg_proc->assert.buf, str, MDBG_ASSERT_SIZE);
 	WCN_INFO("mdbg_assert_interface:%s\n",
 		(char *)(mdbg_proc->assert.buf));
@@ -164,9 +160,6 @@ int mdbg_assert_read(int channel, struct mbuf_t *head,
 
 #else
 		sprdwcn_bus_push_list(channel, head, tail, num);
-#ifdef CONFIG_WCN_LOOPCHECK
-		stop_loopcheck();
-#endif
 		WCN_ERR("chip reset & notify every subsystem...\n");
 		marlin_reset_notify_call(MARLIN_CP2_STS_ASSERTED);
 		msleep(1000);
@@ -197,9 +190,6 @@ int mdbg_loopcheck_read(int channel, struct mbuf_t *head,
 		  (char *)(mdbg_proc->loopcheck.buf));
 	mdbg_proc->fail_count = 0;
 	complete(&mdbg_proc->loopcheck.completed);
-#ifdef CONFIG_WCN_LOOPCHECK
-	complete_kernel_loopcheck();
-#endif
 	sprdwcn_bus_push_list(channel, head, tail, num);
 
 	return 0;
@@ -239,9 +229,7 @@ int mdbg_at_cmd_read(int channel, struct mbuf_t *head,
 		WCN_INFO("WCND at cmd read:%s\n",
 			(char *)(mdbg_proc->at_cmd.buf));
 		complete(&mdbg_proc->at_cmd.completed);
-#ifndef CONFIG_WCND
-		complete_kernel_atcmd();
-#endif
+
 		sprdwcn_bus_push_list(channel, head, tail, num);
 
 		break;
@@ -810,11 +798,6 @@ static ssize_t mdbg_proc_write(struct file *filp,
 		return count;
 	}
 
-	if (strncmp(mdbg_proc->write_buf, "at+armlog=1", 11) == 0) {
-		WCN_INFO("%s: init log file path, if necessary\n", __func__);
-		wcn_debug_init();
-	}
-
 	if (strncmp(mdbg_proc->write_buf, "disabledumpmem",
 		strlen("disabledumpmem")) == 0) {
 		g_dumpmem_switch = 0;
@@ -1109,7 +1092,6 @@ struct mchn_ops_t mdbg_proc_ops[MDBG_ASSERT_RX_OPS + 1] = {
 		.inout = WCNBUS_TX,
 		.pool_size = 5,
 		.pop_link = mdbg_tx_cb,
-		.power_notify = mdbg_tx_power_notify,
 	},
 	{
 		.channel = WCN_LOOPCHECK_RX,

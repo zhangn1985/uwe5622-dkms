@@ -598,7 +598,7 @@ EXPORT_SYMBOL_GPL(marlin_get_wcn_module_vendor);
  */
 int marlin_get_ant_num(void)
 {
-	return get_board_ant_num();
+	return 1;
 }
 EXPORT_SYMBOL_GPL(marlin_get_ant_num);
 
@@ -2443,46 +2443,6 @@ void set_fm_supe_freq(int subsys, int val, unsigned long sub_state)
 	}
 }
 
-/*
- * MARLIN_GNSS no need loopcheck action
- * MARLIN_AUTO no need loopcheck action
- */
-static void power_state_notify_or_not(int subsys, int poweron)
-{
-#ifndef CONFIG_WCN_LOOPCHECK
-	return;
-#endif
-
-	if (poweron == 1) {
-		set_cp_mem_status(subsys, poweron);
-#ifdef CONFIG_WCN_FM
-		set_fm_supe_freq(subsys, poweron, marlin_dev->power_state);
-#endif
-	}
-
-	if ((test_bit(MARLIN_BLUETOOTH, &marlin_dev->power_state) +
-		  test_bit(MARLIN_FM, &marlin_dev->power_state) +
-		  test_bit(MARLIN_WIFI, &marlin_dev->power_state) +
-		  test_bit(MARLIN_MDBG, &marlin_dev->power_state)) == 1) {
-#ifdef CONFIG_WCN_LOOPCHECK
-		WCN_DEBUG("only one module open, need to notify loopcheck\n");
-		start_loopcheck();
-#endif
-		marlin_dev->loopcheck_status_change = 1;
-		wakeup_loopcheck_int();
-	}
-
-	if (((marlin_dev->power_state) & MARLIN_MASK) == 0) {
-#ifdef CONFIG_WCN_LOOPCHECK
-		WCN_DEBUG("marlin close, need to notify loopcheck\n");
-		stop_loopcheck();
-#endif
-		marlin_dev->loopcheck_status_change = 1;
-		wakeup_loopcheck_int();
-
-	}
-}
-
 static void marlin_scan_finish(void)
 {
 	WCN_INFO("marlin_scan_finish!\n");
@@ -2582,15 +2542,10 @@ static void pre_btwifi_download_sdio(struct work_struct *work)
 #ifdef CONFIG_MEM_PD
 		mem_pd_save_bin();
 #endif
-#ifdef CONFIG_CPLOG_DEBUG
-		wcn_debug_init();
-#endif
 		sprdwcn_bus_runtime_get();
 
 #ifndef CONFIG_WCND
-		get_cp2_version();
 #ifndef CONFIG_CPLOG_DEBUG
-		switch_cp2_log(false);
 #endif
 #endif
 	}
@@ -2915,7 +2870,6 @@ static int marlin_set_power(int subsys, int val)
 			marlin_dev->first_power_on_flag = 2;
 			WCN_DEBUG("mutex_unlock\n");
 			mutex_unlock(&marlin_dev->power_lock);
-			power_state_notify_or_not(subsys, val);
 #ifdef CONFIG_WCN_GNSS
 			if (subsys == WCN_AUTO) {
 				marlin_set_power(WCN_AUTO, false);
@@ -3055,8 +3009,6 @@ static int marlin_set_power(int subsys, int val)
 #endif
 			}
 		}
-		/* power on together's Action */
-		power_state_notify_or_not(subsys, val);
 
 		WCN_INFO("wcn chip power on and run finish: [%s]\n",
 				  strno(subsys));
@@ -3102,7 +3054,6 @@ static int marlin_set_power(int subsys, int val)
 #ifdef CONFIG_WCN_FM
 		set_fm_supe_freq(subsys, val, marlin_dev->power_state);
 #endif
-		power_state_notify_or_not(subsys, val);
 
 		WCN_INFO("wcn chip start power off!\n");
 		sprdwcn_bus_runtime_put();
@@ -3138,7 +3089,6 @@ out:
 	return ret ? ret : -EIO;
 
 check_power_state_notify:
-	power_state_notify_or_not(subsys, val);
 	WCN_DEBUG("mutex_unlock\n");
 	mutex_unlock(&marlin_dev->power_lock);
 
@@ -3435,9 +3385,6 @@ int marlin_core_init(struct device *dev)
 	mdbg_atcmd_owner_init();
 	wcn_op_init();
 #endif
-#ifndef CONFIG_WCND
-	loopcheck_init();
-#endif
 
 	flag_reset = 0;
 	/*notify subsys do reset, when cp2 was dead*/
@@ -3495,9 +3442,6 @@ void marlin_core_remove(struct device *dev)
 	cancel_work_sync(&marlin_dev->download_wq);
 	cancel_work_sync(&marlin_dev->gnss_dl_wq);
 	cancel_delayed_work_sync(&marlin_dev->power_wq);
-#ifndef CONFIG_WCND
-	loopcheck_deinit();
-#endif
 	wcn_op_exit();
 	mdbg_atcmd_owner_deinit();
 	log_dev_exit();

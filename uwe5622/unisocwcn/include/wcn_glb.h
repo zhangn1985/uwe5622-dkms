@@ -25,7 +25,6 @@
 #endif
 
 #include "wcn_dump.h"
-#include "loopcheck.h"
 #include "rdc_debug.h"
 
 #endif

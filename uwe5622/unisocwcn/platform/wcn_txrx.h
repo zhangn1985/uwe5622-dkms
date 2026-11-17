@@ -117,7 +117,6 @@ long mdbg_send(char *buf, long len, unsigned int subtype);
 long mdbg_receive(void *buf, long len);
 int mdbg_tx_cb(int channel, struct mbuf_t *head,
 	       struct mbuf_t *tail, int num);
-int mdbg_tx_power_notify(int chn, int flag);
 long mdbg_content_len(void);
 int mdbg_read_release(unsigned int fifo_id);
 bool mdbg_rx_count_change(void);

@@ -12,14 +12,6 @@ firmware_target := $(PWD)/fw/wcnmodem.bin.hex
 
 #### Global configs for each item ######
 
-ifeq ($(CONFIG_RK_WIFI_DEVICE_UWE5621),y)
-export CONFIG_WCN_SDIO = y
-#ccflags-y += -DCONFIG_CHECK_DRIVER_BY_CHIPID
-ccflags-y += -DCONFIG_UWE5621
-BSP_CHIP_ID := uwe5621
-WCN_HW_TYPE := sdio
-endif
-
 ifeq ($(CONFIG_RK_WIFI_DEVICE_UWE5622),y)
 export CONFIG_WCN_SDIO = y
 # export CONFIG_WCN_GNSS = y
@@ -66,22 +58,6 @@ ccflags-y += -I$(UNISOCWCN_DIR)/platform/rf/
 #### add cflag for Customer ######
 
 ### ---------- Rockchip start ---------- ###
-ifeq ($(CONFIG_RK_WIFI_DEVICE_UWE5621),y)
-#### add cflag ######
-ccflags-y += -DCONFIG_RK_BOARD
-ccflags-y += -DCONFIG_WCN_PARSE_DTS
-#ccflags-y += -DCONFIG_WCN_DOWNLOAD_FIRMWARE_FROM_HEX
-#ccflags-y += -DCONFIG_WCN_RESUME_POWER_DOWN
-#ccflags-y += -DCONFIG_WCN_RESUME_KEEPPWR_RESETSDIO
-#ccflags-y += -DCONFIG_WCN_CHECK_MODULE_VENDOR
-ifneq ($(TARGET_BUILD_VARIANT),user)
-#ccflags-y += -DCONFIG_WCN_LOOPCHECK
-ccflags-y += -DCONFIG_CPLOG_DEBUG
-endif
-#ccflags-y += -DCONFIG_MEM_PD
-
-all_dependencies += install
-endif
 
 ifeq ($(CONFIG_RK_WIFI_DEVICE_UWE5622),y)
 #### add cflag ######
@@ -91,10 +67,6 @@ ccflags-y += -DCONFIG_WCN_PARSE_DTS
 #ccflags-y += -DCONFIG_WCN_RESUME_POWER_DOWN
 #ccflags-y += -DCONFIG_WCN_RESUME_KEEPPWR_RESETSDIO
 #ccflags-y += -DCONFIG_WCN_CHECK_MODULE_VENDOR
-ifneq ($(TARGET_BUILD_VARIANT),user)
-ccflags-y += -DCONFIG_WCN_LOOPCHECK
-#ccflags-y += -DCONFIG_CPLOG_DEBUG
-endif
 #ccflags-y += -DCONFIG_MEM_PD
 
 all_dependencies += install
@@ -127,8 +99,7 @@ $(MODULE_NAME)-y += wcn_bus.o \
 			platform/rdc_debug.o \
 			platform/wcn_log.o \
 			platform/wcn_misc.o \
-			platform/wcn_procfs.o \
-			platform/loopcheck.o
+			platform/wcn_procfs.o
 
 $(MODULE_NAME)-$(CONFIG_WCN_SWD) += platform/wcn_swd_dp.o
 
