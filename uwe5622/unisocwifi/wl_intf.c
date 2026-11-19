@@ -1289,34 +1289,6 @@ struct mchn_ops_t pcie_hif_ops[] = {
 		  sprdwl_tx_data_pop_list, NULL, NULL, NULL)
 };
 
-struct mchn_ops_t usb_hif_ops[] = {
-	/* RX INTF */
-	INIT_INTF(USB_RX_CMD_PORT, 3, 0, 0,
-		  SPRDWL_MAX_CMD_RXLEN, 10, 0, 0, 0,
-		  intf_rx_handle, NULL, NULL, NULL),
-	INIT_INTF(USB_RX_PKT_LOG_PORT, 3, 0, 0,
-		  SPRDWL_MAX_DATA_RXLEN, 50, 0, 0, 0,
-		  intf_rx_handle, NULL, NULL, NULL),
-#ifndef RX_NAPI
-	INIT_INTF(USB_RX_DATA_PORT, 3, 0, 0,
-		  SPRDWL_MAX_DATA_RXLEN, 1000, 0, 0, 0,
-		  intf_rx_handle, NULL, NULL, NULL),
-#else
-	INIT_INTF(USB_RX_DATA_PORT, 3, 0, 0,
-		  SPRDWL_MAX_DATA_RXLEN, 300, 0, 0, 0,
-		  intf_napi_rx_handle, NULL, NULL, NULL),
-#endif
-
-	/* TX INTF */
-	INIT_INTF(USB_TX_CMD_PORT, 3, 1, 0,
-		  SPRDWL_MAX_CMD_TXLEN, 20, 0, 0, 0,
-		  sprdwl_tx_cmd_pop_list, NULL, NULL,
-		  sprdwl_suspend_resume_handle),
-	INIT_INTF(USB_TX_DATA_PORT, 3, 1, 0,
-		  SPRDWL_MAX_DATA_TXLEN, 300, 0, 0, 0,
-		  sprdwl_tx_data_pop_list, NULL, NULL, NULL),
-};
-
 struct sprdwl_peer_entry
 *sprdwl_find_peer_entry_using_lut_index(struct sprdwl_intf *intf,
 					unsigned char sta_lut_index)

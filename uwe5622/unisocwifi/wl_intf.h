@@ -41,12 +41,6 @@
 #define PCIE_TX_CMD_PORT	2
 #define PCIE_TX_DATA_PORT	3
 
-#define USB_RX_CMD_PORT	20
-#define USB_RX_PKT_LOG_PORT	21
-#define USB_RX_DATA_PORT	22
-#define USB_TX_CMD_PORT	4
-#define USB_TX_DATA_PORT	6
-
 #define MSDU_DSCR_RSVD	5
 
 #define DEL_LUT_INDEX 0
