@@ -693,9 +693,7 @@ int sdiohal_tx_list_denq(struct sdiohal_list_t *data_list)
 			sdiohal_ops->pop_link(channel, tx_list->mbuf_head,
 						  tx_list->mbuf_tail,
 						  tx_list->node_num);
-		} else
-			sdiohal_err("%s no tx ops channel:%d\n",
-					__func__, channel);
+		}
 
 		tx_list->node_num = 0;
 		sdiohal_callback_unlock(&chn_callback[channel]);
@@ -781,8 +779,6 @@ int sdiohal_rx_list_dispatch(void)
 						  rx_list->mbuf_tail,
 						  rx_list->node_num);
 		} else {
-			sdiohal_err("%s no rx ops channel:%d\n",
-					__func__, channel);
 			sdiohal_rx_list_free(rx_list->mbuf_head,
 						 rx_list->mbuf_tail,
 						 rx_list->node_num);
