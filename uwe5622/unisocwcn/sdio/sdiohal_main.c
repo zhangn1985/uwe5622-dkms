@@ -1355,19 +1355,6 @@ static int sdiohal_parse_dt(struct device *dev)
 		     p_data->gpio_num ? desc_to_gpio(p_data->gpio_num) : 0,
 		     sprdwcn_bus_get_blk_size());
 
-#ifdef CONFIG_WCN_PARSE_DTS
-	sdio_node = of_parse_phandle(np, "sdhci-name", 0);
-	if (sdio_node == NULL)
-		sdiohal_info("not config sdio host node.");
-
-	p_data->sdio_dev_host = sdiohal_dev_get_host(sdio_node);
-	if (p_data->sdio_dev_host == NULL) {
-		sdiohal_err("get host failed!!!");
-		return -1;
-	}
-	sdiohal_info("get host ok!!!");
-#endif /* end of CONFIG_WCN_PARSE_DTS */
-
 	return 0;
 }
 
