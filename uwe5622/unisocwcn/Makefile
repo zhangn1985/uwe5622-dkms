@@ -95,7 +95,6 @@ $(MODULE_NAME)-y += wcn_bus.o \
 			platform/bufring.o \
 			platform/wcn_txrx.o \
 			platform/wcn_op.o \
-			platform/wcn_parn_parser.o \
 			platform/rdc_debug.o \
 			platform/wcn_log.o \
 			platform/wcn_misc.o \

@@ -42,7 +42,6 @@
 #include "../sleep/slp_mgr.h"
 #include "mem_pd_mgr.h"
 #include "wcn_op.h"
-#include "wcn_parn_parser.h"
 #include "rdc_debug.h"
 #include "wcn_dump.h"
 #include "wcn_misc.h"
@@ -2449,41 +2448,10 @@ static void marlin_scan_finish(void)
 	complete(&marlin_dev->carddetect_done);
 }
 
-int find_firmware_path(void)
-{
-	int ret;
-	int pre_len;
-#ifdef CONFIG_WCN_GNSS
-	if ((strlen(BTWF_FIRMWARE_PATH) != 0) || (strlen(GNSS_FIRMWARE_PATH) != 0))
-#else
-	if (strlen(BTWF_FIRMWARE_PATH) != 0)
-#endif
-		return 0;
-
-	ret = parse_firmware_path(BTWF_FIRMWARE_PATH);
-	if (ret != 0) {
-		WCN_ERR("can not find wcn partition\n");
-		return ret;
-	}
-	WCN_INFO("BTWF path is %s\n", BTWF_FIRMWARE_PATH);
-	pre_len = strlen(BTWF_FIRMWARE_PATH) - strlen("wcnmodem");
-	memcpy(GNSS_FIRMWARE_PATH, BTWF_FIRMWARE_PATH, strlen(BTWF_FIRMWARE_PATH));
-	memcpy(&GNSS_FIRMWARE_PATH[pre_len], "gnssmodem", strlen("gnssmodem"));
-	GNSS_FIRMWARE_PATH[pre_len + strlen("gnssmodem")] = '\0';
-	WCN_INFO("GNSS path is %s\n", GNSS_FIRMWARE_PATH);
-
-	return 0;
-}
-
 static void pre_gnss_download_firmware(struct work_struct *work)
 {
 	static int cali_flag;
 	int ret = 0;
-
-	/* ./fstab.xxx is prevent for user space progress */
-	if (marlin_dev->first_power_on_flag == 1)
-		if (find_firmware_path() < 0)
-			return;
 
 	if (gnss_download_firmware() != 0) {
 		WCN_ERR("gnss download firmware fail\n");

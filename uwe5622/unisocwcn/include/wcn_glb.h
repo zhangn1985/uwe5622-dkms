@@ -3,7 +3,6 @@
 
 #include <marlin_platform.h>
 #include "bufring.h"
-#include "wcn_parn_parser.h"
 #include "wcn_txrx.h"
 #include "wcn_log.h"
 

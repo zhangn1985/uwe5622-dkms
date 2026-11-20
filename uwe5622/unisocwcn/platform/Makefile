@@ -7,7 +7,6 @@ MARLINOFILES += bufring.o
 MARLINOFILES += wcn_txrx.o
 MARLINOFILES += wcn_op.o
 MARLINOFILES += rf/rf.o
-MARLINOFILES += wcn_parn_parser.o
 MARLINOFILES += rdc_debug.o
 MARLINOFILES += wcn_log.o
 MARLINOFILES += wcn_misc.o
@@ -18,7 +17,6 @@ marlin-objs += $(MARLINOFILES)
 
 #WCN_PLATFORM
 obj-$(CONFIG_WCN_PLATFORM) := wcn_platform.o
-wcn_platform-c-objs += wcn_parn_parser.o
 
 wcn_platform-c-objs +=  wcn_procfs.o \
 			wcn_txrx.o \
