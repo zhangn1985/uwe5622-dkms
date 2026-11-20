@@ -5,7 +5,6 @@ MARLINOFILES += wcn_dump.o
 marlin-$(CONFIG_WCN_SWD) += wcn_swd_dp.o
 MARLINOFILES += bufring.o
 MARLINOFILES += wcn_txrx.o
-MARLINOFILES += wcn_op.o
 MARLINOFILES += rf/rf.o
 MARLINOFILES += rdc_debug.o
 MARLINOFILES += wcn_log.o

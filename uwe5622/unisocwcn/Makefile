@@ -94,7 +94,6 @@ $(MODULE_NAME)-y += wcn_bus.o \
 			platform/wcn_dump.o \
 			platform/bufring.o \
 			platform/wcn_txrx.o \
-			platform/wcn_op.o \
 			platform/rdc_debug.o \
 			platform/wcn_log.o \
 			platform/wcn_misc.o \

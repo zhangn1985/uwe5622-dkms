@@ -41,7 +41,6 @@
 #include "../sleep/sdio_int.h"
 #include "../sleep/slp_mgr.h"
 #include "mem_pd_mgr.h"
-#include "wcn_op.h"
 #include "rdc_debug.h"
 #include "wcn_dump.h"
 #include "wcn_misc.h"
@@ -3081,12 +3080,6 @@ int marlin_get_power(enum marlin_sub_sys subsys)
 }
 EXPORT_SYMBOL_GPL(marlin_get_power);
 
-bool marlin_get_download_status(void)
-{
-	return marlin_dev->download_finish_flag;
-}
-EXPORT_SYMBOL_GPL(marlin_get_download_status);
-
 int wcn_get_module_status_changed(void)
 {
 	return marlin_dev->loopcheck_status_change;
@@ -3351,7 +3344,6 @@ int marlin_core_init(struct device *dev)
 	proc_fs_init();
 	log_dev_init();
 	mdbg_atcmd_owner_init();
-	wcn_op_init();
 #endif
 
 	flag_reset = 0;
@@ -3410,7 +3402,6 @@ void marlin_core_remove(struct device *dev)
 	cancel_work_sync(&marlin_dev->download_wq);
 	cancel_work_sync(&marlin_dev->gnss_dl_wq);
 	cancel_delayed_work_sync(&marlin_dev->power_wq);
-	wcn_op_exit();
 	mdbg_atcmd_owner_deinit();
 	log_dev_exit();
 	proc_fs_exit();
