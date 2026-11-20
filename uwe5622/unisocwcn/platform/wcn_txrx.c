@@ -226,11 +226,6 @@ long mdbg_send(char *buf, long len, unsigned int subtype)
 }
 EXPORT_SYMBOL_GPL(mdbg_send);
 
-long mdbg_receive(void *buf, long len)
-{
-	return mdbg_ring_read(ring_dev->ring, buf, len);
-}
-
 int mdbg_tx_cb(int channel, struct mbuf_t *head,
 		   struct mbuf_t *tail, int num)
 {

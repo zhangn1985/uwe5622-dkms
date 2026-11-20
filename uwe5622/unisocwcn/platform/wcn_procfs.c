@@ -650,19 +650,6 @@ static ssize_t mdbg_proc_write(struct file *filp,
 		kfree(tempbuf);
 	}
 
-#ifdef MDBG_PROC_CMD_DEBUG
-/* for test cdev */
-	if (x == '1') {
-		WCN_INFO("wsh proc write =%c\n", x);
-		WCN_INFO("start char release test\n");
-		log_cdev_exit();
-	}
-	if (x == '2') {
-		WCN_INFO("wsh proc write =%c\n", x);
-		WCN_INFO("start char register test\n");
-		log_cdev_init();
-	}
-#endif
 /* for test power on/off frequently */
 #ifdef MDBG_PROC_CMD_DEBUG
 	if (x == '0')

@@ -37,7 +37,6 @@ struct mdbg_ring_t {
 
 struct mdbg_ring_t *mdbg_ring_alloc(long size);
 void mdbg_ring_destroy(struct mdbg_ring_t *ring);
-int mdbg_ring_read(struct mdbg_ring_t *ring, void *buf, int len);
 int mdbg_ring_write(struct mdbg_ring_t *ring, void *buf, unsigned int len);
 int mdbg_ring_write_timeout(struct mdbg_ring_t *ring, void *buf,
 			    unsigned int len, unsigned int timeout);

@@ -7,7 +7,6 @@
 
 struct mdbg_device_t {
 	int			open_count;
-	struct mutex		mdbg_lock;
 	wait_queue_head_t	rxwait;
 	struct wcnlog_dev *dev[WCN_LOG_MAX_MINOR];
 	struct ring_device *ring_dev;
@@ -27,6 +26,4 @@ void wcnlog_clear_log(void);
 int log_dev_init(void);
 int log_dev_exit(void);
 int wake_up_log_wait(void);
-int log_cdev_exit(void);
-int log_cdev_init(void);
 #endif
