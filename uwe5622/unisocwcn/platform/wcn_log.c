@@ -9,7 +9,6 @@
 
 #include "rdc_debug.h"
 #include "wcn_glb.h"
-#include "wcn_misc.h"
 
 #define MDBG_WRITE_SIZE			(64)
 #define WCN_LOG_MAJOR 255

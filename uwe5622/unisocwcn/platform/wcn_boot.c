@@ -41,11 +41,12 @@
 #include "../sleep/sdio_int.h"
 #include "../sleep/slp_mgr.h"
 #include "rdc_debug.h"
-#include "wcn_misc.h"
 #include "wcn_log.h"
 #include "mdbg_type.h"
 #include "wcn_glb_reg.h"
 #include "wcn_glb.h"
+
+u32 wcn_print_level = WCN_DEBUG_OFF;
 
 #ifdef CONFIG_WCN_SDIO
 #include "../sdio/sdiohal.h"
@@ -2061,8 +2062,6 @@ static int marlin_start_run(void)
 		WCN_ERR("%s write reset reg error:%d\n", __func__, ret);
 		return ret;
 	}
-	marlin_bootup_time_update();	/* update the time at once. */
-
 	ret = sprdwcn_bus_reg_read(CP_RESET_REG, &ss_val, 4);
 	if (ret < 0) {
 		WCN_ERR("%s read reset reg error:%d\n", __func__, ret);
@@ -3281,7 +3280,6 @@ int marlin_core_init(struct device *dev)
 		sdio_pub_int_init(marlin_dev->int_ap);
 #endif
 	log_dev_init();
-	mdbg_atcmd_owner_init();
 #endif
 
 	flag_reset = 0;
@@ -3340,7 +3338,6 @@ void marlin_core_remove(struct device *dev)
 	cancel_work_sync(&marlin_dev->download_wq);
 	cancel_work_sync(&marlin_dev->gnss_dl_wq);
 	cancel_delayed_work_sync(&marlin_dev->power_wq);
-	mdbg_atcmd_owner_deinit();
 	log_dev_exit();
 #ifdef CONFIG_WCN_SDIO
 	if (marlin_dev->int_ap > 0)
