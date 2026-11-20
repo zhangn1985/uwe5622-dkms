@@ -44,8 +44,6 @@ endif
 ifeq ($(CONFIG_WCN_SDIO),y)
 ccflags-y += -DCONFIG_WCN_SDIO
 ccflags-y += -DCONFIG_WCN_SLP
-ccflags-y += -DCONFIG_WCN_SWD
-export CONFIG_WCN_SWD = y
 endif
 ccflags-y += -DCONFIG_WCN_BOOT
 ccflags-y += -DCONFIG_WCN_UTILS
@@ -97,8 +95,6 @@ $(MODULE_NAME)-y += wcn_bus.o \
 			platform/wcn_log.o \
 			platform/wcn_misc.o \
 			platform/wcn_procfs.o
-
-$(MODULE_NAME)-$(CONFIG_WCN_SWD) += platform/wcn_swd_dp.o
 
 $(MODULE_NAME)-$(CONFIG_WCN_SDIO) += \
 			sdio/sdiohal_main.o \

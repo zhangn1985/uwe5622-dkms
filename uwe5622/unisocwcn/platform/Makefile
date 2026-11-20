@@ -1,7 +1,6 @@
 obj-$(CONFIG_WCN_BOOT) := marlin.o
 
 MARLINOFILES += wcn_boot.o
-marlin-$(CONFIG_WCN_SWD) += wcn_swd_dp.o
 MARLINOFILES += bufring.o
 MARLINOFILES += wcn_txrx.o
 MARLINOFILES += rf/rf.o
