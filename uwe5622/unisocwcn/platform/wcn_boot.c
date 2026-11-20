@@ -40,7 +40,6 @@
 #include "rf/rf.h"
 #include "../sleep/sdio_int.h"
 #include "../sleep/slp_mgr.h"
-#include "mem_pd_mgr.h"
 #include "rdc_debug.h"
 #include "wcn_dump.h"
 #include "wcn_misc.h"
@@ -81,17 +80,12 @@ static char GNSS_FIRMWARE_PATH[255];
 
 struct wcn_sync_info_t {
 	unsigned int init_status;
-	unsigned int mem_pd_bt_start_addr;
-	unsigned int mem_pd_bt_end_addr;
-	unsigned int mem_pd_wifi_start_addr;
-	unsigned int mem_pd_wifi_end_addr;
 	unsigned int prj_type;
 	unsigned int tsx_dac_data;
 	unsigned int sdio_config;
 	unsigned int dcache_status;
 	unsigned int dcache_start_addr;
 	unsigned int dcache_end_addr;
-	unsigned int mem_pd_status;
 	unsigned int mem_ap_cmd;
 	unsigned int rsvd[3];
 	unsigned int bind_verify_data[4];
@@ -2506,9 +2500,7 @@ static void pre_btwifi_download_sdio(struct work_struct *work)
 			sprdwcn_bus_set_carddump_status(true);
 			goto out;
 		}
-#ifdef CONFIG_MEM_PD
-		mem_pd_save_bin();
-#endif
+
 		sprdwcn_bus_runtime_get();
 
 #ifndef CONFIG_WCND
@@ -2618,9 +2610,7 @@ int chip_power_on(int subsys)
 	wifipa_enable(1);
 #ifndef CONFIG_WCN_PCIE
 	loopcheck_first_boot_set();
-#ifdef CONFIG_MEM_PD
-	mem_pd_poweroff_deinit();
-#endif
+
 #ifdef CONFIG_WCN_SDIO
 	if (marlin_dev->int_ap > 0)
 		sdio_pub_int_poweron(true);
@@ -2641,11 +2631,7 @@ int chip_power_off(int subsys)
 	chip_reset_release(0);
 	marlin_dev->wifi_need_download_ini_flag = 0;
 	marlin_dev->power_state = 0;
-#ifndef CONFIG_WCN_PCIE
-#ifdef CONFIG_MEM_PD
-	mem_pd_poweroff_deinit();
-#endif
-#endif
+
 	loopcheck_first_boot_clear();
 #ifdef CONFIG_WCN_SDIO
 	if (marlin_dev->int_ap > 0)
@@ -3044,9 +3030,6 @@ out:
 		sprdwcn_bus_runtime_put();
 		marlin_dev->download_finish_flag = 0;
 	}
-#ifdef CONFIG_MEM_PD
-	mem_pd_poweroff_deinit();
-#endif
 	if (chip_powered)
 		chip_power_off(subsys);
 	marlin_dev->power_state = 0;
@@ -3124,9 +3107,7 @@ int cali_ini_need_download(enum marlin_sub_sys subsys)
 {
 	unsigned int pd_wifi_st = 0;
 
-#ifdef CONFIG_MEM_PD
-	pd_wifi_st = mem_pd_wifi_state();
-#endif
+
 	if ((marlin_dev->wifi_need_download_ini_flag == 1) || pd_wifi_st) {
 		WCN_INFO("cali_ini_need_download return 1\n");
 		return 1;	/* the first */
@@ -3221,11 +3202,8 @@ int start_marlin(u32 subsys)
 	if (ret)
 		return ret;
 
-#ifdef CONFIG_MEM_PD
-	return mem_pd_mgr(subsys, true);
-#else
+
 	return 0;
-#endif
 #endif
 }
 EXPORT_SYMBOL_GPL(start_marlin);
@@ -3242,10 +3220,6 @@ int stop_marlin(u32 subsys)
 		WCN_ERR("%s loopcheck status is fail\n", __func__);
 		return -1;
 	}
-
-#ifdef CONFIG_MEM_PD
-	mem_pd_mgr(subsys, false);
-#endif
 
 	return marlin_set_power(subsys, false);
 #else
@@ -3338,9 +3312,6 @@ int marlin_core_init(struct device *dev)
 	if (marlin_dev->int_ap > 0)
 		sdio_pub_int_init(marlin_dev->int_ap);
 #endif
-#ifdef CONFIG_MEM_PD
-	mem_pd_init();
-#endif
 	proc_fs_init();
 	log_dev_init();
 	mdbg_atcmd_owner_init();
@@ -3408,9 +3379,6 @@ void marlin_core_remove(struct device *dev)
 #ifdef CONFIG_WCN_SDIO
 	if (marlin_dev->int_ap > 0)
 		sdio_pub_int_deinit();
-#endif
-#ifdef CONFIG_MEM_PD
-	mem_pd_exit();
 #endif
 	sprdwcn_bus_deinit();
 	if ((marlin_dev->power_state != 0) && (!marlin_dev->no_power_off)) {

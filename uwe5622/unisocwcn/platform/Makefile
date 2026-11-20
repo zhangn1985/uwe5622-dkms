@@ -10,7 +10,6 @@ MARLINOFILES += rdc_debug.o
 MARLINOFILES += wcn_log.o
 MARLINOFILES += wcn_misc.o
 MARLINOFILES += wcn_procfs.o
-marlin-$(CONFIG_MEM_PD) += mem_pd_mgr.o
 
 marlin-objs += $(MARLINOFILES)
 

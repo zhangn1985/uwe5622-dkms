@@ -26,17 +26,6 @@ config WCN_GNSS
 	In order to enable to download gnss fw, you will need to
 	support WCN_GNSS.
 
-config MEM_PD
-	bool "wcn mem power down support"
-	depends on SDIOHAL
-	default y
-	help
-	Choose Y here if you need to support mem_pd.
-	this is used for memory power down
-
-	In order to enable sdio memory power save function, you will need to
-	support memory power down.
-
 
 config WCN_PLATFORM
 	tristate "Platform Support"

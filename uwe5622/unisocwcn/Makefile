@@ -111,8 +111,7 @@ $(MODULE_NAME)-$(CONFIG_WCN_SDIO) += \
 			sleep/sdio_int.o \
 			sleep/slp_mgr.o \
 			sleep/slp_sdio.o \
-			sleep/slp_test.o \
-			platform/mem_pd_mgr.o
+			sleep/slp_test.o
 KDIR ?= $(ANDROID_PRODUCT_OUT)/obj/KERNEL_OBJ
 ARCH ?= arm
 CROSS_COMPILE ?= arm-histbv310-linux-

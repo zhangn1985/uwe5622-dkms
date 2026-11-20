@@ -2,7 +2,6 @@
 #define __UWE5621_GLB_H__
 
 #include "../sleep/slp_mgr.h"
-#include "mem_pd_mgr.h"
 #include "rdc_debug.h"
 
 /* log buf size */

@@ -685,14 +685,8 @@ static ssize_t mdbg_proc_write(struct file *filp,
 	if (x == 'U')
 		sprdwcn_bus_aon_writeb(0X1B0, 0X10);
 	if (x == 'T') {
-#ifdef CONFIG_MEM_PD
-		mem_pd_mgr(MARLIN_WIFI, 0X1);
-#endif
 	}
 	if (x == 'Q') {
-#ifdef CONFIG_MEM_PD
-		mem_pd_save_bin();
-#endif
 	}
 	if (x == 'N')
 		start_marlin(MARLIN_WIFI);
