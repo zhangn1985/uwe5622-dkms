@@ -61,7 +61,6 @@ struct mdbg_proc_t {
 	char *dir_name;
 	struct proc_dir_entry		*procdir;
 	struct mdbg_proc_entry		assert;
-	struct mdbg_proc_entry		loopcheck;
 	struct mdbg_proc_entry		at_cmd;
 	struct mdbg_proc_entry		snap_shoot;
 	struct mutex		mutex;
@@ -921,13 +920,6 @@ int proc_fs_init(void)
 						&mdbg_proc_fops,
 						&(mdbg_proc->assert));
 
-	mdbg_proc->loopcheck.name = "loopcheck";
-	mdbg_proc->loopcheck.entry = proc_create_data(mdbg_proc->loopcheck.name,
-						0600,
-						mdbg_proc->procdir,
-						&mdbg_proc_fops,
-						&(mdbg_proc->loopcheck));
-
 	mdbg_proc->at_cmd.name = "at_cmd";
 	mdbg_proc->at_cmd.entry = proc_create_data(mdbg_proc->at_cmd.name,
 						0600,
@@ -963,7 +955,6 @@ void proc_fs_exit(void)
 	mdbg_fs_channel_destroy();
 	remove_proc_entry(mdbg_proc->snap_shoot.name, mdbg_proc->procdir);
 	remove_proc_entry(mdbg_proc->assert.name, mdbg_proc->procdir);
-	remove_proc_entry(mdbg_proc->loopcheck.name, mdbg_proc->procdir);
 	remove_proc_entry(mdbg_proc->at_cmd.name, mdbg_proc->procdir);
 	remove_proc_entry(mdbg_proc->dir_name, NULL);
 
