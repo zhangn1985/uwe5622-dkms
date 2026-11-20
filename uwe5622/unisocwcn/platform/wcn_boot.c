@@ -220,7 +220,6 @@ struct marlin_device {
 	unsigned char bt_wl_wake_host_en;
 	unsigned int bt_wake_host_int_num;
 	unsigned int wl_wake_host_int_num;
-	int loopcheck_status_change;
 	struct wcn_sync_info_t sync_f;
 	struct tsx_cali tsxcali;
 	char *btwf_path;
@@ -254,7 +253,6 @@ static unsigned int marlin2_clk_wait_reg;
 /* for PMIC control */
 static struct regmap *reg_map;
 #endif
-
 #define IMG_HEAD_MAGIC "WCNM"
 #define IMG_HEAD_MAGIC_COMBINE "WCNE"
 
@@ -2608,8 +2606,6 @@ int chip_power_on(int subsys)
 	marlin_analog_power_enable(true);
 	wifipa_enable(1);
 #ifndef CONFIG_WCN_PCIE
-	loopcheck_first_boot_set();
-
 #ifdef CONFIG_WCN_SDIO
 	if (marlin_dev->int_ap > 0)
 		sdio_pub_int_poweron(true);
@@ -2630,8 +2626,6 @@ int chip_power_off(int subsys)
 	chip_reset_release(0);
 	marlin_dev->wifi_need_download_ini_flag = 0;
 	marlin_dev->power_state = 0;
-
-	loopcheck_first_boot_clear();
 #ifdef CONFIG_WCN_SDIO
 	if (marlin_dev->int_ap > 0)
 		sdio_pub_int_poweron(false);
@@ -2855,8 +2849,6 @@ static int marlin_set_power(int subsys, int val)
 		else if ((((marlin_dev->power_state) & AUTO_RUN_MASK) != 0)
 			|| (((marlin_dev->power_state) & GNSS_MASK) != 0)) {
 			WCN_INFO("GNSS and marlin have ready\n");
-			if (((marlin_dev->power_state) & MARLIN_MASK) == 0)
-				loopcheck_first_boot_set();
 			set_wifipa_status(subsys, val);
 			set_bit(subsys, &marlin_dev->power_state);
 
@@ -3061,18 +3053,6 @@ int marlin_get_power(enum marlin_sub_sys subsys)
 		return test_bit(subsys, &marlin_dev->power_state);
 }
 EXPORT_SYMBOL_GPL(marlin_get_power);
-
-int wcn_get_module_status_changed(void)
-{
-	return marlin_dev->loopcheck_status_change;
-}
-EXPORT_SYMBOL_GPL(wcn_get_module_status_changed);
-
-void wcn_set_module_status_changed(bool status)
-{
-	marlin_dev->loopcheck_status_change = status;
-}
-EXPORT_SYMBOL_GPL(wcn_set_module_status_changed);
 
 int marlin_get_module_status(void)
 {

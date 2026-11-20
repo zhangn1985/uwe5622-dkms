@@ -162,7 +162,6 @@ struct sprdwcn_bus_ops {
 
 	unsigned int (*get_carddump_status)(void);
 	void (*set_carddump_status)(unsigned int flag);
-	unsigned long long (*get_rx_total_cnt)(void);
 
 	/* for runtime */
 	int (*runtime_get)(void);
@@ -423,17 +422,6 @@ void sprdwcn_bus_set_carddump_status(unsigned int flag)
 		return;
 
 	bus_ops->set_carddump_status(flag);
-}
-
-static inline
-unsigned long long sprdwcn_bus_get_rx_total_cnt(void)
-{
-	struct sprdwcn_bus_ops *bus_ops = get_wcn_bus_ops();
-
-	if (!bus_ops || !bus_ops->get_rx_total_cnt)
-		return 0;
-
-	return bus_ops->get_rx_total_cnt();
 }
 
 static inline

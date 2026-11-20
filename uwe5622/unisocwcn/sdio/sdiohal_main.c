@@ -1072,13 +1072,6 @@ int sdiohal_aon_writeb(unsigned int addr, unsigned char val)
 	return err;
 }
 
-unsigned long long sdiohal_get_rx_total_cnt(void)
-{
-	struct sdiohal_data_t *p_data = sdiohal_get_data();
-
-	return p_data->rx_packer_cnt;
-}
-
 void sdiohal_set_carddump_status(unsigned int flag)
 {
 	struct sdiohal_data_t *p_data = sdiohal_get_data();

@@ -83,8 +83,7 @@ enum smp_diag_subtype_t {
 #define WCNBUS_RX 0
 enum wcnbus_channel_t {
 	WCN_AT_TX = 0,
-	WCN_LOOPCHECK_RX = 12,
-	WCN_AT_RX,
+	WCN_AT_RX = 13,
 	WCN_ASSERT_RX,
 	WCN_RING_RX,
 	/* TODO: The port num is temp,need to consult with cp */
@@ -95,7 +94,6 @@ enum wcnbus_channel_t {
 enum mdbg_channel_ops_t {
 	MDBG_AT_TX_OPS = 0,
 	MDBG_AT_RX_OPS,
-	MDBG_LOOPCHECK_RX_OPS,
 	MDBG_ASSERT_RX_OPS,
 	MDBG_RING_RX_OPS,
 	MDBG_ADSP_RING_RX_OPS,
@@ -104,9 +102,8 @@ enum mdbg_channel_ops_t {
 
 enum {
 	MDBG_SUBTYPE_RING = 0,
-	MDBG_SUBTYPE_LOOPCHECK,
-	MDBG_SUBTYPE_AT,
-	MDBG_SUBTYPE_ASSERT,
+	MDBG_SUBTYPE_AT = 2,
+	MDBG_SUBTYPE_ASSERT = 3,
 };
 
 extern struct mchn_ops_t mdbg_proc_ops[MDBG_ASSERT_RX_OPS + 1];
@@ -116,6 +113,5 @@ void mdbg_ring_remove(void);
 long mdbg_send(char *buf, long len, unsigned int subtype);
 int mdbg_tx_cb(int channel, struct mbuf_t *head,
 	       struct mbuf_t *tail, int num);
-bool mdbg_rx_count_change(void);
 
 #endif

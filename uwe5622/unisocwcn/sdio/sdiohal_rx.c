@@ -103,7 +103,6 @@ static int sdiohal_rx_list_parser(struct sdiohal_list_t *data_list,
 						puh->len);
 				continue;
 			}
-			p_data->rx_packer_cnt++;
 			mbuf_node->len = MAX_MBUF_SIZE;
 			sdiohal_data_list_assignment(mbuf_node, puh, channel);
 		} else {
@@ -151,8 +150,6 @@ static int sdiohal_rx_buf_parser(char *data_buf, int valid_len)
 						puh->len);
 				continue;
 			}
-			p_data->rx_packer_cnt++;
-
 			data_list = sdiohal_get_rx_mbuf_node(1);
 			if (!data_list)
 				return -ENOMEM;

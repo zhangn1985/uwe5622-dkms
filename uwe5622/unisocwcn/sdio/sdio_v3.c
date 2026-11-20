@@ -84,11 +84,6 @@ static void sdio_set_carddump_status(unsigned int flag)
 	return sdiohal_set_carddump_status(flag);
 }
 
-static unsigned long long sdio_get_rx_total_cnt(void)
-{
-	return sdiohal_get_rx_total_cnt();
-}
-
 static int sdio_runtime_get(void)
 {
 	return sdiohal_runtime_get();
@@ -143,7 +138,6 @@ static struct sprdwcn_bus_ops sdiohal_bus_ops = {
 
 	.get_carddump_status = sdio_get_carddump_status,
 	.set_carddump_status = sdio_set_carddump_status,
-	.get_rx_total_cnt = sdio_get_rx_total_cnt,
 
 	.runtime_get = sdio_runtime_get,
 	.runtime_put = sdio_runtime_put,

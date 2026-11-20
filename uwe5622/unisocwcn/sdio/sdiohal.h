@@ -363,7 +363,6 @@ struct sdiohal_data_t {
 
 	unsigned int dtbs;
 	unsigned int remain_pac_num;
-	unsigned long long rx_packer_cnt;
 	char *dtbs_buf;
 
 	/* for performance statics */
@@ -512,9 +511,6 @@ void sdiohal_dump_aon_reg(void);
 /* for dumpmem */
 unsigned int sdiohal_get_carddump_status(void);
 void sdiohal_set_carddump_status(unsigned int flag);
-
-/* for loopcheck */
-unsigned long long sdiohal_get_rx_total_cnt(void);
 
 /* for power on/off */
 int sdiohal_runtime_get(void);

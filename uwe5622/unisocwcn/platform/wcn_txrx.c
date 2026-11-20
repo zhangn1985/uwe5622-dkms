@@ -23,8 +23,6 @@ int mdbg_log_push(int chn, struct mbuf_t **head,
 #endif
 
 static struct ring_device *ring_dev;
-static unsigned long long rx_count;
-static unsigned long long rx_count_last;
 
 #ifdef CONFIG_WCN_PCIE
 static struct mchn_ops_t mdbg_ringc_ops = {
@@ -54,23 +52,6 @@ int mdbg_log_push(int chn, struct mbuf_t **head, struct mbuf_t **tail, int *num)
 	return 0;
 }
 #endif
-
-bool mdbg_rx_count_change(void)
-{
-	rx_count = sprdwcn_bus_get_rx_total_cnt();
-
-	WCN_INFO("rx_count:0x%llx rx_count_last:0x%llx\n",
-		rx_count, rx_count_last);
-
-	if ((rx_count == 0) && (rx_count_last == 0)) {
-		return true;
-	} else if (rx_count != rx_count_last) {
-		rx_count_last = rx_count;
-		return true;
-	} else {
-		return false;
-	}
-}
 
 static long mdbg_comm_write(char *buf,
 				long len, unsigned int subtype)

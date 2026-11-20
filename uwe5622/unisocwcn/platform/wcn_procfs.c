@@ -44,7 +44,6 @@
 u32 wcn_print_level = WCN_DEBUG_OFF;
 
 static u32 g_dumpmem_switch =  1;
-static u32 g_loopcheck_switch;
 #ifdef CONFIG_WCN_PCIE
 struct wcn_pcie_info *pcie_dev;
 #endif
@@ -68,7 +67,6 @@ struct mdbg_proc_t {
 	struct mutex		mutex;
 	char write_buf[MDBG_WRITE_SIZE];
 	int fail_count;
-	bool first_boot;
 };
 
 static struct mdbg_proc_t *mdbg_proc;
@@ -165,33 +163,6 @@ int mdbg_assert_read(int channel, struct mbuf_t *head,
 }
 EXPORT_SYMBOL_GPL(mdbg_assert_read);
 
-int mdbg_loopcheck_read(int channel, struct mbuf_t *head,
-			struct mbuf_t *tail, int num)
-{
-	unsigned int data_length;
-
-	data_length = mdbg_mbuf_get_datalength(head);
-	if (data_length > MDBG_LOOPCHECK_SIZE) {
-		WCN_ERR("The loopcheck data len:%d,beyond max read:%d",
-			data_length, MDBG_LOOPCHECK_SIZE);
-		sprdwcn_bus_push_list(channel, head, tail, num);
-		return -1;
-	}
-
-	memset(mdbg_proc->loopcheck.buf, 0, MDBG_LOOPCHECK_SIZE);
-	memcpy(mdbg_proc->loopcheck.buf, head->buf + PUB_HEAD_RSV, data_length);
-	mdbg_proc->loopcheck.rcv_len = data_length;
-
-	WCN_DEBUG("mdbg_loopcheck_read:%s\n",
-		  (char *)(mdbg_proc->loopcheck.buf));
-	mdbg_proc->fail_count = 0;
-	complete(&mdbg_proc->loopcheck.completed);
-	sprdwcn_bus_push_list(channel, head, tail, num);
-
-	return 0;
-}
-EXPORT_SYMBOL_GPL(mdbg_loopcheck_read);
-
 int mdbg_at_cmd_read(int channel, struct mbuf_t *head,
 		     struct mbuf_t *tail, int num)
 {
@@ -278,17 +249,6 @@ int prepare_free_buf(int chn, int size, int num)
 	}
 
 	ret = sprdwcn_bus_push_list(chn, head, tail, num);
-
-	return ret;
-}
-
-static int loopcheck_prepare_buf(int chn, struct mbuf_t **head,
-				 struct mbuf_t **tail, int *num)
-{
-	int ret;
-
-	WCN_INFO("%s: chn=%d, num=%d\n", __func__, chn, *num);
-	ret = sprdwcn_bus_list_alloc(chn, head, tail, num);
 
 	return ret;
 }
@@ -462,82 +422,6 @@ static ssize_t mdbg_proc_read(struct file *filp,
 		len = mdbg_proc->assert.rcv_len;
 		mdbg_proc->assert.rcv_len = 0;
 		memset(mdbg_proc->assert.buf, 0, MDBG_ASSERT_SIZE);
-	}
-
-	if (strcmp(type, "loopcheck") == 0) {
-		if (unlikely(g_loopcheck_switch != 0)) {
-			if (marlin_get_module_status() == 1) {
-				WCN_INFO("fake loopcheck\n");
-				if (copy_to_user((void __user *)buf,
-							"loopcheck_ack", 13))
-					WCN_ERR("fake loopcheck reply error\n");
-				len = 13;
-			} else {
-				if (copy_to_user((void __user *)buf,
-							"poweroff", 8))
-					WCN_ERR("read loopcheck error\n");
-				len = 8;
-				WCN_INFO("loopcheck poweroff\n");
-			}
-			return len;
-		}
-
-		if (!marlin_get_module_status())
-			goto loopcheck_out;
-		if (timeout < 0) {
-			while (1) {
-				ret = wait_for_completion_timeout(
-						&mdbg_proc->loopcheck.completed,
-						msecs_to_jiffies(1000));
-				if (ret != -ERESTARTSYS)
-					break;
-			}
-		}
-		if (marlin_get_module_status() == 1) {
-			if (mdbg_proc->first_boot) {
-				if (copy_to_user((void __user *)buf,
-					"loopcheck_ack", 13))
-					WCN_ERR("loopcheck first error\n");
-				loopcheck_first_boot_clear();
-				WCN_INFO("CP power on first time\n");
-				len = 13;
-			} else
-			if (mdbg_rx_count_change()) {
-			/* fix the error(ack slow),use rx count to verify CP */
-				WCN_INFO("CP run well with rx_cnt change\n");
-				if (copy_to_user((void __user *)buf,
-							"loopcheck_ack", 13))
-					WCN_ERR("loopcheck rx count error\n");
-				len = 13;
-			} else {
-				if (copy_to_user((void __user *)buf,
-					mdbg_proc->loopcheck.buf, min(count,
-						(size_t)MDBG_LOOPCHECK_SIZE)))
-					WCN_ERR("loopcheck cp ack error\n");
-				len = mdbg_proc->loopcheck.rcv_len;
-				/*
-				 * LP: ERROR!
-				 * WORK-AROUND for old CP2 project which
-				 * one already released to customer and can't
-				 * change code.
-				 */
-				if ((strncmp(mdbg_proc->loopcheck.buf,
-					"loopcheck_ack", 13) != 0) &&
-					(strncmp(mdbg_proc->loopcheck.buf,
-					"LP: ERROR!", 10) != 0))
-					mdbg_proc->fail_count++;
-				WCN_INFO("loopcheck status:%d\n",
-					mdbg_proc->fail_count);
-			}
-		} else {
-loopcheck_out:
-			if (copy_to_user((void __user *)buf, "poweroff", 8))
-				WCN_ERR("Read loopcheck poweroff error\n");
-			len = 8;
-			WCN_INFO("mdbg loopcheck poweroff\n");
-		}
-		memset(mdbg_proc->loopcheck.buf, 0, MDBG_LOOPCHECK_SIZE);
-		mdbg_proc->loopcheck.rcv_len = 0;
 	}
 
 	if (strcmp(type, "at_cmd") == 0) {
@@ -733,21 +617,6 @@ static ssize_t mdbg_proc_write(struct file *filp,
 				g_dumpmem_switch);
 		return count;
 	}
-	if (strncmp(mdbg_proc->write_buf, "debugloopcheckon",
-		strlen("debugloopcheckon")) == 0) {
-		g_loopcheck_switch = 1;
-		WCN_INFO("loopcheck debug:switch(%d)\n",
-				g_loopcheck_switch);
-		return count;
-	}
-	if (strncmp(mdbg_proc->write_buf, "debugloopcheckoff",
-		strlen("debugloopcheckoff")) == 0) {
-		g_loopcheck_switch = 0;
-		WCN_INFO("loopcheck debug:switch(%d)\n",
-				g_loopcheck_switch);
-		return count;
-	}
-
 #ifdef CONFIG_SC2342_INTEG
 	if (strncmp(mdbg_proc->write_buf, "dumpmem", 7) == 0) {
 		if (g_dumpmem_switch == 0)
@@ -901,16 +770,6 @@ static unsigned int mdbg_proc_poll(struct file *filp, poll_table *wait)
 			mask |= POLLIN | POLLRDNORM;
 	}
 
-	if (strcmp(type, "loopcheck") == 0) {
-		poll_wait(filp, &mdbg_proc->loopcheck.rxwait, wait);
-		MDBG_LOG("loopcheck:power_state_changed:%d\n",
-					wcn_get_module_status_changed());
-		if (wcn_get_module_status_changed()) {
-			wcn_set_module_status_changed(false);
-			mask |= POLLIN | POLLRDNORM;
-		}
-	}
-
 	return mask;
 }
 
@@ -938,22 +797,15 @@ int mdbg_memory_alloc(void)
 	if (!mdbg_proc->assert.buf)
 		return -ENOMEM;
 
-	mdbg_proc->loopcheck.buf =  kzalloc(MDBG_LOOPCHECK_SIZE, GFP_KERNEL);
-	if (!mdbg_proc->loopcheck.buf) {
-		kfree(mdbg_proc->assert.buf);
-		return -ENOMEM;
-	}
 	mdbg_proc->at_cmd.buf =  kzalloc(MDBG_AT_CMD_SIZE, GFP_KERNEL);
 	if (!mdbg_proc->at_cmd.buf) {
 		kfree(mdbg_proc->assert.buf);
-		kfree(mdbg_proc->loopcheck.buf);
 		return -ENOMEM;
 	}
 
 	mdbg_proc->snap_shoot.buf =  kzalloc(MDBG_SNAP_SHOOT_SIZE, GFP_KERNEL);
 	if (!mdbg_proc->snap_shoot.buf) {
 		kfree(mdbg_proc->assert.buf);
-		kfree(mdbg_proc->loopcheck.buf);
 		kfree(mdbg_proc->at_cmd.buf);
 		return -ENOMEM;
 	}
@@ -975,15 +827,6 @@ struct mchn_ops_t mdbg_proc_ops[MDBG_ASSERT_RX_OPS + 1] = {
 		.cb_in_irq = 1,
 		.pop_link = mdbg_tx_cb,
 		.tx_complete = mdbg_tx_comptele_cb,
-	},
-	{
-		.channel = WCN_LOOPCHECK_RX,
-		.inout = WCNBUS_RX,
-		.pool_size = 5,
-		.hif_type = 1,
-		.cb_in_irq = 1,
-		.pop_link = mdbg_loopcheck_read,
-		.push_link = loopcheck_prepare_buf,
 	},
 	{
 		.channel = WCN_AT_RX,
@@ -1011,12 +854,6 @@ struct mchn_ops_t mdbg_proc_ops[MDBG_ASSERT_RX_OPS + 1] = {
 		.inout = WCNBUS_TX,
 		.pool_size = 5,
 		.pop_link = mdbg_tx_cb,
-	},
-	{
-		.channel = WCN_LOOPCHECK_RX,
-		.inout = WCNBUS_RX,
-		.pool_size = 1,
-		.pop_link = mdbg_loopcheck_read,
 	},
 	{
 		.channel = WCN_AT_RX,
@@ -1064,9 +901,6 @@ static  void mdbg_memory_free(void)
 	kfree(mdbg_proc->assert.buf);
 	mdbg_proc->assert.buf = NULL;
 
-	kfree(mdbg_proc->loopcheck.buf);
-	mdbg_proc->loopcheck.buf = NULL;
-
 	kfree(mdbg_proc->at_cmd.buf);
 	mdbg_proc->at_cmd.buf = NULL;
 }
@@ -1112,10 +946,8 @@ int proc_fs_init(void)
 	mdbg_fs_channel_init();
 
 	init_completion(&mdbg_proc->assert.completed);
-	init_completion(&mdbg_proc->loopcheck.completed);
 	init_completion(&mdbg_proc->at_cmd.completed);
 	init_waitqueue_head(&mdbg_proc->assert.rxwait);
-	init_waitqueue_head(&mdbg_proc->loopcheck.rxwait);
 	mutex_init(&mdbg_proc->mutex);
 
 	if (mdbg_memory_alloc() < 0)
@@ -1142,19 +974,4 @@ void proc_fs_exit(void)
 int get_loopcheck_status(void)
 {
 	return mdbg_proc->fail_count;
-}
-
-void wakeup_loopcheck_int(void)
-{
-	wake_up_interruptible(&mdbg_proc->loopcheck.rxwait);
-}
-
-void loopcheck_first_boot_clear(void)
-{
-	mdbg_proc->first_boot = false;
-}
-
-void loopcheck_first_boot_set(void)
-{
-	mdbg_proc->first_boot = true;
 }
