@@ -158,11 +158,7 @@ static void mdbg_ring_rx_task(struct work_struct *work)
 		puh = (struct bus_puh_t *)mbuf_node->buf;
 #ifdef CONFIG_WCND
 		mdbg_ring_write(ring, rx->addr, puh->len);
-#else
-		log_rx_callback(rx->addr, puh->len);
 #endif
-#else
-		log_rx_callback(mbuf_node->buf, mbuf_node->len);
 #endif
 	}
 	sprdwcn_bus_push_list(mdbg_ringc_ops.channel,

@@ -33,10 +33,4 @@ enum {
 };
 
 extern char functionmask[8];
-int log_rx_callback(void *addr, unsigned int len);
-int dumpmem_rx_callback(void *addr, unsigned int len);
-int wcn_set_log_file_limit_size(unsigned int log_file_limit_size);
-int wcn_set_log_file_max_num(unsigned int log_file_max_num);
-int wcn_set_log_file_cover_old(unsigned int is_cover_old);
-int wcn_set_log_file_path(char *path, unsigned int path_len);
 #endif

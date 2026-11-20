@@ -719,59 +719,6 @@ static ssize_t mdbg_proc_write(struct file *filp,
 		return count;
 	}
 
-
-	/* unit of loglimitsize is MByte. */
-	if (strncmp(mdbg_proc->write_buf, "loglimitsize=",
-		strlen("loglimitsize=")) == 0) {
-		long log_limit_size;
-
-		ret = kstrtol(&mdbg_proc->write_buf[strlen("loglimitsize=")],
-			10, &log_limit_size);
-		if (wcn_set_log_file_limit_size(log_limit_size))
-			return -EIO;
-
-		return count;
-	}
-
-	if (strncmp(mdbg_proc->write_buf, "logmaxnum=",
-		strlen("logmaxnum=")) == 0) {
-		long log_file_max_num;
-
-		ret = kstrtol(&mdbg_proc->write_buf[strlen("logmaxnum=")],
-			10, &log_file_max_num);
-		if (wcn_set_log_file_max_num(log_file_max_num))
-			return -EIO;
-
-		return count;
-	}
-
-	if (strncmp(mdbg_proc->write_buf, "logcoverold=",
-		strlen("logcoverold=")) == 0) {
-		long cover_old_flag;
-
-		ret = kstrtol(&mdbg_proc->write_buf[strlen("logcoverold=")],
-			10, &cover_old_flag);
-		if (wcn_set_log_file_cover_old(cover_old_flag))
-			return -EIO;
-
-		return count;
-	}
-
-	if (strncmp(mdbg_proc->write_buf, "logpath=",
-		strlen("logpath=")) == 0) {
-		unsigned int path_len = count - strlen("logpath=") - 1;
-
-		if (strstr(mdbg_proc->write_buf, "\r"))
-			path_len--;
-		if (wcn_set_log_file_path(mdbg_proc->write_buf + 8,
-			path_len)) {
-			WCN_ERR("%s change path failed\n", __func__);
-			return -EIO;
-		}
-
-		return count;
-	}
-
 	if (strncmp(mdbg_proc->write_buf, "disabledumpmem",
 		strlen("disabledumpmem")) == 0) {
 		g_dumpmem_switch = 0;

@@ -4,7 +4,6 @@ MARLINOFILES += wcn_boot.o
 MARLINOFILES += bufring.o
 MARLINOFILES += wcn_txrx.o
 MARLINOFILES += rf/rf.o
-MARLINOFILES += rdc_debug.o
 MARLINOFILES += wcn_log.o
 MARLINOFILES += wcn_misc.o
 MARLINOFILES += wcn_procfs.o
@@ -16,7 +15,6 @@ obj-$(CONFIG_WCN_PLATFORM) := wcn_platform.o
 
 wcn_platform-c-objs +=  wcn_procfs.o \
 			wcn_txrx.o \
-			rdc_debug.o \
 			wcn_log.o \
 			wcn_misc.o \
 			rf/rf.o \

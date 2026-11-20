@@ -27,15 +27,6 @@ MODULE_NAME := $(BSP_CHIP_ID)_bsp_$(WCN_HW_TYPE)
 ifneq ($(UNISOC_FW_PATH_CONFIG),)
 ccflags-y += -DCONFIG_CUSTOMIZE_UNISOC_FW_PATH=\"$(UNISOC_FW_PATH_CONFIG)\"
 endif
-ifneq ($(UNISOC_DBG_FILESIZE_CONFIG),)
-ccflags-y += -DCONFIG_CUSTOMIZE_UNISOC_DBG_FILESIZE=$(UNISOC_DBG_FILESIZE_CONFIG)
-endif
-ifneq ($(UNISOC_DBG_FILENUM_CONFIG),)
-ccflags-y += -DCONFIG_CUSTOMIZE_UNISOC_DBG_FILENUM=$(UNISOC_DBG_FILENUM_CONFIG)
-endif
-ifneq ($(UNISOC_DBG_PATH_CONFIG),)
-ccflags-y += -DCONFIG_CUSTOMIZE_UNISOC_DBG_PATH=\"$(UNISOC_DBG_PATH_CONFIG)\"
-endif
 ifneq ($(UNISOC_SDIO_IRQ_TYPE_CONFIG),)
 ccflags-y += -DCONFIG_CUSTOMIZE_SDIO_IRQ_TYPE=$(UNISOC_SDIO_IRQ_TYPE_CONFIG)
 endif
@@ -91,7 +82,6 @@ $(MODULE_NAME)-y += wcn_bus.o \
 			platform/wcn_boot.o \
 			platform/bufring.o \
 			platform/wcn_txrx.o \
-			platform/rdc_debug.o \
 			platform/wcn_log.o \
 			platform/wcn_misc.o \
 			platform/wcn_procfs.o
