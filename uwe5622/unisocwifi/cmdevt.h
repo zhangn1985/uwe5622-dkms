@@ -1121,7 +1121,6 @@ sprdwl_msg_buf *sprdwl_cmd_getbuf_atomic(struct sprdwl_priv *priv,
 int sprdwl_send_data2cmd(struct sprdwl_priv *priv, u8 vif_ctx_id,
 		void *data, u16 len);
 
-void mdbg_assert_interface(char *str);
 void sprdwl_set_tlv_elmt(u8 *addr, u16 type, u16 len, u8 *data);
 int sprdwl_set_wowlan(struct sprdwl_priv *priv, int subcmd, void *pad, int pad_len);
 #ifdef SYNC_DISCONNECT

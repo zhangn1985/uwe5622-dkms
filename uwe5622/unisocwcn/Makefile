@@ -83,8 +83,7 @@ $(MODULE_NAME)-y += wcn_bus.o \
 			platform/bufring.o \
 			platform/wcn_txrx.o \
 			platform/wcn_log.o \
-			platform/wcn_misc.o \
-			platform/wcn_procfs.o
+			platform/wcn_misc.o
 
 $(MODULE_NAME)-$(CONFIG_WCN_SDIO) += \
 			sdio/sdiohal_main.o \

@@ -24,9 +24,10 @@
 #endif
 
 #include "wcn_misc.h"
-#include "wcn_procfs.h"
 #include "wcn_txrx.h"
 #include "mdbg_type.h"
+
+u32 wcn_print_level = WCN_DEBUG_OFF;
 
 static struct atcmd_fifo s_atcmd_owner;
 static unsigned long s_marlin_bootup_time;
@@ -71,35 +72,6 @@ void mdbg_atcmd_clean(void)
 	mutex_unlock(&s_atcmd_owner.lock);
 }
 
-/*
- * Until now, CP2 response every AT CMD to AP side
- * without owner-id.AP side transfer every ATCMD
- * response info to WCND.If AP send AT CMD on kernel layer,
- * and the response info transfer to WCND,
- * WCND deal other owner's response CMD.
- * We'll not modify CP2 codes because some
- * products already released to customer.
- * We will save all of the owner-id to the atcmd fifo.
- * and dispatch the response ATCMD info to the matched owner.
- * We'd better send all of the ATCMD with this function
- * or caused WCND error
- */
-long mdbg_send_atcmd(char *buf, long len, enum atcmd_owner owner)
-{
-	long sent_size = 0;
-
-	mdbg_atcmd_owner_add(owner);
-
-	/* confirm write finish */
-	mutex_lock(&s_atcmd_owner.lock);
-	sent_size = mdbg_send(buf, len, MDBG_SUBTYPE_AT);
-	mutex_unlock(&s_atcmd_owner.lock);
-
-	WCN_DEBUG("%s, owner=%d\n", buf, owner);
-
-	return sent_size;
-}
-
 /* copy from function: kdb_gmtime */
 static void wcn_gmtime(struct timespec64 *tv, struct wcn_tm *tm)
 {
@@ -126,41 +98,6 @@ static void wcn_gmtime(struct timespec64 *tv, struct wcn_tm *tm)
 		}
 	}
 	++tm->tm_mday;
-}
-
-/* AP notify BTWF time by at+aptime=... cmd */
-long wcn_ap_notify_btwf_time(void)
-{
-#if KERNEL_VERSION(4, 20, 0) <= LINUX_VERSION_CODE
-	struct timespec64 now;
-#else
-	struct timespec now;
-#endif
-	struct wcn_tm tm;
-	char aptime[64];
-	long send_cnt = 0;
-
-	/* get ap kernel time and transfer to China-BeiJing Time */
-#if KERNEL_VERSION(4, 20, 0) <= LINUX_VERSION_CODE
-	ktime_get_real_ts64(&now);
-#else
-	now = current_kernel_time();
-#endif
-	wcn_gmtime(&now, &tm);
-	tm.tm_hour = (tm.tm_hour + WCN_BTWF_TIME_OFFSET) % 24;
-
-	/* save time with string: month,day,hour,min,sec,mili-sec */
-	memset(aptime, 0, 64);
-	sprintf(aptime, "at+aptime=%d,%d,%d,%d,%d,%d\r",
-		tm.tm_mon+1, tm.tm_mday,
-		tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_msec);
-
-	/* send to BTWF CP2 */
-	send_cnt = mdbg_send_atcmd((void *)aptime, strlen(aptime),
-		   WCN_ATCMD_KERNEL);
-	WCN_INFO("%s, send_cnt=%ld", aptime, send_cnt);
-
-	return send_cnt;
 }
 
 /*

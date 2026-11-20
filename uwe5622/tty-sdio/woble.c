@@ -124,7 +124,6 @@ int hci_cmd_send_sync(unsigned short opcode, struct HC_BT_HDR *py,
 
 	if (down_timeout(&hci_cmd.wait, msecs_to_jiffies(CMD_TIMEOUT))) {
 		pr_err("%s CMD_TIMEOUT for CMD: 0x%04X", __func__, opcode);
-		mdbg_assert_interface("hci cmd timeout");
 	}
 	hci_cmd.opcode = 0;
 

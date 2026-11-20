@@ -43,7 +43,6 @@
 #include "rdc_debug.h"
 #include "wcn_misc.h"
 #include "wcn_log.h"
-#include "wcn_procfs.h"
 #include "mdbg_type.h"
 #include "wcn_glb_reg.h"
 #include "wcn_glb.h"
@@ -3163,11 +3162,6 @@ int start_marlin(u32 subsys)
 		return -1;
 	}
 
-	if (get_loopcheck_status()) {
-		WCN_ERR("%s loopcheck status is fail\n", __func__);
-		return -1;
-	}
-
 	if (subsys == MARLIN_WIFI) {
 		/* not need write cali */
 		if (marlin_dev->wifi_need_download_ini_flag == 0)
@@ -3192,11 +3186,6 @@ int stop_marlin(u32 subsys)
 #ifndef CONFIG_WCN_PCIE
 	if (sprdwcn_bus_get_carddump_status() != 0) {
 		WCN_ERR("%s SDIO card dump\n", __func__);
-		return -1;
-	}
-
-	if (get_loopcheck_status()) {
-		WCN_ERR("%s loopcheck status is fail\n", __func__);
 		return -1;
 	}
 
@@ -3291,7 +3280,6 @@ int marlin_core_init(struct device *dev)
 	if (marlin_dev->int_ap > 0)
 		sdio_pub_int_init(marlin_dev->int_ap);
 #endif
-	proc_fs_init();
 	log_dev_init();
 	mdbg_atcmd_owner_init();
 #endif
@@ -3354,7 +3342,6 @@ void marlin_core_remove(struct device *dev)
 	cancel_delayed_work_sync(&marlin_dev->power_wq);
 	mdbg_atcmd_owner_deinit();
 	log_dev_exit();
-	proc_fs_exit();
 #ifdef CONFIG_WCN_SDIO
 	if (marlin_dev->int_ap > 0)
 		sdio_pub_int_deinit();

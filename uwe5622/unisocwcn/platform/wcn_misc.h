@@ -55,11 +55,8 @@ struct wcn_tm {
 
 void mdbg_atcmd_owner_init(void);
 void mdbg_atcmd_owner_deinit(void);
-long mdbg_send_atcmd(char *buf, long len, enum atcmd_owner owner);
 enum atcmd_owner mdbg_atcmd_owner_peek(void);
 void mdbg_atcmd_clean(void);
-/* AP notify BTWF time by at+aptime=... cmd */
-long wcn_ap_notify_btwf_time(void);
 /*
  * Only marlin poweron, CP2 CPU tick starts to run,
  * It can call this function.

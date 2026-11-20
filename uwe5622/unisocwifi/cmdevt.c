@@ -545,7 +545,6 @@ static int sprdwl_atcmd_assert(struct sprdwl_priv *priv, u8 vif_ctx_id, u8 cmd_i
 
 		buf[idx] = '\0';
 
-		mdbg_assert_interface(buf);
 		sprdwl_net_flowcontrl(priv, SPRDWL_MODE_NONE, false);
 		intf->exit = 1;
 

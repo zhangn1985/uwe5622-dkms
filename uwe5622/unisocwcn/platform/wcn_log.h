@@ -14,7 +14,6 @@ extern struct mdbg_device_t	*mdbg_dev;
 extern unsigned char flag_reset;
 extern struct completion ge2_completion;
 
-int get_loopcheck_status(void);
 void marlin_hold_cpu(void);
 void wcnlog_clear_log(void);
 

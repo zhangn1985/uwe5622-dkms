@@ -13,7 +13,6 @@
 
 #include "bufring.h"
 #include "wcn_glb.h"
-#include "wcn_procfs.h"
 
 int mdbg_log_read(int channel, struct mbuf_t *head,
 		  struct mbuf_t *tail, int num);
@@ -52,55 +51,6 @@ int mdbg_log_push(int chn, struct mbuf_t **head, struct mbuf_t **tail, int *num)
 	return 0;
 }
 #endif
-
-static long mdbg_comm_write(char *buf,
-				long len, unsigned int subtype)
-{
-	unsigned char *send_buf = NULL;
-	char *str = NULL;
-	struct mbuf_t *head, *tail;
-	int num = 1;
-
-	if (unlikely(marlin_get_module_status() != true)) {
-		WCN_ERR("WCN module have not open\n");
-		return -EIO;
-	}
-	send_buf = kzalloc(len + PUB_HEAD_RSV + 1, GFP_KERNEL);
-	if (!send_buf)
-		return -ENOMEM;
-	memcpy(send_buf + PUB_HEAD_RSV, buf, len);
-
-	str = strstr(send_buf + PUB_HEAD_RSV, SMP_HEAD_STR);
-	if (!str)
-		str = strstr(send_buf + PUB_HEAD_RSV + ARMLOG_HEAD,
-				 SMP_HEAD_STR);
-
-	if (str) {
-		int ret;
-
-		/* for arm log to pc */
-		WCN_INFO("smp len:%ld,str:%s\n", len, str);
-		str[sizeof(SMP_HEAD_STR)] = 0;
-		ret = kstrtol(&str[sizeof(SMP_HEAD_STR) - 1], 10,
-							&ring_dev->flag_smp);
-		WCN_INFO("smp ret:%d, flag_smp:%ld\n", ret,
-			 ring_dev->flag_smp);
-		kfree(send_buf);
-	} else {
-		if (!sprdwcn_bus_list_alloc(
-				mdbg_proc_ops[MDBG_AT_TX_OPS].channel,
-				&head, &tail, &num)) {
-			head->buf = send_buf;
-			head->len = len;
-			head->next = NULL;
-			sprdwcn_bus_push_list(
-				mdbg_proc_ops[MDBG_AT_TX_OPS].channel,
-				head, tail, num);
-		}
-	}
-
-	return len;
-}
 
 static void mdbg_ring_rx_task(struct work_struct *work)
 {
@@ -175,45 +125,9 @@ int mdbg_log_read(int channel, struct mbuf_t *head,
 	return 0;
 }
 
-long mdbg_send(char *buf, long len, unsigned int subtype)
-{
-	long sent_size = 0;
-
-	WCN_DEBUG("BYTE MODE");
-
-	__pm_stay_awake(ring_dev->rw_wake_lock);
-	sent_size = mdbg_comm_write(buf, len, subtype);
-	__pm_relax(ring_dev->rw_wake_lock);
-
-	return sent_size;
-}
-EXPORT_SYMBOL_GPL(mdbg_send);
-
-int mdbg_tx_cb(int channel, struct mbuf_t *head,
-		   struct mbuf_t *tail, int num)
-{
-#ifndef CONFIG_WCN_PCIE
-	struct mbuf_t *mbuf_node;
-	int i;
-
-	mbuf_node = head;
-	for (i = 0; i < num; i++, mbuf_node = mbuf_node->next) {
-		kfree(mbuf_node->buf);
-		mbuf_node->buf = NULL;
-	}
-#endif
-	/* PCIe buf is witebuf[], not kmalloc, no need to free */
-	sprdwcn_bus_list_free(channel, head, tail, num);
-
-	return 0;
-}
-
 static void mdbg_pt_ring_reg(void)
 {
 	sprdwcn_bus_chn_init(&mdbg_ringc_ops);
-#ifdef CONFIG_WCN_PCIE
-	prepare_free_buf(15, 1056, 6);
-#endif
 }
 
 static void mdbg_pt_ring_unreg(void)

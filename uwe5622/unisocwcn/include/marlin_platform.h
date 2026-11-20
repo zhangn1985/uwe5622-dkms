@@ -121,7 +121,6 @@ int is_first_power_on(enum marlin_sub_sys subsys);
 int cali_ini_need_download(enum marlin_sub_sys subsys);
 void marlin_wifi_ini_failed(void);
 const char *strno(int subsys);
-void mdbg_assert_interface(char *str);
 int marlin_reset_callback_register(u32 subsys, struct notifier_block *nb);
 void marlin_reset_callback_unregister(u32 subsys, struct notifier_block *nb);
 int marlin_reset_notify_call(enum marlin_cp2_status sts);

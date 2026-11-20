@@ -6,15 +6,13 @@ MARLINOFILES += wcn_txrx.o
 MARLINOFILES += rf/rf.o
 MARLINOFILES += wcn_log.o
 MARLINOFILES += wcn_misc.o
-MARLINOFILES += wcn_procfs.o
 
 marlin-objs += $(MARLINOFILES)
 
 #WCN_PLATFORM
 obj-$(CONFIG_WCN_PLATFORM) := wcn_platform.o
 
-wcn_platform-c-objs +=  wcn_procfs.o \
-			wcn_txrx.o \
+wcn_platform-c-objs +=  wcn_txrx.o \
 			wcn_log.o \
 			wcn_misc.o \
 			rf/rf.o \
