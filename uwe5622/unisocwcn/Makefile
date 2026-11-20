@@ -91,7 +91,6 @@ endif
 
 $(MODULE_NAME)-y += wcn_bus.o \
 			platform/wcn_boot.o \
-			platform/wcn_dump.o \
 			platform/bufring.o \
 			platform/wcn_txrx.o \
 			platform/rdc_debug.o \

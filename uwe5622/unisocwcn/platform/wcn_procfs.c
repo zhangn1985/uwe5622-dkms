@@ -93,10 +93,7 @@ void mdbg_assert_interface(char *str)
 
 #if (CONFIG_CP2_ASSERT)
 	sprdwcn_bus_set_carddump_status(true);
-#ifndef CONFIG_WCND
-	/* wcn_hold_cpu(); */
-	mdbg_dump_mem();
-#endif
+
 	wcnlog_clear_log();
 	mdbg_proc->assert.rcv_len = strlen(mdbg_proc->assert.buf);
 	mdbg_proc->fail_count++;
@@ -150,7 +147,6 @@ int mdbg_assert_read(int channel, struct mbuf_t *head,
 #ifndef CONFIG_WCND
 	sprdwcn_bus_set_carddump_status(true);
 	/* wcn_hold_cpu(); */
-	mdbg_dump_mem();
 	wcnlog_clear_log();
 #endif
 	mdbg_proc->fail_count++;
@@ -609,9 +605,6 @@ static ssize_t mdbg_proc_write(struct file *filp,
 #ifdef MDBG_PROC_CMD_DEBUG
 /* for test boot */
 
-	if (x == '0')
-		dump_arm_reg();
-
 	if (x == 'B') {
 		WCN_INFO("wsh proc write =%c\n", x);
 		tempbuf = kzalloc(10, GFP_KERNEL);
@@ -814,7 +807,6 @@ static ssize_t mdbg_proc_write(struct file *filp,
 			return count;
 		WCN_INFO("start mdbg dumpmem");
 		sprdwcn_bus_set_carddump_status(true);
-		mdbg_dump_mem();
 		return count;
 	}
 	if (strncmp(mdbg_proc->write_buf, "holdcp2cpu",
@@ -840,7 +832,6 @@ static ssize_t mdbg_proc_write(struct file *filp,
 		mutex_lock(&mdbg_proc->mutex);
 		marlin_set_sleep(MARLIN_MDBG, FALSE);
 		marlin_set_wakeup(MARLIN_MDBG);
-		mdbg_dump_mem();
 		marlin_set_sleep(MARLIN_MDBG, TRUE);
 		mutex_unlock(&mdbg_proc->mutex);
 		return count;

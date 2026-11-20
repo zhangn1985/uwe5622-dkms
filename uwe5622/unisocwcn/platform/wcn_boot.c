@@ -41,7 +41,6 @@
 #include "../sleep/sdio_int.h"
 #include "../sleep/slp_mgr.h"
 #include "rdc_debug.h"
-#include "wcn_dump.h"
 #include "wcn_misc.h"
 #include "wcn_log.h"
 #include "wcn_procfs.h"

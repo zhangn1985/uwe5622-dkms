@@ -23,7 +23,6 @@
 #include "uwe562x_glb.h"
 #endif
 
-#include "wcn_dump.h"
 #include "rdc_debug.h"
 
 #endif
