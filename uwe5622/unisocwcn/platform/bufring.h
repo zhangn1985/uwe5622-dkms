@@ -43,7 +43,6 @@ int mdbg_ring_write_timeout(struct mdbg_ring_t *ring, void *buf,
 char *mdbg_ring_write_ext(struct mdbg_ring_t *ring, long len);
 bool mdbg_ring_will_full(struct mdbg_ring_t *ring, int len);
 long mdbg_ring_free_space(struct mdbg_ring_t *ring);
-long mdbg_ring_readable_len(struct mdbg_ring_t *ring);
 void mdbg_ring_clear(struct mdbg_ring_t *ring);
 void mdbg_ring_reset(struct mdbg_ring_t *ring);
 bool mdbg_ring_over_loop(struct mdbg_ring_t *ring, u_long len, int rw);

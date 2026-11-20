@@ -114,11 +114,8 @@ extern struct mchn_ops_t mdbg_proc_ops[MDBG_ASSERT_RX_OPS + 1];
 int mdbg_ring_init(void);
 void mdbg_ring_remove(void);
 long mdbg_send(char *buf, long len, unsigned int subtype);
-long mdbg_receive(void *buf, long len);
 int mdbg_tx_cb(int channel, struct mbuf_t *head,
 	       struct mbuf_t *tail, int num);
-long mdbg_content_len(void);
-int mdbg_read_release(unsigned int fifo_id);
 bool mdbg_rx_count_change(void);
 
 #endif

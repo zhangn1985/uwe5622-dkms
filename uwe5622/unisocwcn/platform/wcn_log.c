@@ -17,17 +17,6 @@ static int wcn_log_major = WCN_LOG_MAJOR;
 static struct class		*wcnlog_class;
 
 struct mdbg_device_t *mdbg_dev;
-wait_queue_head_t	mdbg_wait;
-
-int wake_up_log_wait(void)
-{
-	if (!mdbg_dev->exit_flag) {
-		wake_up_interruptible(&mdbg_dev->rxwait);
-		wake_up_interruptible(&mdbg_wait);
-	}
-
-	return 0;
-}
 
 void wcnlog_clear_log(void)
 {
@@ -49,22 +38,15 @@ int log_dev_init(void)
 	if (!mdbg_dev)
 		return -ENOMEM;
 
-	mdbg_dev->open_count = 0;
-	init_waitqueue_head(&mdbg_dev->rxwait);
-	init_waitqueue_head(&mdbg_wait);
 	err = mdbg_ring_init();
 	if (err < 0)
 		return -ENOMEM;
-
-	mdbg_dev->exit_flag = 0;
 
 	return 0;
 }
 
 int log_dev_exit(void)
 {
-	mdbg_dev->exit_flag = 1;
-
 	/* free for old mdbg_dev */
 	mdbg_ring_remove();
 	kfree(mdbg_dev);

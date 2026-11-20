@@ -6,15 +6,11 @@
 #define WCN_LOG_MAX_MINOR 2
 
 struct mdbg_device_t {
-	int			open_count;
-	wait_queue_head_t	rxwait;
 	struct wcnlog_dev *dev[WCN_LOG_MAX_MINOR];
 	struct ring_device *ring_dev;
-	bool exit_flag;
 };
 
 extern struct mdbg_device_t	*mdbg_dev;
-extern wait_queue_head_t	mdbg_wait;
 extern unsigned char flag_reset;
 extern struct completion ge2_completion;
 
@@ -25,5 +21,4 @@ void wcnlog_clear_log(void);
 
 int log_dev_init(void);
 int log_dev_exit(void);
-int wake_up_log_wait(void);
 #endif

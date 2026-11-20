@@ -72,19 +72,6 @@ bool mdbg_rx_count_change(void)
 	}
 }
 
-int mdbg_read_release(unsigned int fifo_id)
-{
-	return 0;
-}
-
-long mdbg_content_len(void)
-{
-	if (unlikely(!ring_dev))
-		return 0;
-
-	return mdbg_ring_readable_len(ring_dev->ring);
-}
-
 static long mdbg_comm_write(char *buf,
 				long len, unsigned int subtype)
 {
@@ -180,7 +167,6 @@ static void mdbg_ring_rx_task(struct work_struct *work)
 	}
 	sprdwcn_bus_push_list(mdbg_ringc_ops.channel,
 				  rx->head, rx->tail, rx->num);
-	wake_up_log_wait();
 	kfree(rx);
 }
 

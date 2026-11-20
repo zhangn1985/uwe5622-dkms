@@ -153,13 +153,6 @@ int mdbg_ring_write(struct mdbg_ring_t *ring, void *buf, unsigned int len)
 	 * ring buf valid space < len,need to write (buf_space-1)
 	 * and then write len-(buf_space-1)
 	 */
-	if (((mdbg_ring_free_space(ring) - 1) < len)
-		&& (mdbg_dev->open_count != 0)) {
-		WCN_ERR("log buf is full, Discard the package=%d\n", len);
-		wake_up_log_wait();
-		return len;
-	}
-
 	/* ring buf valid space > len, you can write freely */
 	if (mdbg_ring_over_loop(ring, len, MDBG_RING_W)) {
 		MDBG_LOG("Ring overloop.");
@@ -249,12 +242,6 @@ char *mdbg_ring_write_ext(struct mdbg_ring_t *ring, long len)
 bool mdbg_ring_will_full(struct mdbg_ring_t *ring, int len)
 {
 	return (len > mdbg_ring_free_space(ring));
-}
-
-/* remain data for read */
-long mdbg_ring_readable_len(struct mdbg_ring_t *ring)
-{
-	return ring->size - mdbg_ring_free_space(ring);
 }
 
 void mdbg_ring_clear(struct mdbg_ring_t *ring)
