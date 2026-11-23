@@ -3,7 +3,6 @@
 
 #include <marlin_platform.h>
 #include "wcn_txrx.h"
-#include "wcn_log.h"
 
 #ifndef CONFIG_CHECK_DRIVER_BY_CHIPID
 #ifdef CONFIG_UWE5621

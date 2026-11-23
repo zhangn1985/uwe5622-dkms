@@ -41,7 +41,6 @@
 #include "../sleep/sdio_int.h"
 #include "../sleep/slp_mgr.h"
 #include "rdc_debug.h"
-#include "wcn_log.h"
 #include "mdbg_type.h"
 #include "wcn_glb_reg.h"
 #include "wcn_glb.h"
@@ -211,7 +210,6 @@ struct marlin_device {
 	struct work_struct download_wq;
 	struct work_struct gnss_dl_wq;
 	bool no_power_off;
-	bool wait_ge2;
 	bool is_btwf_in_sysfs;
 	bool is_gnss_in_sysfs;
 	int wifi_need_download_ini_flag;
@@ -233,8 +231,6 @@ struct wifi_calibration {
 };
 
 static struct wifi_calibration wifi_data;
-struct completion ge2_completion;
-static int first_call_flag;
 marlin_reset_callback marlin_reset_func;
 void *marlin_callback_para;
 static struct raw_notifier_head marlin_reset_notifiers[MARLIN_ALL];
@@ -1531,13 +1527,6 @@ static int marlin_parse_dt(struct device *dev)
 #endif /* end of CONFIG_WL_WAKE_HOST_EN */
 #endif /* end of CONFIG_WCN_PARSE_DTS */
 
-#ifdef CONFIG_WCN_PARSE_DTS
-	if (of_property_read_bool(np, "wait-ge2")) {
-		WCN_INFO("wait-ge2 need wait gps ready\n");
-		marlin_dev->wait_ge2 = true;
-	}
-#endif
-
 #if defined(CONFIG_WCN_PARSE_DTS) && defined(CONFIG_WCN_PMIC)
 	pmu_apb_gpr = syscon_regmap_lookup_by_phandle(np,
 				"unisoc,syscon-pmu-apb");
@@ -1674,30 +1663,6 @@ static int marlin_analog_power_enable(bool enable)
 	}
 
 	return ret;
-}
-
-/*
- * hold cpu means cpu register is clear
- * different from reset pin gpio
- * reset gpio is all register is clear
- */
-void marlin_hold_cpu(void)
-{
-	int ret = 0;
-	unsigned int temp_reg_val;
-
-	ret = sprdwcn_bus_reg_read(CP_RESET_REG, &temp_reg_val, 4);
-	if (ret < 0) {
-		WCN_ERR("%s read reset reg error:%d\n", __func__, ret);
-		return;
-	}
-	WCN_INFO("%s reset reg val:0x%x\n", __func__, temp_reg_val);
-	temp_reg_val |= (RESET_BIT);
-	ret = sprdwcn_bus_reg_write(CP_RESET_REG, &temp_reg_val, 4);
-	if (ret < 0) {
-		WCN_ERR("%s write reset reg error:%d\n", __func__, ret);
-		return;
-	}
 }
 
 void marlin_read_cali_data(void)
@@ -2751,17 +2716,6 @@ static int marlin_set_power(int subsys, int val)
 	WCN_DEBUG("mutex_lock\n");
 	mutex_lock(&marlin_dev->power_lock);
 
-	if (marlin_dev->wait_ge2) {
-		first_call_flag++;
-		if (first_call_flag == 1) {
-			WCN_INFO("(marlin2+ge2)waiting ge2 download finish\n");
-			timeleft = wait_for_completion_timeout(&ge2_completion, 12*HZ);
-			if (!timeleft)
-				WCN_ERR("wait ge2 timeout\n");
-		}
-		first_call_flag = 2;
-	}
-
 	WCN_INFO("marlin power state:%lx, subsys: [%s] power %d\n",
 			marlin_dev->power_state, strno(subsys), val);
 	init_completion(&marlin_dev->download_done);
@@ -3252,7 +3206,6 @@ int marlin_core_init(struct device *dev)
 	}
 	if (marlin_dev->reset)
 		gpiod_direction_output(marlin_dev->reset, 0);
-	init_completion(&ge2_completion);
 	init_completion(&marlin_dev->carddetect_done);
 #ifdef CONFIG_WCN_SLP
 	slp_mgr_init();
