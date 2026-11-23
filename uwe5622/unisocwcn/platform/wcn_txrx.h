@@ -13,11 +13,8 @@
 #ifndef __WCN_TXRX_H__
 #define __WCN_TXRX_H__
 #include <linux/interrupt.h>
-#include <linux/mutex.h>
-#include <linux/sched.h>
 #include <linux/types.h>
 #include <linux/version.h>
-#include <linux/wait.h>
 
 #include "mdbg_type.h"
 #include <wcn_bus.h>
@@ -33,29 +30,6 @@
 #define ARMLOG_HEAD 9
 
 #define SMP_HEAD_STR "at+smphead="
-
-struct ring_rx_data {
-	unsigned char		*addr;
-	unsigned int		len;
-	unsigned int		fifo_id;
-	struct list_head	entry;
-	int channel;
-	struct mbuf_t *head;
-	struct mbuf_t *tail;
-	int num;
-};
-
-struct ring_device {
-	struct mdbg_ring_t	*ring;
-	/*wakeup_source pointer*/
-	struct wakeup_source	*rw_wake_lock;
-
-	spinlock_t		rw_lock;
-	struct mutex mdbg_read_mutex;
-	struct list_head	rx_head;
-	struct work_struct	rx_task;
-	long flag_smp;
-};
 
 struct sme_head_tag {
 	unsigned int seq_num;
@@ -103,6 +77,6 @@ enum {
 	MDBG_SUBTYPE_AT = 2,
 };
 
-int mdbg_ring_init(void);
-void mdbg_ring_remove(void);
+int mdbg_log_channel_init(void);
+void mdbg_log_channel_remove(void);
 #endif

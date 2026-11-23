@@ -15,40 +15,15 @@
 static int wcn_log_major = WCN_LOG_MAJOR;
 static struct class		*wcnlog_class;
 
-struct mdbg_device_t *mdbg_dev;
-
-void wcnlog_clear_log(void)
-{
-	if (mdbg_dev->ring_dev->ring->rp
-		!= mdbg_dev->ring_dev->ring->wp) {
-		WCN_INFO("log:%ld left in ringbuf not read\n",
-			(long)(mdbg_dev->ring_dev->ring->wp -
-			mdbg_dev->ring_dev->ring->rp));
-		mdbg_ring_clear(mdbg_dev->ring_dev->ring);
-	}
-}
-
 int log_dev_init(void)
 {
-	int err;
-
 	MDBG_FUNC_ENTERY;
-	mdbg_dev = kzalloc_obj(struct mdbg_device_t, GFP_KERNEL);
-	if (!mdbg_dev)
-		return -ENOMEM;
-
-	err = mdbg_ring_init();
-	if (err < 0)
-		return -ENOMEM;
-
-	return 0;
+	return mdbg_log_channel_init();
 }
 
 int log_dev_exit(void)
 {
-	/* free for old mdbg_dev */
-	mdbg_ring_remove();
-	kfree(mdbg_dev);
+	mdbg_log_channel_remove();
 
 	return 0;
 }

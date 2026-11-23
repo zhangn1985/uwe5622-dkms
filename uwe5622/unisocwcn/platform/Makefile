@@ -1,7 +1,6 @@
 obj-$(CONFIG_WCN_BOOT) := marlin.o
 
 MARLINOFILES += wcn_boot.o
-MARLINOFILES += bufring.o
 MARLINOFILES += wcn_txrx.o
 MARLINOFILES += rf/rf.o
 MARLINOFILES += wcn_log.o
@@ -13,6 +12,5 @@ obj-$(CONFIG_WCN_PLATFORM) := wcn_platform.o
 
 wcn_platform-c-objs +=  wcn_txrx.o \
 			wcn_log.o \
-			rf/rf.o \
-			bufring.o
+			rf/rf.o
 wcn_platform-objs += $(wcn_platform-c-objs)

@@ -80,7 +80,6 @@ endif
 
 $(MODULE_NAME)-y += wcn_bus.o \
 			platform/wcn_boot.o \
-			platform/bufring.o \
 			platform/wcn_txrx.o \
 			platform/wcn_log.o
 
