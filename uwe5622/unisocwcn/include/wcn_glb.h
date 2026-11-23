@@ -2,7 +2,6 @@
 #define __WCN_GLB_H__
 
 #include <marlin_platform.h>
-#include "wcn_txrx.h"
 
 #ifndef CONFIG_CHECK_DRIVER_BY_CHIPID
 #ifdef CONFIG_UWE5621
