@@ -79,9 +79,7 @@ obj-m := $(MODULE_NAME).o
 endif
 
 $(MODULE_NAME)-y += wcn_bus.o \
-			platform/wcn_boot.o \
-			platform/wcn_txrx.o \
-			platform/wcn_log.o
+			platform/wcn_boot.o
 
 $(MODULE_NAME)-$(CONFIG_WCN_SDIO) += \
 			sdio/sdiohal_main.o \

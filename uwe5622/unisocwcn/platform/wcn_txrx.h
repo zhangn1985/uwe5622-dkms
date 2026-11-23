@@ -58,7 +58,6 @@ enum smp_diag_subtype_t {
 enum wcnbus_channel_t {
 	WCN_AT_TX = 0,
 	WCN_AT_RX = 13,
-	WCN_RING_RX = 15,
 	/* TODO: The port num is temp,need to consult with cp */
 	WCN_ADSP_RING_RX = 19,
 	WCN_RSV_RX,
@@ -67,16 +66,11 @@ enum wcnbus_channel_t {
 enum mdbg_channel_ops_t {
 	MDBG_AT_TX_OPS = 0,
 	MDBG_AT_RX_OPS,
-	MDBG_RING_RX_OPS = 3,
 	MDBG_ADSP_RING_RX_OPS = 4,
 	MDBG_RSV_OPS = 5,
 };
 
 enum {
-	MDBG_SUBTYPE_RING = 0,
 	MDBG_SUBTYPE_AT = 2,
 };
-
-int mdbg_log_channel_init(void);
-void mdbg_log_channel_remove(void);
 #endif

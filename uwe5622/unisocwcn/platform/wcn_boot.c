@@ -3279,7 +3279,6 @@ int marlin_core_init(struct device *dev)
 	if (marlin_dev->int_ap > 0)
 		sdio_pub_int_init(marlin_dev->int_ap);
 #endif
-	log_dev_init();
 #endif
 
 	flag_reset = 0;
@@ -3338,7 +3337,6 @@ void marlin_core_remove(struct device *dev)
 	cancel_work_sync(&marlin_dev->download_wq);
 	cancel_work_sync(&marlin_dev->gnss_dl_wq);
 	cancel_delayed_work_sync(&marlin_dev->power_wq);
-	log_dev_exit();
 #ifdef CONFIG_WCN_SDIO
 	if (marlin_dev->int_ap > 0)
 		sdio_pub_int_deinit();
