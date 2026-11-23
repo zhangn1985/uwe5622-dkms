@@ -472,13 +472,6 @@ int sdiohal_tx_data_list_send(struct sdiohal_list_t *data_list,
 			      bool pop_flag);
 void sdiohal_enable_rx_irq(void);
 
-/* for debugfs */
-#ifdef CONFIG_DEBUG_FS
-void sdiohal_debug_init(void);
-void sdiohal_debug_deinit(void);
-#endif
-
-
 void sdiohal_print_list_data(int channel, struct sdiohal_list_t *data_list,
 			     const char *func, int loglevel);
 void sdiohal_print_mbuf_data(int channel, struct mbuf_t *head,

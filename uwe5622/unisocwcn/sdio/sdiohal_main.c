@@ -37,6 +37,13 @@
 #include "sdiohal.h"
 #include "wcn_glb.h"
 
+#ifdef CONFIG_DEBUG_FS
+#ifdef CONFIG_SPRD_DEBUG
+long sdiohal_log_level = SDIOHAL_NORMAL_LEVEL;
+#else
+long sdiohal_log_level;
+#endif
+#endif
 
 
 #ifdef CONFIG_RK_BOARD
@@ -2073,11 +2080,6 @@ int sdiohal_init(struct device *dev)
 	}
 	p_data->flag_init = true;
 
-#ifdef CONFIG_DEBUG_FS
-#ifndef USB_SDIO_DT
-	sdiohal_debug_init();
-#endif
-#endif
 	sdiohal_info("sdiohal_init ok\n");
 
 	return 0;
@@ -2101,9 +2103,6 @@ void sdiohal_exit(void)
 	sdiohal_info("sdiohal_exit entry\n");
 
 	p_data->flag_init = false;
-#ifdef CONFIG_DEBUG_FS
-	sdiohal_debug_deinit();
-#endif
 	if (p_data->gpio_num) {
 		gpiod_put(p_data->gpio_num);
 		p_data->gpio_num = NULL;

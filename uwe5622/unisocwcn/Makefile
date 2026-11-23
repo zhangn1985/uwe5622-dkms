@@ -87,7 +87,6 @@ $(MODULE_NAME)-$(CONFIG_WCN_SDIO) += \
 			sdio/sdiohal_tx.o \
 			sdio/sdiohal_rx.o \
 			sdio/sdio_v3.o \
-			sdio/sdiohal_ctl.o \
 			sleep/sdio_int.o \
 			sleep/slp_mgr.o \
 			sleep/slp_sdio.o \
