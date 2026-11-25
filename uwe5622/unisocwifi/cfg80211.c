@@ -2650,15 +2650,27 @@ void sprdwl_cfg80211_dump_frame_prot_info(int send, int freq,
 static int sprdwl_cfg80211_remain_on_channel(struct wiphy *wiphy,
 						 struct wireless_dev *wdev,
 						 struct ieee80211_channel *chan,
-						 unsigned int duration, u64 *cookie,
+						 unsigned int duration,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(7, 3, 0)
+						 u64 cookie_value,
+#else
+						 u64 *cookie,
+#endif
 						 const u8 *rx_addr)
 {
 	struct sprdwl_vif *vif = container_of(wdev, struct sprdwl_vif, wdev);
 	enum nl80211_channel_type channel_type = 0;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(7, 3, 0)
+	u64 *cookie = &cookie_value;
+#else
 	static u64 remain_index;
+#endif
 	int ret;
 
-	*cookie = vif->listen_cookie = ++remain_index;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(7, 3, 0)
+	*cookie = ++remain_index;
+#endif
+	vif->listen_cookie = *cookie;
 	wl_ndev_log(L_DBG, wdev->netdev, "%s %d for %dms, cookie %lld\n",
 			__func__, chan->center_freq, duration, *cookie);
 	memcpy(&vif->listen_channel, chan, sizeof(struct ieee80211_channel));
@@ -2688,7 +2700,11 @@ static int sprdwl_cfg80211_cancel_remain_on_channel(struct wiphy *wiphy,
 static int sprdwl_cfg80211_mgmt_tx(struct wiphy *wiphy,
 				   struct wireless_dev *wdev,
 				   struct cfg80211_mgmt_tx_params *params,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(7, 3, 0)
+				   u64 cookie_value)
+#else
 				   u64 *cookie)
+#endif
 #else
 static int sprdwl_cfg80211_mgmt_tx(struct wiphy *wiphy,
 				   struct wireless_dev *wdev,
@@ -2705,10 +2721,16 @@ static int sprdwl_cfg80211_mgmt_tx(struct wiphy *wiphy,
 	unsigned int wait = params->wait;
 	bool dont_wait_for_ack = params->dont_wait_for_ack;
 #endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(7, 3, 0)
+	u64 *cookie = &cookie_value;
+#else
 	static u64 mgmt_index;
+#endif
 	int ret = 0;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(7, 3, 0)
 	*cookie = ++mgmt_index;
+#endif
 	wl_ndev_log(L_DBG, wdev->netdev, "%s cookie %lld\n", __func__, *cookie);
 
 	sprdwl_cfg80211_dump_frame_prot_info(1, chan->center_freq, buf, len);
