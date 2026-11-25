@@ -418,19 +418,6 @@ struct sprdwl_msg_buf *__sprdwl_cmd_getbuf(struct sprdwl_priv *priv,
 	if (intf->cp_asserted == 1)
 		return NULL;
 
-#ifdef CP2_RESET_SUPPORT
-	if ((g_sprdwl_priv->sync.scan_not_allowed == true) &&
-	   (g_sprdwl_priv->sync.cmd_not_allowed == false)) {
-		if ((cmd_id != WIFI_CMD_SYNC_VERSION) &&
-		   (cmd_id != WIFI_CMD_DOWNLOAD_INI) &&
-		   (cmd_id != WIFI_CMD_GET_INFO) &&
-		   (cmd_id != WIFI_CMD_OPEN) &&
-		   (cmd_id != WIFI_CMD_SET_REGDOM)) {
-			return NULL;
-		}
-	}
-#endif
-
 	if (cmd_id >= WIFI_CMD_OPEN) {
 		vif = ctx_id_to_vif(priv, ctx_id);
 		if (!vif)
@@ -603,15 +590,6 @@ int sprdwl_cmd_send_recv(struct sprdwl_priv *priv,
 	}
 
 	ret = sprdwl_timeout_recv_rsp(priv, timeout);
-
-#ifdef CP2_RESET_SUPPORT
-	if (true == priv->sync.cmd_not_allowed) {
-		if (unlikely(cmd->init_ok))
-			sprdwl_cmd_unlock(cmd);
-
-		return 0;
-	}
-#endif
 
 	if (ret != -1) {
 		if (rbuf && rlen && *rlen) {

@@ -182,17 +182,6 @@ struct sprdwl_channel_list {
 	int channels[TOTAL_2G_5G_CHANNEL_NUM];
 };
 
-#ifdef CP2_RESET_SUPPORT
-struct sprlwl_drv_cp_sync {
-	char country[2];
-	unsigned char fw_stat[SPRDWL_MODE_MAX];
-	bool scan_not_allowed;
-	bool cmd_not_allowed;
-	struct regulatory_request request;
-
-};
-#endif
-
 struct sprdwl_priv {
 	struct wiphy *wiphy;
 	/* virtual interface list */
@@ -283,9 +272,6 @@ struct sprdwl_priv {
 #define OTT_SUPT	(1)
 	unsigned char ott_supt;
 
-#ifdef CP2_RESET_SUPPORT
-	struct sprlwl_drv_cp_sync sync;
-#endif
 };
 
 struct sprdwl_eap_hdr {

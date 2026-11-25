@@ -1416,13 +1416,8 @@ static int sprdwl_cfg80211_scan(struct wiphy *wiphy,
 
 	intf = (struct sprdwl_intf *)(priv->hw_priv);
 
-#ifndef CP2_RESET_SUPPORT
 	if (intf->cp_asserted)
 		return -EIO;
-#else
-	if (intf->cp_asserted || priv->sync.scan_not_allowed)
-		return -EIO;
-#endif
 
 	wl_ndev_log(L_DBG, vif->ndev, "%s n_channels %u\n", __func__,
 			request->n_channels);
@@ -3529,11 +3524,6 @@ void sprdwl_reg_notify(struct wiphy *wiphy,
 		wl_err("%s(): Wiphy = NULL\n", __func__);
 		return;
 	}
-
-#ifdef CP2_RESET_SUPPORT
-	if (request->initiator == NL80211_REGDOM_SET_BY_COUNTRY_IE)
-		memcpy(&priv->sync.request, request, sizeof(struct regulatory_request));
-#endif
 
 	pRegdom = getRegdomainFromSprdDB(request->alpha2);
 	if (!pRegdom) {

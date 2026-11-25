@@ -233,7 +233,6 @@ struct wifi_calibration {
 static struct wifi_calibration wifi_data;
 marlin_reset_callback marlin_reset_func;
 void *marlin_callback_para;
-static struct raw_notifier_head marlin_reset_notifiers[MARLIN_ALL];
 
 struct marlin_device *marlin_dev;
 struct sprdwcn_gnss_ops *gnss_ops;
@@ -3157,8 +3156,6 @@ static void marlin_power_wq(struct work_struct *work)
 	marlin_set_power(WCN_AUTO, true);
 
 }
-static void marlin_reset_notify_init(void);
-
 static const struct mfd_cell marlin_cells[] = {
 	{
 		.name = "unisoc_wifi",
@@ -3235,9 +3232,6 @@ int marlin_core_init(struct device *dev)
 #endif
 
 	flag_reset = 0;
-	/*notify subsys do reset, when cp2 was dead*/
-	marlin_reset_notify_init();
-
 #ifdef CONFIG_WCN_PCIE
 	chip_power_on(WCN_AUTO);
 #endif
@@ -3352,47 +3346,6 @@ int marlin_reset_unregister_notify(void)
 	return 0;
 }
 EXPORT_SYMBOL_GPL(marlin_reset_unregister_notify);
-
-static void marlin_reset_notify_init(void)
-{
-	int i = 0;
-
-	for (i = 0; i < MARLIN_ALL; i++)
-		 RAW_INIT_NOTIFIER_HEAD(&marlin_reset_notifiers[i]);
-}
-
-/**
- * @return: is notify callback function return value
-*/
-int marlin_reset_notify_call(enum marlin_cp2_status sts)
-{
-
-	int i = 0;
-
-	for (i = 0; i < MARLIN_ALL; i++) {
-		if (marlin_reset_notifiers[i].head != NULL)
-			raw_notifier_call_chain(&marlin_reset_notifiers[i], sts, (void *)strno(i));
-	}
-	return 0;
-}
-EXPORT_SYMBOL_GPL(marlin_reset_notify_call);
-
-int marlin_reset_callback_register(u32 subsys, struct notifier_block *nb)
-{
-	return raw_notifier_chain_register(&marlin_reset_notifiers[subsys], nb);
-}
-EXPORT_SYMBOL_GPL(marlin_reset_callback_register);
-
-void marlin_reset_callback_unregister(u32 subsys, struct notifier_block *nb)
-{
-	int ret = 0;
-
-	ret = raw_notifier_chain_unregister(&marlin_reset_notifiers[subsys], nb);
-	if (ret)
-		WCN_ERR("%s is not registered for reset notification\n", strno(subsys));
-}
-EXPORT_SYMBOL_GPL(marlin_reset_callback_unregister);
-
 
 MODULE_LICENSE("GPL v2");
 MODULE_FIRMWARE(WCN_FW_NAME);

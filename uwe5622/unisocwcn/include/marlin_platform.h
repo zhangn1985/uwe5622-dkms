@@ -20,7 +20,6 @@
 #define __MARLIN_H__
 
 #include <linux/types.h>
-#include <linux/notifier.h>
 
 struct device;
 int marlin_core_init(struct device *dev);
@@ -88,10 +87,6 @@ enum marlin_wake_host_en {
 	WL_WAKE_HOST
 };
 
-enum marlin_cp2_status {
-	MARLIN_CP2_STS_ASSERTED = 0,
-};
-
 enum wcn_hw_type wcn_get_hw_if_type(void);
 enum wcn_clock_type wcn_get_xtal_26m_clk_type(void);
 enum wcn_clock_mode wcn_get_xtal_26m_clk_mode(void);
@@ -121,7 +116,4 @@ int is_first_power_on(enum marlin_sub_sys subsys);
 int cali_ini_need_download(enum marlin_sub_sys subsys);
 void marlin_wifi_ini_failed(void);
 const char *strno(int subsys);
-int marlin_reset_callback_register(u32 subsys, struct notifier_block *nb);
-void marlin_reset_callback_unregister(u32 subsys, struct notifier_block *nb);
-int marlin_reset_notify_call(enum marlin_cp2_status sts);
 #endif

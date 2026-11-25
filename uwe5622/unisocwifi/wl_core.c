@@ -529,60 +529,6 @@ static struct sprdwl_if_ops sprdwl_core_ops = {
 	.ini_download_status = sprdwl_ini_download_status
 };
 
-#ifdef CP2_RESET_SUPPORT
-extern struct sprdwl_priv *g_sprdwl_priv;
-extern void sprdwl_cancel_scan(struct sprdwl_vif *vif);
-extern void sprdwl_cancel_sched_scan(struct sprdwl_vif *vif);
-struct completion wifi_reset_ready;
-extern void sprdwl_net_flowcontrl(struct sprdwl_priv *priv, enum sprdwl_mode mode, bool state);
-extern struct sprdwl_cmd g_sprdwl_cmd;
-
-static void sprdwl_wifi_reset(void)
-{
-	struct sprdwl_intf *intf = NULL;
-	struct sprdwl_tx_msg *tx_msg = NULL;
-	struct sprdwl_rx_if *rx_if = NULL;
-
-	intf = (struct sprdwl_intf *)g_sprdwl_priv->hw_priv;
-	tx_msg = (void *)intf->sprdwl_tx;
-	rx_if = (struct sprdwl_rx_if *)intf->sprdwl_rx;
-
-	wl_err("cp2 reset begin..........\n");
-	g_sprdwl_priv->sync.scan_not_allowed = true;
-	g_sprdwl_priv->sync.cmd_not_allowed = true;
-	intf->cp_asserted = 1;
-	intf->exit = 1;
-	if (tx_msg->tx_thread) {
-		tx_up(tx_msg);
-		kthread_stop(tx_msg->tx_thread);
-		tx_msg->tx_thread = NULL;
-	}
-
-	wl_err("cp2 reset finish..........\n");
-}
-
-static int wifi_exception_event(void)
-{
-	char *envp[2];
-
-	envp[0] = "CP2-EXCEPTION-EVENT";
-	envp[1] = NULL;
-	kobject_uevent_env(&sprdwl_dev->kobj, KOBJ_CHANGE, envp);
-	return 0;
-}
-
-int wifi_reset_callback(struct notifier_block *nb, unsigned long event, void *v)
-{
-	sprdwl_wifi_reset();
-	wifi_exception_event();
-	return NOTIFY_OK;
-}
-
-static struct notifier_block wifi_reset_notifier = {
-    .notifier_call = wifi_reset_callback,
-};
-#endif
-
 static int sprdwl_probe(struct platform_device *pdev)
 {
 	struct sprdwl_intf *intf;
@@ -592,10 +538,6 @@ static int sprdwl_probe(struct platform_device *pdev)
 
 	if (!mfd_get_cell(pdev))
 		return -ENODEV;
-
-#ifdef CP2_RESET_SUPPORT
-	marlin_reset_callback_register(MARLIN_WIFI, &wifi_reset_notifier);
-#endif
 
 	ret = start_marlin(MARLIN_WIFI);
 	if (ret) {
@@ -698,10 +640,6 @@ static void sprdwl_remove(struct platform_device *pdev)
 {
 	struct sprdwl_intf *intf = platform_get_drvdata(pdev);
 	struct sprdwl_priv *priv = intf->priv;
-
-#ifdef CP2_RESET_SUPPORT
-	marlin_reset_callback_unregister(MARLIN_WIFI, &wifi_reset_notifier);
-#endif
 
 	sprdwl_debugfs_deinit();
 	sprdwl_core_deinit(priv);
