@@ -592,28 +592,12 @@ int sprdwl_mm_init(struct sprdwl_mm *mm_entry, void *intf)
 
 	mm_entry->hif_offset = ((struct sprdwl_intf *)intf)->hif_offset;
 
-	if (((struct sprdwl_intf *)intf)->priv->hw_type ==
-		SPRDWL_HW_PCIE) {
-		skb_queue_head_init(&mm_entry->buffer_list);
-
-		ret = mm_buffer_alloc(mm_entry, SPRDWL_MAX_MH_BUF);
-		if (ret)
-			wl_err("%s: alloc rx if fail\n", __func__);
-	}
 
 	return ret;
 }
 
 int sprdwl_mm_deinit(struct sprdwl_mm *mm_entry, void *intf)
 {
-	if (((struct sprdwl_intf *)intf)->priv->hw_type ==
-		SPRDWL_HW_PCIE) {
-		/* NOTE: pclint says kfree(NULL) is safe */
-		kfree(mm_entry->hdr);
-		mm_entry->hdr = NULL;
-		mm_entry->addr_trans = NULL;
-		mm_flush_buffer(mm_entry);
-	}
 
 	mm_entry->hif_offset = 0;
 	return 0;

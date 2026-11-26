@@ -98,16 +98,7 @@ unsigned short get_sdio_data_csum(void *entry, void *data)
 
 unsigned short get_pcie_data_csum(void *entry, void *data)
 {
-	unsigned short csum = 0;
-	struct rx_mh_desc *mh_desc = (struct rx_mh_desc *)data;
-	struct sprdwl_intf *intf = (struct sprdwl_intf *)entry;
-
-	if (intf->priv->hw_type == SPRDWL_HW_PCIE) {
-		if (mh_desc->tcp_checksum_en)
-			csum = mh_desc->tcp_hw_checksum;
-	}
-
-	return csum;
+	return 0;
 }
 
 inline int fill_skb_csum(struct sk_buff *skb, unsigned short csum)
@@ -324,19 +315,6 @@ static void sprdwl_rx_work_queue(struct work_struct *work)
 					wl_err("err data trans too long:%d > %d\n",
 						   len, SPRDWL_MAX_CMD_RXLEN);
 				sprdwl_rx_mh_data_process(rx_if, tran_data, len,
-							  msg->buffer_type);
-				tran_data = NULL;
-				data = NULL;
-				break;
-			case SPRDWL_TYPE_DATA_PCIE_ADDR:
-				if (intf->priv->hw_type != SPRDWL_HW_PCIE) {
-					wl_err("error get pcie addr data!\n");
-					break;
-				}
-				if (msg->len > SPRDWL_MAX_CMD_RXLEN)
-					wl_err("err rx mh data too long:%d > %d\n",
-						   len, SPRDWL_MAX_DATA_RXLEN);
-				sprdwl_rx_mh_addr_process(rx_if, tran_data, len,
 							  msg->buffer_type);
 				tran_data = NULL;
 				data = NULL;

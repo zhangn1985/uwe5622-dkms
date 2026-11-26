@@ -39,9 +39,6 @@ static inline struct sprdwl_intf *get_intf(void)
 	return (struct sprdwl_intf *)g_intf_ops.intf;
 }
 
-#define INTF_IS_PCIE \
-	(get_intf()->priv->hw_type == SPRDWL_HW_PCIE)
-
 void sprdwl_hex_dump(unsigned char *name,
 			 unsigned char *data, unsigned short len)
 {
@@ -80,9 +77,6 @@ enum sprdwl_hw_type get_hwintf_type(void)
 	switch (hif) {
 	case HW_TYPE_SDIO:
 		hw_type = SPRDWL_HW_SDIO;
-		break;
-	case HW_TYPE_PCIE:
-		hw_type = SPRDWL_HW_PCIE;
 		break;
 	default:
 		hw_type = SPRDWL_HW_SDIO;
@@ -170,19 +164,10 @@ int if_tx_one(struct sprdwl_intf *intf, unsigned char *data,
 	mbuf->next = NULL;
 	if (sprdwl_debug_level >= L_DBG)
 		sprdwl_hex_dump("tx to cp2 cmd data dump", data + 4, len);
-	if (intf->priv->hw_type == SPRDWL_HW_PCIE) {
-		mbuf->phy = mm_virt_to_phys(&intf->pdev->dev, mbuf->buf,
-						mbuf->len, DMA_TO_DEVICE);
-	}
 
 	ret = sprdwcn_bus_push_list(chn, head, tail, num);
 	if (ret) {
 		mbuf = head;
-		if (intf->priv->hw_type == SPRDWL_HW_PCIE) {
-			mm_phys_to_virt(&intf->pdev->dev, mbuf->phy, mbuf->len,
-					DMA_TO_DEVICE, false);
-			mbuf->phy = 0;
-		}
 		kfree(mbuf->buf);
 		mbuf->buf = NULL;
 
@@ -203,48 +188,6 @@ inline int if_tx_addr_trans(struct sprdwl_intf *intf,
 {
 	/* FIXME: Which port is used to send ADDR TRNAS*/
 	return if_tx_one(intf, data, len, intf->tx_data_port);
-}
-
-static inline struct pcie_addr_buffer
-*sprdwl_alloc_pcie_addr_buf(int tx_count)
-{
-	struct pcie_addr_buffer *addr_buffer;
-#define ADDR_OFFSET 5
-
-	addr_buffer =
-		kzalloc(sizeof(struct pcie_addr_buffer) +
-		tx_count * SPRDWL_PHYS_LEN, GFP_KERNEL);
-	if (addr_buffer == NULL) {
-		wl_err("%s:%d alloc pcie addr buf fail\n", __func__, __LINE__);
-		return NULL;
-	}
-	addr_buffer->common.type = SPRDWL_TYPE_DATA_PCIE_ADDR;
-	addr_buffer->common.direction_ind = 0;
-	addr_buffer->number = tx_count;
-	addr_buffer->offset = ADDR_OFFSET;
-	addr_buffer->buffer_ctrl.buffer_inuse = 1;
-	addr_buffer->buffer_ctrl.buffer_type = 1;
-
-	return addr_buffer;
-}
-
-static inline struct pcie_addr_buffer
-*sprdwl_set_pcie_addr_to_mbuf(struct sprdwl_tx_msg *tx_msg, struct mbuf_t *mbuf,
-				   int tx_count)
-{
-#define ADDR_OFFSET 5
-	struct pcie_addr_buffer *addr_buffer;
-	struct sprdwl_intf *intf = tx_msg->intf;
-
-	addr_buffer = sprdwl_alloc_pcie_addr_buf(tx_count);
-	if (addr_buffer == NULL)
-		return NULL;
-	mbuf->len = ADDR_OFFSET + tx_count * SPRDWL_PHYS_LEN;
-	mbuf->buf = (unsigned char *)addr_buffer;
-	mbuf->phy = mm_virt_to_phys(&intf->pdev->dev, mbuf->buf,
-					mbuf->len, DMA_TO_DEVICE);
-
-	return addr_buffer;
 }
 
 void sprdwl_add_tx_list_head(struct list_head *tx_fail_list,
@@ -386,23 +329,10 @@ int sprdwl_intf_tx_list(struct sprdwl_intf *dev,
 		WARN_ON(1);
 	}
 	tx_msg = (struct sprdwl_tx_msg *)dev->sprdwl_tx;
-	if (dev->priv->hw_type == SPRDWL_HW_PCIE) {
-		if (tx_count <= PCIE_TX_NUM) {
-			pcie_count = 1;
-		} else {
-			cnt = tx_count;
-			while (cnt > PCIE_TX_NUM) {
-				++num;
-				cnt -= PCIE_TX_NUM;
-			}
-			pcie_count = num + 1;
-		}
-		ret = sprdwcn_bus_list_alloc(dev->tx_data_port, &head,
-					  &tail, &pcie_count);
-	} else {
-		ret = sprdwcn_bus_list_alloc(dev->tx_data_port, &head,
+
+	ret = sprdwcn_bus_list_alloc(dev->tx_data_port, &head,
 					  &tail, &tx_count);
-	}
+
 	if (ret != 0 || head == NULL || tail == NULL) {
 		wl_err("%s, %d, mbuf alloc fail\n",
 			   __func__, __LINE__);
@@ -419,22 +349,6 @@ int sprdwl_intf_tx_list(struct sprdwl_intf *dev,
 	mbufalloc += tx_count;
 
 	mbuf_pos = head;
-	if (dev->priv->hw_type == SPRDWL_HW_PCIE) {
-		if (pcie_count > 1) {
-			addr_buffer =
-			sprdwl_set_pcie_addr_to_mbuf(tx_msg,
-							 mbuf_pos, PCIE_TX_NUM);
-		} else {
-			addr_buffer =
-			sprdwl_set_pcie_addr_to_mbuf(tx_msg,
-							 mbuf_pos, tx_count);
-		}
-		if (addr_buffer == NULL) {
-			wl_err("%s:%d alloc pcie addr buf fail\n",
-				   __func__, __LINE__);
-			return -1;
-		}
-	}
 	list_for_each_safe(pos, n_list, tx_list) {
 		msg_pos = list_entry(pos, struct sprdwl_msg_buf, list);
 		sprdwl_move_tcpack_msg(dev->priv, msg_pos);
@@ -465,44 +379,13 @@ int sprdwl_intf_tx_list(struct sprdwl_intf *dev,
 		*for call back func free
 		*/
 		*msg_ptr = (unsigned long)msg_pos;
-		if (dev->priv->hw_type == SPRDWL_HW_PCIE) {
-			if (pcie_count > 1 && num > 0 && i >= j) {
-				if (--num == 0) {
-					if (cnt > 0)
-						addr_buffer =
-						sprdwl_set_pcie_addr_to_mbuf(
-						tx_msg, mbuf_pos, cnt);
-				} else {
-					/*if data num greater than PCIE_TX_NUM,
-					*alloc another pcie addr buf
-					*/
-					j += PCIE_TX_NUM;
-						addr_buffer =
-						sprdwl_set_pcie_addr_to_mbuf(
-						tx_msg, mbuf_pos, PCIE_TX_NUM);
-				}
-				if (addr_buffer == NULL) {
-					wl_err("%s:%d alloc pcie addr buf fail\n",
-						   __func__, __LINE__);
-					return -1;
-				}
-			}
-
-			pcie_addr =
-				mm_virt_to_phys(&dev->pdev->dev,
-						msg_pos->tran_data,
-						msg_pos->len, DMA_TO_DEVICE);
-			memcpy(&addr_buffer->pcie_addr[i],
-				   &pcie_addr, SPRDWL_PHYS_LEN);
-		} else {
-			mbuf_pos->buf = data_ptr;
-			mbuf_pos->len = msg_pos->len;
-			/*TODO, to check msgbuf before list push*/
-			msg_temp = GET_MSG_BUF(mbuf_pos);
-			if (!virt_addr_valid(msg_temp) ||
-				!virt_addr_valid(msg_temp->skb))
-				BUG_ON(1);
-		}
+		mbuf_pos->buf = data_ptr;
+		mbuf_pos->len = msg_pos->len;
+		/*TODO, to check msgbuf before list push*/
+		msg_temp = GET_MSG_BUF(mbuf_pos);
+		if (!virt_addr_valid(msg_temp) ||
+			!virt_addr_valid(msg_temp->skb))
+			BUG_ON(1);
 		mbuf_pos = mbuf_pos->next;
 		if (++i == tx_count)
 			break;
@@ -512,36 +395,6 @@ int sprdwl_intf_tx_list(struct sprdwl_intf *dev,
 	sprdwl_list_cut_position(tx_list_head, tx_list, tx_list_tail,
 				 ac_index);
 	sprdwl_add_to_free_list(tx_msg, tx_list_head, tx_count);
-
-	if (dev->priv->hw_type == SPRDWL_HW_PCIE) {
-		/*ret = sprdwcn_bus_push_list(dev->tx_data_port, head, tail,*/
-		/*pcie_count);*/
-		/*edma sync function*/
-		ret = sprdwcn_bus_push_link_wait_complete(dev->tx_data_port, head,
-						   tail, pcie_count, 50000);
-		if (ret != 0) {
-			for (mbuf_pos = head; mbuf_pos != NULL;
-				mbuf_pos = mbuf_pos->next) {
-				kfree(mbuf_pos->buf);
-				mbuf_pos->buf = NULL;
-				if (--pcie_count == 0)
-					break;
-			}
-			sprdwcn_bus_list_free(dev->tx_data_port, head, tail,
-					   pcie_count);
-			/*add data list to tx list header if tx fail*/
-			sprdwl_add_tx_list_head(tx_list_head,
-						tx_list, ac_index, tx_count);
-			wl_err("%s:%d Tx pcie addr buf fail\n",
-				   __func__, __LINE__);
-		} else {
-#if defined(MORE_DEBUG)
-			UPDATE_TX_PACKETS(dev, tx_count, tx_bytes);
-#endif
-			INIT_LIST_HEAD(tx_list_head);
-		}
-		return ret;
-	}
 
 	/*BT is on: call sdiohal_txthread to send data.*/
 	if (dev->priv->hw_type == SPRDWL_HW_SDIO) {
@@ -708,7 +561,7 @@ int sprdwl_intf_fill_msdu_dscr(struct sprdwl_vif *vif,
 		is_special_data = 1;
 
 	dev = (struct sprdwl_intf *)(vif->priv->hw_priv);
-	dscr_rsvd = INTF_IS_PCIE ? MSDU_DSCR_RSVD : 0;
+	dscr_rsvd = 0;
 	if (skb_headroom(skb) < (DSCR_LEN + dev->hif_offset +
 		MSG_PTR_LEN + dscr_rsvd)) {
 		temp_skb = skb;
@@ -830,12 +683,6 @@ inline void *sprdwl_get_rx_data(struct sprdwl_intf *intf,
 {
 	struct mbuf_t *mbuf = (struct mbuf_t *)pos;
 
-	if (intf->priv->hw_type == SPRDWL_HW_PCIE) {
-		mm_phys_to_virt(&intf->pdev->dev, mbuf->phy, mbuf->len,
-				DMA_FROM_DEVICE, false);
-		mbuf->phy = 0;
-	}
-
 	*tran_data = mbuf->buf;
 	*data = (*tran_data) + offset;
 	*len = mbuf->len;
@@ -847,28 +694,7 @@ inline void *sprdwl_get_rx_data(struct sprdwl_intf *intf,
 inline void sprdwl_free_rx_data(struct sprdwl_intf *intf,
 				int chn, void *head, void *tail, int num)
 {
-	int len = 0, ret = 0;
-
-	/* We should refill mbuf in pcie mode */
-	if (intf->priv->hw_type == SPRDWL_HW_PCIE) {
-		if (intf->rx_cmd_port == chn)
-			len = SPRDWL_MAX_CMD_RXLEN;
-		else
-			len = SPRDWL_MAX_DATA_RXLEN;
-
-		ret = sprdwl_rx_fill_mbuf(head, tail, num, len);
-		if (ret) {
-			wl_err("%s: alloc buf fail\n", __func__);
-			sprdwcn_bus_list_free(chn, (struct mbuf_t *)head,
-					   (struct mbuf_t *)tail, num);
-			head = NULL;
-			tail = NULL;
-			num = 0;
-		}
-	}
-
-	if (!ret)
-		sprdwcn_bus_push_list(chn, (struct mbuf_t *)head, (struct mbuf_t *)tail, num);
+	sprdwcn_bus_push_list(chn, (struct mbuf_t *)head, (struct mbuf_t *)tail, num);
 }
 
 static int intf_rx_handle(int chn, struct mbuf_t *head,
@@ -994,22 +820,6 @@ int sprdwl_tx_data_pop_list(int channel, struct mbuf_t *head, struct mbuf_t *tai
 	wl_debug("%s channel: %d, head: %p, tail: %p num: %d\n",
 		__func__, channel, head, tail, num);
 
-	if (intf->priv->hw_type == SPRDWL_HW_PCIE) {
-		/* FIXME: Temp solution, addr node pos hard to sync dma */
-		for (mbuf_pos = head; mbuf_pos != NULL;
-		mbuf_pos = mbuf_pos->next) {
-			mm_phys_to_virt(&intf->pdev->dev, mbuf_pos->phy,
-					mbuf_pos->len, DMA_TO_DEVICE, false);
-			mbuf_pos->phy = 0;
-			kfree(mbuf_pos->buf);
-			mbuf_pos->buf = NULL;
-			if (--num == 0)
-				break;
-		}
-		sprdwcn_bus_list_free(channel, head, tail, num);
-		wl_info("%s:%d free : %d msg buf\n", __func__, __LINE__, num);
-		return 0;
-	}
 #if defined(MORE_DEBUG)
 	msg_head = GET_MSG_BUF(head);
 	/*show packet average sent time, unit: ns*/
@@ -1102,11 +912,6 @@ int sprdwl_tx_cmd_pop_list(int channel, struct mbuf_t *head, struct mbuf_t *tail
 			/*list msg_buf from to_free list  to free list*/
 			sprdwl_free_cmd_buf(pos_buf, &tx_msg->tx_list_cmd);
 
-			if (intf->priv->hw_type == SPRDWL_HW_PCIE) {
-				mm_phys_to_virt(&intf->pdev->dev, pos->phy,
-						pos->len, DMA_TO_DEVICE, false);
-				pos->phy = 0;
-			}
 			/*free it*/
 			kfree(pos->buf);
 			pos->buf = NULL;
@@ -1526,10 +1331,6 @@ int sprdwl_intf_init(struct sprdwl_priv *priv, struct sprdwl_intf *intf)
 		g_intf_ops.hif_ops = sdio_hif_ops;
 		g_intf_ops.max_num =
 			sizeof(sdio_hif_ops)/sizeof(struct mchn_ops_t);
-	} else if (priv->hw_type == SPRDWL_HW_PCIE) {
-		g_intf_ops.hif_ops = pcie_hif_ops;
-		g_intf_ops.max_num =
-			sizeof(pcie_hif_ops)/sizeof(struct mchn_ops_t);
 	}
 
 	if (g_intf_ops.max_num < MAX_CHN_NUM) {

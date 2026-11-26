@@ -148,8 +148,7 @@ struct sprdwl_vif {
 };
 
 enum sprdwl_hw_type {
-	SPRDWL_HW_SDIO,
-	SPRDWL_HW_PCIE
+	SPRDWL_HW_SDIO
 };
 
 #ifdef WMMAC_WFA_CERTIFICATION

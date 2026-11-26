@@ -621,8 +621,6 @@ int sprdwl_fc_get_send_num(struct sprdwl_tx_msg *tx_msg,
 	if (data_num <= 0 || mode == SPRDWL_MODE_NONE)
 		return 0;
 	/*send all data in buff with PCIe interface*/
-	if (priv->hw_type == SPRDWL_HW_PCIE)
-		return data_num;
 	if (data_num > 100)
 		data_num = 100;
 	if (priv->credit_capa == TX_NO_CREDIT)
@@ -701,8 +699,6 @@ int sprdwl_fc_test_send_num(struct sprdwl_tx_msg *tx_msg,
 	if (data_num <= 0 || mode == SPRDWL_MODE_NONE)
 		return 0;
 	/*send all data in buff with PCIe interface, TODO*/
-	if (priv->hw_type == SPRDWL_HW_PCIE)
-		return data_num;
 	if (data_num > 100)
 		data_num = 100;
 	if (priv->credit_capa == TX_NO_CREDIT)

@@ -581,18 +581,11 @@ static int sprdwl_probe(struct platform_device *pdev)
 			 utsname()->release, SPRDWL_DRIVER_VERSION,
 			 SPRDWL_UPDATE, SPRDWL_RESERVE);
 
-	if (priv->hw_type == SPRDWL_HW_SDIO) {
-		intf->hif_offset = sizeof(struct sdiohal_puh);
-		intf->rx_cmd_port = SDIO_RX_CMD_PORT;
-		intf->rx_data_port = SDIO_RX_DATA_PORT;
-		intf->tx_cmd_port = SDIO_TX_CMD_PORT;
-		intf->tx_data_port = SDIO_TX_DATA_PORT;
-	} else if (priv->hw_type == SPRDWL_HW_PCIE) {
-		intf->rx_cmd_port = PCIE_RX_CMD_PORT;
-		intf->rx_data_port = PCIE_RX_DATA_PORT;
-		intf->tx_cmd_port = PCIE_TX_CMD_PORT;
-		intf->tx_data_port = PCIE_TX_DATA_PORT;
-	}
+	intf->hif_offset = sizeof(struct sdiohal_puh);
+	intf->rx_cmd_port = SDIO_RX_CMD_PORT;
+	intf->rx_data_port = SDIO_RX_DATA_PORT;
+	intf->tx_cmd_port = SDIO_TX_CMD_PORT;
+	intf->tx_data_port = SDIO_TX_DATA_PORT;
 	ret = sprdwl_intf_init(priv, intf);
 	if (ret) {
 		wl_err("%s intf init failed: %d\n", __func__, ret);

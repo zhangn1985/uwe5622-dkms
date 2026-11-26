@@ -26,7 +26,6 @@
 #include <wcn_bus.h>
 
 #define HW_TYPE_SDIO 0
-#define HW_TYPE_PCIE 1
 
 #define SDIO_RX_CMD_PORT	22
 #define SDIO_RX_PKT_LOG_PORT	23
