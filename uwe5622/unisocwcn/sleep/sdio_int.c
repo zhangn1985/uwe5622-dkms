@@ -264,26 +264,6 @@ int sdio_pub_int_btwf_en0(void)
 }
 EXPORT_SYMBOL(sdio_pub_int_btwf_en0);
 
-int sdio_pub_int_gnss_en0(void)
-{
-	union PUB_INT_EN0_REG reg_int_en = {0};
-
-	if (sdio_int.pub_int_num <= 0)
-		return 0;
-
-	sprdwcn_bus_aon_readb(sdio_int.pub_int_en0, &(reg_int_en.reg));
-
-	reg_int_en.bit.gnss_cali_done = 1;
-
-	sprdwcn_bus_aon_writeb(sdio_int.pub_int_en0, reg_int_en.reg);
-
-	SLP_MGR_INFO("%s ok!\n", __func__);
-
-	return 0;
-}
-EXPORT_SYMBOL(sdio_pub_int_gnss_en0);
-
-
 void sdio_pub_int_poweron(bool state)
 {
 	if (sdio_int.pub_int_num <= 0)

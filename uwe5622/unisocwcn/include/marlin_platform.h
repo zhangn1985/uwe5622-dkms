@@ -41,8 +41,8 @@ enum marlin_sub_sys {
 	MARLIN_SDIO_TX,
 	MARLIN_SDIO_RX,
 	MARLIN_MDBG,
-	MARLIN_GNSS,
-	WCN_AUTO,	/* fist GPS, then btwififm */
+	MARLIN_RESERVED_7,
+	WCN_AUTO,	/* retained power-state slot */
 	MARLIN_ALL,
 };
 

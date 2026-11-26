@@ -232,26 +232,6 @@ static inline unsigned int reg_value(unsigned int marlin3reg,
 #define CHKSUM_LEN 0X2
 #define ARMLOG_HEAD 9
 
-/* For GNSS */
-#define GNSS_CP_START_ADDR_M3L 0x40A50000
-#define GNSS_CP_START_ADDR_M3_M3E	0x40A20000
-#define GNSS_CP_START_ADDR \
-	SET_REG_VALUE(GNSS_CP_START_ADDR_M3_M3E, GNSS_CP_START_ADDR_M3L,	\
-	GNSS_CP_START_ADDR_M3_M3E)
-
-#define GNSS_CP_RESET_REG	0x40BC8280
-#define GNSS_FIRMWARE_MAX_SIZE_M3L 0x2B000
-#define GNSS_FIRMWARE_MAX_SIZE_M3_M3E 0x58000
-#define	GNSS_FIRMWARE_MAX_SIZE	\
-	SET_REG_VALUE(GNSS_FIRMWARE_MAX_SIZE_M3_M3E,	\
-	GNSS_FIRMWARE_MAX_SIZE_M3L, GNSS_FIRMWARE_MAX_SIZE_M3_M3E)
-
-#define GNSS_CHIPID_REG 0x603003fc
-
-
-
-
-
 
 /* For MARLIN3 DCACHE */
 #define DCACHE_CMD_ISSUE_START 0X80000000
@@ -305,23 +285,11 @@ static inline unsigned int reg_value(unsigned int marlin3reg,
 	BTWF_STATUS_REG_M3L, BTWF_STATUS_REG_M3_M3E)
 
 #define BTWF_OK_VALUE 0x24770011
-#define GNSS_OK 0x408600fc
 
 #define DJTAG_DAP_SEL (AON_APB_BASE_ADDR + 0X0064)
 #define APB_RST (AON_APB_BASE_ADDR + 0x0000)
 #define APB_EB  (AON_APB_BASE_ADDR + 0x0024)
 #define CM4_DAP_SEL_BTWF 0X00000001	/* bit0 */
-#define CM4_DAP_SEL_GNSS 0X00000002	/* bit1 */
-#define CM4_DAP0_SOFT_RST 0X10000000	/* BIT28 */
-#define CM4_DAP1_SOFT_RST 0X20000000	/* BIT29 */
-#define CM4_DAP0_EB 0X40000000	/* BIT30 */
-#define CM4_DAP1_EB 0X80000000	/* BIT31 */
-
-#define PD_GNSS_SS_AON_CFG4 (AON_APB_BASE_ADDR + 0X00c8)
-#define PD_AUTO_EN		(1 << 12)
-#define FORCE_DEEP_SLEEP	(1 << 3)
-#define GNSS_SS_POWER_DOWN	(1 << 2)/* NO USE */
-#define CHIP_DEEP_SLP_EN	(1 << 1)
 
 #define SYNC_ADDR_M3		0x405F0BB0
 #define SYNC_ADDR_M3L		0x405E73B0
@@ -338,12 +306,6 @@ static inline unsigned int reg_value(unsigned int marlin3reg,
 #define SYNC_VERIFY_WRITE_DONE	0xF0F0F0F7
 #define SYNC_VERIFY_FINISHED	0xF0F0F0F8
 #define SYNC_ALL_FINISHED	0xF0F0F0FF
-#define CHIP_SLP_REG		(AON_APB_BASE_ADDR + 0X000c)
-#define GNSS_SS_PWRON_FINISH	(1 << 12)
-#define GNSS_PWR_FINISH	(1 << 13)
-
-#define CGM_GNSS_FAKE_CFG (0x40844200 + 0X0104)
-#define CGM_GNSS_FAKE_SEL (0x3)
 
 /* for sleep/wakeup */
 #define REG_CP_SLP_CTL_M3_M3L	0x1a2
@@ -387,11 +349,6 @@ static inline unsigned int reg_value(unsigned int marlin3reg,
 /* For power save */
 #define REG_WIFI_MEM_CFG1	0x4083c130
 #define FORCE_SHUTDOWN_BTRAM	(1 << 22)
-
-/* For FM Spue freq */
-#define FM_REG_SPUR_FEQ1_ADDR			0x40098104
-#define FM_DISABLE_SPUR_REMOVE_VALUE		0x06DC063C
-#define FM_ENABLE_SPUR_REMOVE_FREQ2_VALUE	0x06DCAB7C
 
 /*
  * For SPI interface

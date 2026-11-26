@@ -14,7 +14,6 @@ firmware_target := $(PWD)/fw/wcnmodem.bin.hex
 
 ifeq ($(CONFIG_RK_WIFI_DEVICE_UWE5622),y)
 export CONFIG_WCN_SDIO = y
-# export CONFIG_WCN_GNSS = y
 ccflags-y += -DCONFIG_CHECK_DRIVER_BY_CHIPID
 #ccflags-y += -DCONFIG_UWE5622
 BSP_CHIP_ID := uwe5622

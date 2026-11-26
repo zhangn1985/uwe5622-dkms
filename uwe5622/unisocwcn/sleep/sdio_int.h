@@ -36,7 +36,7 @@ enum PUB_INT_BIT {
 	BT_OPEN,
 	WIFI_CLOSE,
 	BT_CLOSE,
-	GNSS_CALI_DONE,
+	PUB_INT_RESERVED,
 
 	PUB_INT_MAX = 8,
 };
@@ -63,7 +63,7 @@ union PUB_INT_EN0_REG {
 		unsigned char bt_open:1;
 		unsigned char wifi_close:1;
 		unsigned char bt_close:1;
-		unsigned char gnss_cali_done:1;
+		unsigned char reserved:1;
 	} bit;
 };
 
@@ -77,7 +77,7 @@ union PUB_INT_CLR0_REG {
 		unsigned char bt_open:1;
 		unsigned char wifi_close:1;
 		unsigned char bt_close:1;
-		unsigned char gnss_cali_done:1;
+		unsigned char reserved:1;
 	} bit;
 };
 
@@ -91,7 +91,7 @@ union PUB_INT_STS0_REG {
 		unsigned char bt_open:1;
 		unsigned char wifi_close:1;
 		unsigned char bt_close:1;
-		unsigned char gnss_cali_done:1;
+		unsigned char reserved:1;
 	} bit;
 };
 
@@ -120,7 +120,6 @@ void sdio_wait_pub_int_done(void);
 int sdio_ap_int_cp0(enum AP_INT_CP_BIT bit);
 /* pub int api */
 int sdio_pub_int_btwf_en0(void);
-int sdio_pub_int_gnss_en0(void);
 int sdio_pub_int_RegCb(enum PUB_INT_BIT bit,
 		PUB_INT_ISR isr_handler);
 void sdio_pub_int_poweron(bool state);

@@ -102,9 +102,6 @@ config AW_BIND_VERIFY
 # sprd's boot driver based on SC2342-integ...,etc
 #source "drivers/misc/sprdwcn/boot/Kconfig"
 
-# sprd's gnss driver based on SC2355/2342...,etc
-#source "drivers/misc/sprdwcn/gnss/Kconfig"
-
 # sprd's SDIO device driver based on SC2355...,etc
 #source "drivers/misc/sprdwcn/sdio/Kconfig"
 

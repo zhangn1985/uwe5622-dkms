@@ -707,7 +707,7 @@ void sdiohal_dump_aon_reg(void)
 		val &= ~BIT(4);
 		sdiohal_aon_writeb(CP_SWITCH_SGINAL, val);
 
-		/* bit3:0 bt wifi sys, 1:gnss sys */
+		/* Sweep the subsystem selection field. */
 		val &= ~(BIT(0) | BIT(1) | BIT(2) | BIT(3));
 		val |= i;
 		sdiohal_aon_writeb(CP_SWITCH_SGINAL, val);

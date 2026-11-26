@@ -34,18 +34,6 @@
 #define MARLIN3E_AA_CHIPID	0
 #endif
 
-/**************GNSS BEG**************/
-#ifdef GNSS_CP_START_ADDR
-#undef GNSS_CP_START_ADDR
-#define GNSS_CP_START_ADDR 0x40A50000
-#endif
-
-#ifdef GNSS_FIRMWARE_MAX_SIZE
-#undef GNSS_FIRMWARE_MAX_SIZE
-#define GNSS_FIRMWARE_MAX_SIZE 0x2B000
-#endif
-/**************GNSS END**************/
-
 /**************WCN BEG**************/
 #ifdef FIRMWARE_MAX_SIZE
 #undef FIRMWARE_MAX_SIZE
