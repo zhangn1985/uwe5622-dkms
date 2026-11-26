@@ -12,20 +12,6 @@
 #define CHANNEL_DPD_CALI_LEN 182
 #define CHANNEL_DPD_CALI_NUM 3
 
-#define CALI_CMD_NAME_LEN 64
-#define CALI_CMD_PARA_LEN 200
-struct nvm_cali_cmd {
-	int8_t itm[CALI_CMD_NAME_LEN];
-	int32_t par[CALI_CMD_PARA_LEN];
-	int32_t num;
-};
-
-struct nvm_name_table {
-	int8_t *itm;
-	uint32_t mem_offset;
-	int32_t type;
-};
-
 struct tx_power_control_t {
 	int8_t data_rate_power;
 	int8_t channel_num;
@@ -227,9 +213,5 @@ struct wifi_cali_t {
 	struct rf_para_t rf_para;
 	struct tpc_cfg_t tpc_cfg;
 };
-
-int get_connectivity_config_param(struct wifi_config_t *p);
-int get_connectivity_cali_param(struct wifi_cali_t *p);
-void dump_cali_file(struct wifi_cali_t *p);
 
 #endif
