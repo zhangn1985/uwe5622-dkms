@@ -248,19 +248,6 @@ struct combin_img_info {
 	unsigned int size;			/* image size */
 };
 
-/* get wcn module hardware interface type. */
-enum wcn_hw_type wcn_get_hw_if_type(void)
-{
-#if defined(CONFIG_WCN_SDIO)
-	return HW_TYPE_SDIO;
-#elif defined(CONFIG_WCN_PCIE)
-	return HW_TYPE_PCIE;
-#else
-	return HW_TYPE_UNKNOWN;
-#endif
-}
-EXPORT_SYMBOL_GPL(wcn_get_hw_if_type);
-
 unsigned long marlin_get_power_state(void)
 {
 	return marlin_dev->power_state;
@@ -1968,7 +1955,7 @@ out:
 /* for example: wifipa bound XTLEN3 */
 int pmic_bound_xtl_assert(unsigned int enable)
 {
-#if defined(CONFIG_WCN_PMIC) && !defined(CONFIG_WCN_PCIE)
+#ifdef CONFIG_WCN_PMIC
 	unsigned int val;
 
 	regmap_read(reg_map, ANA_REG_GLB_LDO_XTL_EN10, &val);
@@ -2060,11 +2047,9 @@ int chip_power_on(int subsys)
 	chip_reset_release(1);
 	marlin_analog_power_enable(true);
 	wifipa_enable(1);
-#ifndef CONFIG_WCN_PCIE
 #ifdef CONFIG_WCN_SDIO
 	if (marlin_dev->int_ap > 0)
 		sdio_pub_int_poweron(true);
-#endif
 #endif
 
 	return 0;
@@ -2392,22 +2377,7 @@ EXPORT_SYMBOL_GPL(marlin_reset_reg);
 
 int start_marlin(u32 subsys)
 {
-#ifndef CONFIG_WCN_PCIE
 	int ret;
-#endif
-#ifdef CONFIG_WCN_PCIE
-	WCN_INFO("%s [%s],power_status=%ld\n", __func__, strno(subsys),
-		 marlin_dev->power_state);
-	if (marlin_dev->download_finish_flag == 1) {
-		WCN_INFO("firmware have download\n");
-		return 0;
-	}
-	set_bit(subsys, &marlin_dev->power_state);
-	pcie_boot(subsys);
-	marlin_dev->download_finish_flag = 1;
-
-	return 0;
-#else
 	WCN_INFO("%s [%s]\n", __func__, strno(subsys));
 	if (sprdwcn_bus_get_carddump_status() != 0) {
 		WCN_ERR("%s SDIO card dump\n", __func__);
@@ -2429,23 +2399,17 @@ int start_marlin(u32 subsys)
 
 
 	return 0;
-#endif
 }
 EXPORT_SYMBOL_GPL(start_marlin);
 
 int stop_marlin(u32 subsys)
 {
-#ifndef CONFIG_WCN_PCIE
 	if (sprdwcn_bus_get_carddump_status() != 0) {
 		WCN_ERR("%s SDIO card dump\n", __func__);
 		return -1;
 	}
 
 	return marlin_set_power(subsys, false);
-#else
-	clear_bit(subsys, &marlin_dev->power_state);
-	return 0;
-#endif
 }
 EXPORT_SYMBOL_GPL(stop_marlin);
 
@@ -2503,7 +2467,7 @@ int marlin_core_init(struct device *dev)
 	/* register ops */
 	wcn_bus_init();
 	sprdwcn_bus_register_rescan_cb(marlin_scan_finish);
-	/* sdiom_init or pcie_init */
+	/* Initialize the selected bus implementation. */
 	ret = sprdwcn_bus_preinit(dev);
 	if (ret) {
 		wcn_bus_deinit();
@@ -2517,17 +2481,12 @@ int marlin_core_init(struct device *dev)
 		marlin_dev = NULL;
 		return ret;
 	}
-#ifndef CONFIG_WCN_PCIE
 #ifdef CONFIG_WCN_SDIO
 	if (marlin_dev->int_ap > 0)
 		sdio_pub_int_init(marlin_dev->int_ap);
 #endif
-#endif
 
 	flag_reset = 0;
-#ifdef CONFIG_WCN_PCIE
-	chip_power_on(WCN_AUTO);
-#endif
 
 	INIT_WORK(&marlin_dev->download_wq, pre_btwifi_download_sdio);
 

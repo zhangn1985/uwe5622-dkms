@@ -11,11 +11,7 @@ struct device;
 #define PUB_HEAD_RSV 0
 #endif
 
-enum wcn_hw_type {
-	HW_TYPE_SDIO = 0,
-	HW_TYPE_PCIE,
-	HW_TYPE_UNKNOWN
-};
+#define HW_TYPE_SDIO 0
 
 enum wcn_vendor_id {
 	/* NOT pull chipen, NOT reset sdio after resume. */
@@ -147,9 +143,6 @@ struct sprdwcn_bus_ops {
 	int (*push_link_wait_complete)(int chn, struct mbuf_t *head,
 				       struct mbuf_t *tail, int num,
 				       int timeout);
-	int (*hw_pop_link)(int chn, void *head, void *tail, int num);
-	int (*hw_tx_complete)(int chn, int timeout);
-	int (*hw_req_push_link)(int chn, int need);
 
 	int (*direct_read)(unsigned int addr, void *buf, unsigned int len);
 	int (*direct_write)(unsigned int addr, void *buf, unsigned int len);
@@ -297,39 +290,6 @@ int sprdwcn_bus_push_link_wait_complete(int chn, struct mbuf_t *head,
 
 	return bus_ops->push_link_wait_complete(chn, head,
 						    tail, num, timeout);
-}
-
-static inline
-int sprdwcn_bus_hw_pop_link(int chn, void *head, void *tail, int num)
-{
-	struct sprdwcn_bus_ops *bus_ops = get_wcn_bus_ops();
-
-	if (!bus_ops || !bus_ops->hw_pop_link)
-		return 0;
-
-	return bus_ops->hw_pop_link(chn, head, tail, num);
-}
-
-static inline
-int sprdwcn_bus_hw_tx_complete(int chn, int timeout)
-{
-	struct sprdwcn_bus_ops *bus_ops = get_wcn_bus_ops();
-
-	if (!bus_ops || !bus_ops->hw_tx_complete)
-		return 0;
-
-	return bus_ops->hw_tx_complete(chn, timeout);
-}
-
-static inline
-int sprdwcn_bus_hw_req_push_link(int chn, int need)
-{
-	struct sprdwcn_bus_ops *bus_ops = get_wcn_bus_ops();
-
-	if (!bus_ops || !bus_ops->hw_req_push_link)
-		return 0;
-
-	return bus_ops->hw_req_push_link(chn, need);
 }
 
 static inline

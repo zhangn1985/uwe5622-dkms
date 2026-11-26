@@ -87,7 +87,6 @@ enum marlin_wake_host_en {
 	WL_WAKE_HOST
 };
 
-enum wcn_hw_type wcn_get_hw_if_type(void);
 enum wcn_clock_type wcn_get_xtal_26m_clk_type(void);
 enum wcn_clock_mode wcn_get_xtal_26m_clk_mode(void);
 unsigned int marlin_get_wcn_chipid(void);

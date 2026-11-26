@@ -22,7 +22,6 @@
 #include <linux/interrupt.h>
 
 #define HW_TYPE_SDIO 0
-#define HW_TYPE_PCIE 1
 #define MCHN_MAX_NUM 32
 
 struct mbuf_t {
@@ -92,12 +91,6 @@ int mchn_deinit(struct mchn_ops_t *ops);
 /*push link list*/
 int mchn_push_link(int channel, struct mbuf_t *head, struct mbuf_t *tail,
 	int num);
-/*push link list, Using a blocking mode, Timeout wait for tx_complete*/
-int mchn_push_link_wait_complete(int chn, struct mbuf_t *head,
-	struct mbuf_t *tail, int num, int timeout);
-int mchn_hw_pop_link(int chn, void *head, void *tail, int num);
-int mchn_hw_tx_complete(int chn, int timeout);
-int mchn_hw_req_push_link(int chn, int need);
 int mbuf_link_alloc(int chn, struct mbuf_t **head, struct mbuf_t **tail,
 	int *num);
 int mbuf_link_free(int chn, struct mbuf_t *head, struct mbuf_t *tail, int num);
