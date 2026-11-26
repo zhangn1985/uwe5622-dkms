@@ -856,9 +856,6 @@ static int sprdwl_cfg80211_start_ap(struct wiphy *wiphy,
 #ifdef STA_SOFTAP_SCC_MODE
 	chn = intf->sta_home_channel;
 #endif
-	if (intf->ini_cfg.softap_channel > 0)
-		chn = intf->ini_cfg.softap_channel;
-
 	if (NULL == beacon->head || NULL == beacon->tail) {
 		wl_ndev_log(L_ERR, ndev, "%s Beacon info is NULL\n", __func__);
 		return -EINVAL;

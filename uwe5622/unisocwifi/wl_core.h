@@ -28,7 +28,6 @@
 #include <linux/init.h>
 #include <linux/fs.h>
 #include <linux/uaccess.h>
-#include "dbg_ini_util.h"
 
 #define SPRDWL_NORMAL_MEM	0
 #define SPRDWL_DEFRAG_MEM	1
@@ -189,7 +188,6 @@ struct sprdwl_intf {
 	unsigned long sleep_time;
 
 	u8 cp_asserted;
-	struct dbg_ini_cfg ini_cfg;
 	/*wifi bt coex mode, 1:BT is on, 0:BT is off*/
 	u8 coex_bt_on;
 #ifdef STA_SOFTAP_SCC_MODE

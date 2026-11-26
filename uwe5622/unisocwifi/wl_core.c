@@ -30,7 +30,6 @@
 #include "msg.h"
 #include "txrx.h"
 #include "debug.h"
-#include "dbg_ini_util.h"
 #include "tcp_ack.h"
 
 #ifdef WL_CONFIG_DEBUG
@@ -559,7 +558,6 @@ static int sprdwl_probe(struct platform_device *pdev)
 	for (i = 0; i < MAX_LUT_NUM; i++)
 		intf->peer_entry[i].ctx_id = 0xff;
 
-	dbg_util_init(&intf->ini_cfg);
 #ifdef STA_SOFTAP_SCC_MODE
 	intf->sta_home_channel = 0;
 #endif
