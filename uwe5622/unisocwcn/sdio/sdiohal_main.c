@@ -1237,37 +1237,6 @@ static int sdiohal_get_dev_func(struct sdio_func *func)
 	return 0;
 }
 
-#ifdef CONFIG_WCN_PARSE_DTS
-static struct mmc_host *sdiohal_dev_get_host(struct device_node *np_node)
-{
-	void *drv_data;
-	struct mmc_host *host_mmc;
-	struct platform_device *pdev;
-
-	pdev = of_find_device_by_node(np_node);
-	if (pdev == NULL) {
-		sdiohal_err("sdio dev get platform device failed!!!");
-		return NULL;
-	}
-
-	drv_data = platform_get_drvdata(pdev);
-	if (drv_data == NULL) {
-		sdiohal_err("sdio dev get drv data failed!!!");
-		return NULL;
-	}
-
-	host_mmc = drv_data;
-	sdiohal_info("host_mmc:%p private data:0x%lx containerof:%p\n",
-		     host_mmc, *(host_mmc->private),
-		     container_of(drv_data, struct mmc_host, private));
-
-	if (*(host_mmc->private) == (unsigned long)host_mmc)
-		return host_mmc;
-	else
-		return container_of(drv_data, struct mmc_host, private);
-}
-#endif
-
 static int sdiohal_parse_dt(struct device *dev)
 {
 	struct sdiohal_data_t *p_data = sdiohal_get_data();

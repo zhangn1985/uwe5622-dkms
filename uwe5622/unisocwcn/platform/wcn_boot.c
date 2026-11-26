@@ -1777,50 +1777,6 @@ static int check_cp_ready(void)
 
 	return 0;
 }
-#if defined CONFIG_UWE5623 || defined CONFIG_CHECK_DRIVER_BY_CHIPID
-#ifdef CONFIG_WCN_SDIO
-static int marlin_reset_by_128_bit(void)
-{
-	unsigned char reg;
-
-	if (sprdwcn_bus_aon_readb(REG_CP_RST_CHIP, &reg)) {
-		WCN_ERR("%s line:%d\n", __func__, __LINE__);
-		return -1;
-	}
-
-	reg |= 1;
-	if (sprdwcn_bus_aon_writeb(REG_CP_RST_CHIP, reg)) {
-		WCN_ERR("%s line:%d\n", __func__, __LINE__);
-		return -1;
-	}
-
-	return 0;
-}
-#endif
-#endif
-
-static int marlin_reset(int val)
-{
-#ifndef CONFIG_CHECK_DRIVER_BY_CHIPID
-#ifdef CONFIG_UWE5623
-	#ifdef CONFIG_WCN_SDIO
-	marlin_reset_by_128_bit();
-	#endif
-#endif
-#else /*CONFIG_CHECK_DRIVER_BY_CHIPID*/
-	if (wcn_get_chip_model() == WCN_CHIP_MARLIN3E)
-		marlin_reset_by_128_bit();
-#endif
-
-	if (marlin_dev->reset) {
-		if (gpiod_direction_output(marlin_dev->reset, 0) == 0) {
-			mdelay(RESET_DELAY);
-			gpiod_set_value_cansleep(marlin_dev->reset, 1);
-		}
-	}
-
-	return 0;
-}
 
 static int chip_reset_release(int val)
 {

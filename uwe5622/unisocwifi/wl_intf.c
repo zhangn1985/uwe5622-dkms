@@ -625,58 +625,6 @@ int sprdwl_intf_fill_msdu_dscr(struct sprdwl_vif *vif,
 	return 0;
 }
 
-int sprdwl_rx_fill_mbuf(struct mbuf_t *head, struct mbuf_t *tail, int num, int len)
-{
-	struct sprdwl_intf *intf = get_intf();
-	int ret = 0, count = 0;
-	struct mbuf_t *pos = NULL;
-
-	for (pos = head, count = 0; count < num; count++) {
-		pos->len = ALIGN(len, SMP_CACHE_BYTES);
-		pos->buf = netdev_alloc_frag(pos->len);
-		pos->phy = mm_virt_to_phys(&intf->pdev->dev, pos->buf,
-					   pos->len, DMA_FROM_DEVICE);
-		if (unlikely(!pos->buf)) {
-			ret = -ENOMEM;
-			break;
-		}
-		pos = pos->next;
-	}
-
-	if (ret) {
-		pos = head;
-		while (count--) {
-			sprdwl_free_data(pos->buf, SPRDWL_DEFRAG_MEM);
-			pos = pos->next;
-		}
-	}
-
-	return ret;
-}
-
-int sprdwl_rx_common_push(int chn, struct mbuf_t **head, struct mbuf_t **tail,
-			  int *num, int len)
-{
-	int ret = 0;
-
-	ret = sprdwcn_bus_list_alloc(chn, head, tail, num);
-	if (ret || head == NULL) {
-		wl_err("%s:%d sprdwcn_bus_list_alloc fail\n", __func__, __LINE__);
-		ret = -ENOMEM;
-	} else {
-		ret = sprdwl_rx_fill_mbuf(*head, *tail, *num, len);
-		if (ret) {
-			wl_err("%s: alloc buf fail\n", __func__);
-			sprdwcn_bus_list_free(chn, *head, *tail, *num);
-			*head = NULL;
-			*tail = NULL;
-			*num = 0;
-		}
-	}
-
-	return ret;
-}
-
 inline void *sprdwl_get_rx_data(struct sprdwl_intf *intf,
 				void *pos, void **data,
 				void **tran_data, int *len, int offset)
@@ -811,7 +759,6 @@ void sprdwl_handle_pop_list(void *data)
 /*call back func for HIF pop_link*/
 int sprdwl_tx_data_pop_list(int channel, struct mbuf_t *head, struct mbuf_t *tail, int num)
 {
-	struct mbuf_t *mbuf_pos = NULL;
 #if defined(MORE_DEBUG)
 	struct sprdwl_msg_buf *msg_head;
 #endif
@@ -929,18 +876,6 @@ int sprdwl_tx_cmd_pop_list(int channel, struct mbuf_t *head, struct mbuf_t *tail
 	sprdwcn_bus_list_free(channel, head, tail, num);
 
 	return 0;
-}
-
-int sprdwl_rx_cmd_push(int chn, struct mbuf_t **head, struct mbuf_t **tail, int *num)
-{
-	return sprdwl_rx_common_push(chn, head, tail,
-					 num, SPRDWL_MAX_CMD_RXLEN);
-}
-
-int sprdwl_rx_data_push(int chn, struct mbuf_t **head, struct mbuf_t **tail, int *num)
-{
-	return sprdwl_rx_common_push(chn, head, tail,
-					 num, SPRDWL_MAX_DATA_RXLEN);
 }
 
 /*
@@ -1073,25 +1008,6 @@ struct mchn_ops_t sdio_hif_ops[] = {
 	INIT_INTF(SDIO_TX_DATA_PORT, 0, 1, 0,
 		  SPRDWL_MAX_DATA_TXLEN, 800, 0, 0, 0,
 		  sprdwl_tx_data_pop_list, NULL, NULL, NULL),
-};
-
-struct mchn_ops_t pcie_hif_ops[] = {
-	/* RX INTF */
-	INIT_INTF(PCIE_RX_CMD_PORT, 1, 0, 0,
-		  SPRDWL_MAX_CMD_RXLEN, 1, 0, 0, 0,
-		  intf_rx_handle,
-		  sprdwl_rx_cmd_push, NULL, NULL),
-	INIT_INTF(PCIE_RX_DATA_PORT, 1, 0, 0,
-		  SPRDWL_MAX_DATA_RXLEN, 1, 0, 0, 0,
-		  intf_rx_handle,
-		  sprdwl_rx_data_push, NULL, NULL),
-	/* TX INTF */
-	INIT_INTF(SDIO_TX_CMD_PORT, 1, 1, 0,
-		  SPRDWL_MAX_CMD_TXLEN, 10, 0, 0, 0,
-		  sprdwl_tx_cmd_pop_list, NULL, NULL, NULL),
-	INIT_INTF(SDIO_TX_DATA_PORT, 1, 1, 0,
-		  SPRDWL_MAX_DATA_TXLEN, 300, 0, 0, 0,
-		  sprdwl_tx_data_pop_list, NULL, NULL, NULL)
 };
 
 struct sprdwl_peer_entry

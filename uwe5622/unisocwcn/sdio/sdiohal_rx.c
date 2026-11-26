@@ -72,7 +72,6 @@ static int sdiohal_data_list_assignment(struct mbuf_t *mbuf_node,
 static int sdiohal_rx_list_parser(struct sdiohal_list_t *data_list,
 				int valid_len)
 {
-	struct sdiohal_data_t *p_data = sdiohal_get_data();
 	struct sdio_puh_t *puh = NULL;
 	struct mbuf_t *mbuf_node, *mbuf_next;
 	unsigned int node_num, i;
