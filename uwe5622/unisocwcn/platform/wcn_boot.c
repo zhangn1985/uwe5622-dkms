@@ -31,7 +31,6 @@
 #include <linux/string.h>
 #include <linux/unistd.h>
 #include <linux/version.h>
-#include <linux/vmalloc.h>
 #include <linux/workqueue.h>
 #include <marlin_platform.h>
 #include <wcn_bus.h>
@@ -50,28 +49,11 @@ u32 wcn_print_level = WCN_DEBUG_OFF;
 #include "../sdio/sdiohal.h"
 #endif
 
-#ifdef CONFIG_WCN_DOWNLOAD_FIRMWARE_FROM_HEX
-#include "../fw/firmware_hex.h"
-#endif
-
-#define WCN_FW_MAX_PATH_NUM	4
-/* path of cp2 firmware. */
-#ifdef CONFIG_CUSTOMIZE_UNISOC_FW_PATH
-#define UNISOC_FW_PATH_DEFAULT CONFIG_CUSTOMIZE_UNISOC_FW_PATH
-#else
-#define UNISOC_FW_PATH_DEFAULT "/system/etc/firmware/"
-#endif
-static char *wcn_fw_path[WCN_FW_MAX_PATH_NUM] = {
-	UNISOC_FW_PATH_DEFAULT,		/* most of projects */
-	"/lib/firmware/"		/* allwinner r328... */
-};
 #define WCN_FW_NAME	"wcnmodem.bin"
 
 #ifndef REG_PMU_APB_XTL_WAIT_CNT0
 #define REG_PMU_APB_XTL_WAIT_CNT0 0xe42b00ac
 #endif
-
-static char BTWF_FIRMWARE_PATH[255];
 
 struct wcn_sync_info_t {
 	unsigned int init_status;
@@ -84,11 +66,6 @@ struct wcn_sync_info_t {
 	unsigned int mem_ap_cmd;
 	unsigned int rsvd[3];
 	unsigned int bind_verify_data[4];
-};
-
-struct firmware_backup {
-	size_t size;
-	u8 *data;
 };
 
 /*
@@ -193,7 +170,6 @@ struct marlin_device {
 	char *write_buffer;
 	struct work_struct download_wq;
 	bool no_power_off;
-	bool is_btwf_in_sysfs;
 	int wifi_need_download_ini_flag;
 	int first_power_on_flag;
 	unsigned char download_finish_flag;
@@ -202,7 +178,6 @@ struct marlin_device {
 	unsigned int wl_wake_host_int_num;
 	struct wcn_sync_info_t sync_f;
 	char *btwf_path;
-	struct firmware_backup firmware;
 };
 
 struct wifi_calibration {
@@ -729,60 +704,6 @@ static const struct imageinfo *marlin_judge_images(const unsigned char *buffer)
 	return NULL;
 }
 
-static char *load_firmware_data_path(const char *path, loff_t offset,
-	unsigned long imag_size)
-{
-	int read_len, size, i, opn_num_max = 1;
-	char *buffer = NULL;
-	char *data = NULL;
-	struct file *file;
-
-	file = filp_open(path, O_RDONLY, 0);
-	for (i = 1; i <= opn_num_max; i++) {
-		if (IS_ERR(file)) {
-			WCN_DEBUG("%s: try open file %s,count_num:%d\n",
-				  __func__, path, i);
-			ssleep(1);
-			file = filp_open(path, O_RDONLY, 0);
-		} else
-			break;
-	}
-	if (IS_ERR(file)) {
-		WCN_DEBUG("%s: open file %s error\n", __func__, path);
-		return NULL;
-	}
-	WCN_DEBUG("marlin %s open image file sucessfully\n", __func__);
-	size = imag_size;
-	buffer = vmalloc(size);
-	if (!buffer) {
-		fput(file);
-		WCN_ERR("no memory for image\n");
-		return NULL;
-	}
-
-	data = buffer;
-	do {
-#if KERNEL_VERSION(4, 14, 0) <= LINUX_VERSION_CODE
-		read_len = kernel_read(file, (void *)buffer, size, &offset);
-#else
-		read_len = kernel_read(file, offset, buffer, size);
-#endif
-		if (read_len > 0) {
-			size -= read_len;
-			buffer += read_len;
-		}
-	} while ((read_len > 0) && (size > 0));
-	fput(file);
-	WCN_DEBUG("%s finish read_Len:%d\n", __func__, read_len);
-#if KERNEL_VERSION(4, 14, 0) > LINUX_VERSION_CODE
-	/* kernel_read return value changed. */
-	if (read_len <= 0)
-		return NULL;
-#endif
-
-	return data;
-}
-
 static int sprdwcn_bus_direct_write_dispack(unsigned int addr, const void *buf,
 		size_t buf_size, size_t packet_max_size)
 {
@@ -823,24 +744,13 @@ struct marlin_firmware {
 static int marlin_request_firmware(struct marlin_firmware **mfirmware_p)
 {
 	struct marlin_firmware *mfirmware;
-#if defined(CONFIG_RK_BOARD) && defined(CONFIG_WCN_SDIO)
 	const struct firmware *firmware;
 	int ret;
-#else
-#ifndef CONFIG_WCN_DOWNLOAD_FIRMWARE_FROM_HEX
-	unsigned char load_fw_cnt = 0;
-	const void *buffer;
-	const struct firmware *firmware;
-	int ret = 0;
-#endif
-#endif
 
 	*mfirmware_p = NULL;
 	mfirmware = kmalloc_obj(struct marlin_firmware, GFP_KERNEL);
 	if (!mfirmware)
 		return -ENOMEM;
-
-#if defined(CONFIG_RK_BOARD) && defined(CONFIG_WCN_SDIO)
 	if (marlin_dev->btwf_path[0] == '/') {
 		dev_err(marlin_dev->dev, "firmware name must be relative: %s\n",
 			marlin_dev->btwf_path);
@@ -856,91 +766,6 @@ static int marlin_request_firmware(struct marlin_firmware **mfirmware_p)
 	mfirmware->data = firmware->data;
 	mfirmware->size = firmware->size;
 	mfirmware->is_from_fs = true;
-#else
-#ifdef CONFIG_WCN_PARSE_DTS
-	marlin_dev->is_btwf_in_sysfs = 1;
-#endif
-
-#ifdef CONFIG_WCN_DOWNLOAD_FIRMWARE_FROM_HEX
-
-	/* Some customer (amlogic) download fw from /fw/wcnmodem.bin.hex */
-	WCN_INFO("marlin %s from wcnmodem.bin.hex start!\n", __func__);
-	mfirmware->data = firmware_hex_buf;
-	mfirmware->size = FIRMWARE_HEX_SIZE;
-	mfirmware->is_from_fs = 0;
-	mfirmware->priv = firmware_hex_buf;
-
-#else /* CONFIG_WCN_DOWNLOAD_FIRMWARE_FROM_HEX */
-
-	if (marlin_dev->is_btwf_in_sysfs != 1) {
-		/*
-		 * If first power on, download from partition,
-		 * else download from backup firmware.
-		 */
-		if (marlin_dev->first_power_on_flag == 1) {
-			WCN_INFO("%s from %s%s start!\n", __func__,
-				 wcn_fw_path[0], WCN_FW_NAME);
-			ret = request_firmware(&firmware, WCN_FW_NAME, NULL);
-			if (ret < 0) {
-				WCN_ERR("%s not find %s errno:(%d)(ignore!!)\n",
-					__func__, WCN_FW_NAME, ret);
-				marlin_dev->is_btwf_in_sysfs = 1;
-
-				return ret;
-			}
-
-			mfirmware->priv = (void *)firmware;
-			mfirmware->data = firmware->data;
-			mfirmware->size = firmware->size;
-			mfirmware->is_from_fs = 1;
-			marlin_dev->firmware.size = firmware->size;
-			marlin_dev->firmware.data = vmalloc(firmware->size);
-			if (!marlin_dev->firmware.data) {
-				WCN_INFO("%s malloc backup error!\n", __func__);
-				return -1;
-			}
-
-			memcpy(marlin_dev->firmware.data, firmware->data,
-				   firmware->size);
-		} else {
-			WCN_INFO("marlin %s from backup start!\n", __func__);
-			mfirmware->priv = (void *)(&marlin_dev->firmware);
-			mfirmware->data = marlin_dev->firmware.data;
-			mfirmware->size = marlin_dev->firmware.size;
-			mfirmware->is_from_fs = 0;
-		}
-	} else {
-		/* NOTE! We canot guarantee the img is complete when we read it
-		 * first! The macro FIRMWARE_MAX_SIZE only guarantee AA(first in
-		 * partition) img is complete. So we need read this img two
-		 * times (other time in marlin_firmware_parse_image)
-		 */
-load_fw:
-		WCN_INFO("%s from %s start!\n", __func__, BTWF_FIRMWARE_PATH);
-		marlin_dev->is_btwf_in_sysfs = 1;
-		buffer = load_firmware_data_path(BTWF_FIRMWARE_PATH, 0,
-						 FIRMWARE_MAX_SIZE);
-		if (!buffer) {
-			load_fw_cnt++;
-			WCN_DEBUG("%s buff is NULL\n", __func__);
-			if (load_fw_cnt < WCN_FW_MAX_PATH_NUM) {
-				sprintf(BTWF_FIRMWARE_PATH, "%s%s",
-					wcn_fw_path[load_fw_cnt],
-					WCN_FW_NAME);
-				goto load_fw;
-			}
-			kfree(mfirmware);
-			return -1;
-		}
-
-		mfirmware->data = buffer;
-		mfirmware->size = FIRMWARE_MAX_SIZE;
-		mfirmware->is_from_fs = 0;
-		mfirmware->priv = buffer;
-	}
-
-#endif /* CONFIG_WCN_DOWNLOAD_FIRMWARE_FROM_HEX */
-#endif
 
 	if (mfirmware->size < sizeof(functionmask)) {
 		if (mfirmware->is_from_fs)
@@ -963,10 +788,6 @@ load_fw:
 
 static int marlin_firmware_parse_image(struct marlin_firmware *mfirmware)
 {
-	size_t offset = 0;
-	size_t size = 0;
-	size_t old_mfirmware_size = mfirmware->size;
-
 	if (mfirmware->size < sizeof(struct head))
 		return -EINVAL;
 
@@ -991,8 +812,6 @@ static int marlin_firmware_parse_image(struct marlin_firmware *mfirmware)
 			return -EINVAL;
 		mfirmware->size = info->size;
 		mfirmware->data += info->offset;
-		offset = info->offset;
-		size = info->size;
 	} else if (bin_magic_is(mfirmware->data, IMG_HEAD_MAGIC_COMBINE)) {
 		/* cal the combin size */
 		unsigned int img_count, index;
@@ -1023,33 +842,7 @@ static int marlin_firmware_parse_image(struct marlin_firmware *mfirmware)
 		}
 
 		mfirmware->size = img_real_size;
-		size = img_real_size;
 	}
-
-#ifndef CONFIG_WCN_RESUME_POWER_DOWN
-	if (!mfirmware->is_from_fs && (offset + size) > old_mfirmware_size) {
-		const void *buffer;
-
-		/* NOTE! We canot guarantee the img is complete when we read it
-		 * first! The macro FIRMWARE_MAX_SIZE only guarantee AA(first in
-		 * partition) img is complete. So we need read this img two
-		 * times (in this)
-		 */
-		buffer = load_firmware_data_path(BTWF_FIRMWARE_PATH,
-				offset, size);
-		if (!buffer) {
-			WCN_ERR("marlin:%s buffer is NULL\n", __func__);
-			return -1;
-		}
-		/* struct data "info" is a part of mfirmware->priv,
-		 * if we free mfirmware->priv, "info" will be free too!
-		 * so we need free priv at here after use "info"
-		 */
-		vfree(mfirmware->priv);
-		mfirmware->data = buffer;
-		mfirmware->priv = buffer;
-	}
-#endif
 
 	return 0;
 }
@@ -1304,16 +1097,10 @@ static int marlin_parse_dt(struct device *dev)
 	if (ret)
 		marlin_dev->btwf_path = WCN_FW_NAME;
 #endif
-	if (!ret)
-		strcpy(BTWF_FIRMWARE_PATH, marlin_dev->btwf_path);
-	else
-		sprintf(BTWF_FIRMWARE_PATH, "%s%s", wcn_fw_path[0],
-			WCN_FW_NAME);
-	WCN_DEBUG("btwf firmware path is %s\n", BTWF_FIRMWARE_PATH);
+		WCN_DEBUG("btwf firmware path is %s\n", marlin_dev->btwf_path);
 
 #else
-	sprintf(BTWF_FIRMWARE_PATH, "%s%s", wcn_fw_path[0], WCN_FW_NAME);
-	WCN_DEBUG("btwf firmware path is %s\n", BTWF_FIRMWARE_PATH);
+		WCN_DEBUG("btwf firmware path is %s\n", WCN_FW_NAME);
 #endif /* end of CONFIG_WCN_PARSE_DTS */
 
 #ifdef CONFIG_WCN_PARSE_DTS
@@ -2799,7 +2586,6 @@ void marlin_core_remove(struct device *dev)
 #endif
 	marlin_gpio_free(dev);
 	mutex_destroy(&marlin_dev->power_lock);
-	vfree(marlin_dev->firmware.data);
 	devm_kfree(dev, marlin_dev->write_buffer);
 	dev_set_drvdata(dev, NULL);
 	devm_kfree(dev, marlin_dev);
