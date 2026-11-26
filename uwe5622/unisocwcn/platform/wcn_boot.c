@@ -94,17 +94,6 @@ struct firmware_backup {
 	u8 *data;
 };
 
-struct tsx_data {
-	u32 flag; /* cali flag ref */
-	u16 dac; /* AFC cali data */
-	u16 reserved;
-};
-
-struct tsx_cali {
-	u32 init_flag;
-	struct tsx_data tsxdata;
-};
-
 /*
  * sdio config to cp side
  * bit[31:24]: reserved
@@ -219,7 +208,6 @@ struct marlin_device {
 	unsigned int bt_wake_host_int_num;
 	unsigned int wl_wake_host_int_num;
 	struct wcn_sync_info_t sync_f;
-	struct tsx_cali tsxcali;
 	char *btwf_path;
 	char *gnss_path;
 	struct firmware_backup firmware;
@@ -274,10 +262,6 @@ static struct regmap *reg_map;
 #define MARLIN_MASK 0x27F
 #define GNSS_MASK 0x080
 #define AUTO_RUN_MASK 0X100
-
-#define AFC_CALI_FLAG 0x54463031 /* cali flag */
-#define AFC_CALI_READ_FINISH 0x12121212
-#define WCN_AFC_CALI_PATH "/productinfo/wcn/tsx_bt_data.txt"
 
 #ifdef CONFIG_WCN_DOWNLOAD_FIRMWARE_FROM_HEX
 #define POWER_WQ_DELAYED_MS 0
@@ -613,75 +597,6 @@ const char *strno(int subsys)
 	default: return "MARLIN_SUBSYS_UNKNOWN";
 	}
 /* #undef E2S */
-}
-
-/* tsx/dac init */
-int marlin_tsx_cali_data_read(struct tsx_data *p_tsx_data)
-{
-	u32 size = 0;
-	u32 read_len = 0;
-	struct file *file;
-	loff_t offset = 0;
-	char *pdata;
-
-	file = filp_open(WCN_AFC_CALI_PATH, O_RDONLY, 0);
-	if (IS_ERR(file)) {
-		WCN_ERR("open file error\n");
-		return -1;
-	}
-	WCN_INFO("open image "WCN_AFC_CALI_PATH" successfully\n");
-
-	/* read file to buffer */
-	size = sizeof(struct tsx_data);
-	pdata = (char *)p_tsx_data;
-	do {
-#if KERNEL_VERSION(4, 14, 0) <= LINUX_VERSION_CODE
-		read_len = kernel_read(file, (void *)pdata, size, &offset);
-#else
-		read_len = kernel_read(file, offset, pdata, size);
-#endif
-
-		if (read_len > 0) {
-			size -= read_len;
-			pdata += read_len;
-		}
-	} while ((read_len > 0) && (size > 0));
-	fput(file);
-	WCN_INFO("After read, data =%p dac value %02x\n", pdata,
-			 p_tsx_data->dac);
-
-	return 0;
-}
-
-static u16 marlin_tsx_cali_data_get(void)
-{
-	int ret;
-
-	return 0;
-
-	WCN_INFO("tsx cali init flag %d\n", marlin_dev->tsxcali.init_flag);
-
-	if (marlin_dev->tsxcali.init_flag == AFC_CALI_READ_FINISH)
-		return marlin_dev->tsxcali.tsxdata.dac;
-
-	ret = marlin_tsx_cali_data_read(&marlin_dev->tsxcali.tsxdata);
-	marlin_dev->tsxcali.init_flag = AFC_CALI_READ_FINISH;
-	if (ret != 0) {
-		marlin_dev->tsxcali.tsxdata.dac = 0xffff;
-		WCN_INFO("tsx cali read fail! default 0xffff\n");
-		return marlin_dev->tsxcali.tsxdata.dac;
-	}
-
-	if (marlin_dev->tsxcali.tsxdata.flag != AFC_CALI_FLAG) {
-		marlin_dev->tsxcali.tsxdata.dac = 0xffff;
-		WCN_INFO("tsx cali flag fail! default 0xffff\n");
-		return marlin_dev->tsxcali.tsxdata.dac;
-	}
-	WCN_INFO("dac flag %d value:0x%x\n",
-				marlin_dev->tsxcali.tsxdata.flag,
-				marlin_dev->tsxcali.tsxdata.dac);
-
-	return marlin_dev->tsxcali.tsxdata.dac;
 }
 
 #define marlin_firmware_get_combin_info(buffer) \
@@ -1877,13 +1792,8 @@ static int marlin_send_sdio_config_to_cp(void)
 #endif
 static int marlin_write_cali_data(void)
 {
-	int ret = 0, init_state = 0, cali_data_offset = 0;
+	int ret = 0, init_state = 0;
 	int i = 0;
-
-	//WCN_INFO("tsx_dac_data:%d\n", marlin_dev->tsxcali.tsxdata.dac);
-	cali_data_offset = (unsigned long)(&(marlin_dev->sync_f.tsx_dac_data))-
-		(unsigned long)(&(marlin_dev->sync_f));
-	WCN_DEBUG("cali_data_offset:0x%x\n", cali_data_offset);
 
 	do {
 		i++;
@@ -1899,18 +1809,6 @@ static int marlin_write_cali_data(void)
 			msleep(20);
 		/* wait cp in the state of waiting cali data */
 		else {
-			/*write cali data to cp*/
-#if 0 /* ott product cali data read from effuse, not ap */
-			marlin_dev->sync_f.tsx_dac_data =
-					marlin_dev->tsxcali.tsxdata.dac;
-			ret = sprdwcn_bus_reg_write(SYNC_ADDR +
-					cali_data_offset,
-					&(marlin_dev->sync_f.tsx_dac_data), 4);
-			if (ret < 0) {
-				WCN_ERR("write cali data error:%d\n", ret);
-				return ret;
-			}
-#endif
 #ifdef CONFIG_WCN_SDIO
 			/*write sdio config to cp*/
 			ret = marlin_send_sdio_config_to_cp();
@@ -2006,7 +1904,6 @@ static int marlin_start_run(void)
 
 	WCN_DEBUG("marlin_start_run\n");
 
-	marlin_tsx_cali_data_get();
 #ifdef CONFIG_WCN_SLP
 	sdio_pub_int_btwf_en0();
 	/* after chip power on, reset sleep status */
