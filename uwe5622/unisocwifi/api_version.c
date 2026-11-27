@@ -271,19 +271,11 @@ struct api_version_t g_api_array[] = {
 		.cmd_id = WIFI_CMD_DOWNLOAD_INI,
 		.drv_version = 1,
 	},
-	{	/*ID:77*/
-		.cmd_id = WIFI_CMD_RADAR_DETECT,
-		.drv_version = 1,
-	},
-	{	/*ID:78*/
+	[78] = {	/*ID:78*/
 		.cmd_id = WIFI_CMD_HANG_RECEIVED,
 		.drv_version = 1,
 	},
-	{	/*ID:79*/
-		.cmd_id = WIFI_CMD_RESET_BEACON,
-		.drv_version = 1,
-	},
-	{	/*ID:80*/
+	[80] = {	/*ID:80*/
 		.cmd_id = WIFI_CMD_VOWIFI_DATA_PROTECT,
 		.drv_version = 1,
 	},
@@ -293,7 +285,7 @@ struct api_version_t g_api_array[] = {
 		.drv_version = 1,
 	},
 #endif
-	[84]{
+	[84] = {
 		/*ID:84*/
 		.cmd_id = WIFI_CMD_PACKET_OFFLOAD,
 		.drv_version = 1,
@@ -336,10 +328,6 @@ struct api_version_t g_api_array[] = {
 	},
 	[160]{	/*ID:0xa0*/
 		.cmd_id = WIFI_EVENT_NEW_STATION,
-		.drv_version = 1,
-	},
-	[161]{	/*ID:0xa1*/
-		.cmd_id = WIFI_EVENT_RADAR_DETECTED,
 		.drv_version = 1,
 	},
 	[176]{	/*ID:0xb0*/
