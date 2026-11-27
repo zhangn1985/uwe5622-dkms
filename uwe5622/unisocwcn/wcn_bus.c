@@ -183,16 +183,6 @@ int buf_list_is_empty(int chn)
 }
 EXPORT_SYMBOL(buf_list_is_empty);
 
-int buf_list_is_full(int chn)
-{
-	struct buffer_pool_t *pool;
-	struct chn_info_t *chn_inf = chn_info();
-
-	pool = &(chn_inf->pool[chn]);
-	return pool->free == pool->size;
-}
-EXPORT_SYMBOL(buf_list_is_full);
-
 int buf_list_free(int chn, struct mbuf_t *head, struct mbuf_t *tail, int num)
 {
 	struct buffer_pool_t *pool;
