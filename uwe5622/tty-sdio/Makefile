@@ -11,7 +11,6 @@ ifeq ($(CONFIG_RK_WIFI_DEVICE_UWE5622),y)
 sprdbt_tty-objs := \
 	tty.o \
 	rfkill.o \
-	lpm.o \
 	woble.o\
 	alignment/sitm.o
 

@@ -39,7 +39,6 @@
 
 #include <marlin_platform.h>
 #include "tty.h"
-#include "lpm.h"
 #include "rfkill.h"
 #include "woble.h"
 #include "alignment/sitm.h"
@@ -187,9 +186,7 @@ static int mtty_rx_cb(int chn, struct mbuf_t *head, struct mbuf_t *tail, int num
 {
 	int ret = 0, block_size;
 	struct rx_data *rx;
-#ifndef WOBLE_FUN
-	bt_wakeup_host();
-#endif
+
 	block_size = ((head->buf[2] & 0x7F) << 9) + (head->buf[1] << 1) + (head->buf[0] >> 7);
 
 	if (log_level == MTTY_LOG_LEVEL_VER) {
@@ -604,9 +601,6 @@ static int  mtty_probe(struct platform_device *pdev)
 	INIT_WORK(&mtty->bt_rx_work, mtty_rx_work_queue);
 
 	mtty_dev = mtty;
-	rval = bluesleep_init();
-	if (rval)
-		goto err_workqueue;
 	rval = woble_init();
 	if (rval)
 		goto err_bluesleep;
@@ -630,7 +624,6 @@ err_rx_channel:
 	sprdwcn_bus_chn_deinit(&bt_rx_ops);
 err_bluesleep:
 	mtty_dev = NULL;
-	bluesleep_exit();
 err_workqueue:
 	mtty_dev = NULL;
 	flush_workqueue(mtty->bt_rx_workqueue);
@@ -738,7 +731,6 @@ static void mtty_remove(struct platform_device *pdev)
 	/*tasklet_kill(&mtty->rx_task);*/
 	kfree(mtty);
 	platform_set_drvdata(pdev, NULL);
-	bluesleep_exit();
 }
 
 #ifdef CONFIG_OF
@@ -768,3 +760,4 @@ module_platform_driver(mtty_driver);
 MODULE_AUTHOR("Unisoc wcn bt");
 MODULE_DESCRIPTION("Unisoc marlin tty driver");
 MODULE_ALIAS("platform:mtty");
+MODULE_LICENSE("GPL");
