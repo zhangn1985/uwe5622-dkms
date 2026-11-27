@@ -1414,13 +1414,6 @@ static int sdiohal_suspend(struct device *dev)
 	int chn, ret = 0;
 
 
-#ifdef CONFIG_WCN_RESUME_KEEPPWR_RESETSDIO
-	/* After resume will reset sdio reg */
-	ret = sprdwcn_bus_reg_read(SDIO_CP_INT_EN, &p_data->sdio_int_reg, 4);
-	sdiohal_info("%s SDIO_CP_INT_EN(0x58):0x%x ret:%d\n", __func__,
-		     p_data->sdio_int_reg, ret);
-#endif
-
 	atomic_set(&p_data->flag_suspending, 1);
 	for (chn = 0; chn < SDIO_CHANNEL_NUM; chn++) {
 		sdiohal_ops = chn_ops(chn);
@@ -1482,68 +1475,15 @@ static int sdiohal_resume(struct device *dev)
 	struct sdio_func *func = p_data->sdio_func[FUNC_1];
 	int chn;
 	int ret = 0;
-#ifdef CONFIG_WCN_RESUME_KEEPPWR_RESETSDIO
-	int init_state = 0;
-#endif
-
-
-#if (defined(CONFIG_WCN_RESUME_KEEPPWR_RESETSDIO) ||\
-	defined(CONFIG_WCN_RESUME_POWER_DOWN))
-	/*
-	 * For hisi board, sdio host will power down.
-	 * So sdio slave need to reset and reinit.
-	 */
-	mmc_power_save_host(p_data->sdio_dev_host);
-	mdelay(5);
-	mmc_power_restore_host(p_data->sdio_dev_host);
-
-	if (!p_data->pwrseq) {
-		/* Enable Function 1 */
-		sdio_claim_host(p_data->sdio_func[FUNC_1]);
-		ret = sdio_enable_func(p_data->sdio_func[FUNC_1]);
-		if (!ret) {
-			ret = sdio_set_block_size(p_data->sdio_func[FUNC_1],
-						  SDIOHAL_BLK_SIZE);
-			if (ret)
-				sdio_disable_func(p_data->sdio_func[FUNC_1]);
-		}
-		sdio_release_host(p_data->sdio_func[FUNC_1]);
-		if (ret < 0) {
-			sdiohal_err("enable func1 err!!! ret is %d\n", ret);
-			return ret;
-		}
-		sdiohal_info("enable func1 ok\n");
-
-		atomic_set(&p_data->flag_resume, 1);
-		sdiohal_enable_slave_irq();
-	} else
-		pm_runtime_put_noidle(&func->dev);
-#endif
 
 	atomic_set(&p_data->flag_resume, 1);
 	if (!WCN_CARD_EXIST(&p_data->xmit_cnt))
 		atomic_sub(SDIOHAL_REMOVE_CARD_VAL, &p_data->xmit_cnt);
 
-#ifdef CONFIG_WCN_RESUME_KEEPPWR_RESETSDIO
-	/* After resume will reset sdio reg, re-enable sdio int. */
-	ret = sprdwcn_bus_reg_write(SDIO_CP_INT_EN, &p_data->sdio_int_reg, 4);
-	sdiohal_info("%s SDIO_CP_INT_EN(0x58):0x%x ret:%d\n", __func__,
-		     p_data->sdio_int_reg, ret);
-#endif
-
 	if (marlin_get_bt_wl_wake_host_en()) {
 		/* Inform CP side that AP reset sdio done during resume. */
 		sprdwcn_bus_aon_writeb(REG_AP_INT_CP0, (1 << AP_RESUME));
 	}
-
-#ifdef CONFIG_WCN_RESUME_POWER_DOWN
-	marlin_schedule_download_wq();
-#endif
-
-#if (defined(CONFIG_WCN_RESUME_KEEPPWR_RESETSDIO) ||\
-	defined(CONFIG_WCN_RESUME_POWER_DOWN))
-	sdiohal_set_cp_pin_status();
-#endif
 
 	if (WCN_CARD_EXIST(&p_data->xmit_cnt)) {
 		func = container_of(dev, struct sdio_func, dev);
@@ -1553,33 +1493,7 @@ static int sdiohal_resume(struct device *dev)
 			     func->card->host->caps);
 	}
 
-#ifdef CONFIG_WCN_RESUME_KEEPPWR_RESETSDIO
-	/*
-	 * polling sync_addr,
-	 * If equal to SYNC_SDIO_REINIT_DONE, cp receive sdio int (ap resume);
-	 * Then write sync_addr to SYNC_SDIO_IS_READY,
-	 * and enable sdio rx int.
-	 */
-	do {
-		ret = sprdwcn_bus_reg_read(SYNC_ADDR, &init_state, 4);
-		sdiohal_info("%s init_state:0x%x ret:%d\n", __func__,
-			     init_state, ret);
-		if (init_state == SYNC_SDIO_REINIT_DONE) {
-			init_state = SYNC_SDIO_IS_READY;
-			ret = sprdwcn_bus_reg_write(SYNC_ADDR, &init_state, 4);
-			if (ret < 0)
-				sdiohal_err("write SDIO_READY err:%d\n", ret);
-			else
-				break;
-		}
-		msleep(20);
-	} while (1);
-#endif
-
-#ifndef CONFIG_WCN_RESUME_POWER_DOWN
-	/* If CONFIG_WCN_RESUME_POWER_DOWN,
-	 * will enable irq at sdiohal_runtime_get function.
-	 */
+	/* Re-enable the host-side SDIO RX interrupt after resume. */
 	if (p_data->irq_type == SDIOHAL_RX_INBAND_IRQ) {
 		sdio_claim_host(p_data->sdio_func[FUNC_1]);
 		if (sdio_claim_irq(p_data->sdio_func[FUNC_1],
@@ -1593,7 +1507,6 @@ static int sdiohal_resume(struct device *dev)
 	} else if ((p_data->irq_type == SDIOHAL_RX_EXTERNAL_IRQ) &&
 		(p_data->irq_num > 0))
 		enable_irq(p_data->irq_num);
-#endif
 
 	for (chn = 0; chn < SDIO_CHANNEL_NUM; chn++) {
 		sdiohal_ops = chn_ops(chn);

@@ -437,77 +437,6 @@ out:
 }
 EXPORT_SYMBOL_GPL(wcn_get_chip_name);
 
-/*
- * Some platforms not insmod bsp ko dynamically. This function is used for
- * wifi or bt to insmod driver statically.
- * return: 0: unisoc module; -1: other module
- */
-#ifdef CONFIG_WCN_CHECK_MODULE_VENDOR
-static int marlin_find_sdio_device_id(unsigned char *path)
-{
-	int i, open_cnt = 6;
-	struct file *filp;
-	loff_t pos;
-	unsigned char read_buf[64], sdio_id_path[64];
-	char *sdio_id_pos;
-
-	sprintf(sdio_id_path, path);
-	for (i = 0; i < open_cnt; i++) {
-		filp = filp_open(sdio_id_path, O_RDONLY, 0644);
-		if (IS_ERR(filp))
-			msleep(100);
-		else
-			break;
-	}
-	if (i >= open_cnt) {
-		WCN_ERR("%s open %s fail no.%d cnt=%d\n", __func__,
-			sdio_id_path, (int)IS_ERR(filp), i);
-		/* other module */
-		return -1;
-	}
-	WCN_INFO("%s open %s success cnt=%d\n", __func__,
-		 sdio_id_path, i);
-	pos = 0;
-	kernel_read(filp, read_buf, sizeof(read_buf), &pos);
-	WCN_INFO("%s read_buf: %s\n", __func__, read_buf);
-	sdio_id_pos = strstr(read_buf, "SDIO_ID=0000:0000");
-	if (!sdio_id_pos) {
-		WCN_ERR("%s sdio id not match (0000:0000)\n", __func__);
-		filp_close(filp, NULL);
-		/* other module */
-		return -1;
-	}
-	filp_close(filp, NULL);
-	WCN_INFO("%s: This is unisoc module\n", __func__);
-
-	/* unisoc module */
-	return 0;
-}
-#endif
-
-#define SDIO_DEVICE_ID_PATH0 ("/sys/bus/sdio/devices/mmc0:8800:1/uevent")
-#define SDIO_DEVICE_ID_PATH1 ("/sys/bus/sdio/devices/mmc1:8800:1/uevent")
-#define SDIO_DEVICE_ID_PATH2 ("/sys/bus/sdio/devices/mmc2:8800:1/uevent")
-int marlin_get_wcn_module_vendor(void)
-{
-	int ret = 0;
-
-#ifdef CONFIG_WCN_CHECK_MODULE_VENDOR
-	ret = marlin_find_sdio_device_id(SDIO_DEVICE_ID_PATH1);
-	if (!ret)
-		return ret;
-	ret = marlin_find_sdio_device_id(SDIO_DEVICE_ID_PATH2);
-	if (!ret)
-		return ret;
-	ret = marlin_find_sdio_device_id(SDIO_DEVICE_ID_PATH0);
-	return ret;
-#endif
-
-	/* unisoc module */
-	return ret;
-}
-EXPORT_SYMBOL_GPL(marlin_get_wcn_module_vendor);
-
 /* return number of marlin antennas
  * MARLIN_TWO_ANT; MARLIN_THREE_ANT; ...
  */
@@ -1345,16 +1274,8 @@ static void marlin_send_sdio_config_to_cp_vendor(void)
 	 * 010: hisilicon version, keep power (NOT pull chipen) and
 	 *      reset sdio after resume
 	 */
-#if defined(CONFIG_WCN_RESUME_POWER_DOWN)
-	sdio_cfg.cfg.vendor_id = WCN_VENDOR_RESUME_POWER_DOWN;
-	WCN_INFO("sdio_config vendor:[power down after resume]\n");
-#elif defined(CONFIG_WCN_RESUME_KEEPPWR_RESETSDIO)
-	sdio_cfg.cfg.vendor_id = WCN_VENDOR_RESUME_KEEPPWR_RESETSDIO;
-	WCN_INFO("sdio_config vendor:[keeppwr, reset sdio after resume]\n");
-#else
 	sdio_cfg.cfg.vendor_id = WCN_VENDOR_DEFAULT;
 	WCN_DEBUG("sdio_config vendor:[default]\n");
-#endif
 
 	/* bit[4]: sdio_rx_mode: 0: adma; 1: sdma */
 	if (sprdwcn_bus_get_rx_mode()) {
@@ -2039,22 +1960,6 @@ int open_power_ctl(void)
 	return 0;
 }
 EXPORT_SYMBOL_GPL(open_power_ctl);
-
-void marlin_schedule_download_wq(void)
-{
-	unsigned long timeleft;
-
-	marlin_dev->wifi_need_download_ini_flag = 0;
-	schedule_work(&marlin_dev->download_wq);
-	timeleft = wait_for_completion_timeout(
-		&marlin_dev->download_done,
-		msecs_to_jiffies(POWERUP_WAIT_MS));
-	if (!timeleft) {
-		WCN_ERR("marlin download timeout\n");
-	} else if (marlin_dev->download_result)
-		WCN_ERR("marlin download failed: %d\n", marlin_dev->download_result);
-
-}
 
 static int marlin_set_power(int subsys, int val)
 {

@@ -375,7 +375,6 @@ struct sdiohal_data_t {
 	/*wakeup_source pointer*/
 #endif
 
-	unsigned int sdio_int_reg;
 #if SDIO_DUMP_CHANNEL_DATA
 	struct sdiohal_data_bak_t chntx_push_old;
 	struct sdiohal_data_bak_t chntx_push_new;

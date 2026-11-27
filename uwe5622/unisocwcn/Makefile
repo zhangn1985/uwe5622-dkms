@@ -51,11 +51,6 @@ ifeq ($(CONFIG_RK_WIFI_DEVICE_UWE5622),y)
 #### add cflag ######
 ccflags-y += -DCONFIG_RK_BOARD
 ccflags-y += -DCONFIG_WCN_PARSE_DTS
-#ccflags-y += -DCONFIG_WCN_DOWNLOAD_FIRMWARE_FROM_HEX
-#ccflags-y += -DCONFIG_WCN_RESUME_POWER_DOWN
-#ccflags-y += -DCONFIG_WCN_RESUME_KEEPPWR_RESETSDIO
-#ccflags-y += -DCONFIG_WCN_CHECK_MODULE_VENDOR
-#ccflags-y += -DCONFIG_MEM_PD
 
 all_dependencies += install
 endif
