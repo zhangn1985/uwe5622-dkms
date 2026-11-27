@@ -47,11 +47,6 @@ struct sprdwl_rx_if {
 	struct work_struct rx_work;
 	struct workqueue_struct *rx_queue;
 
-#ifdef RX_NAPI
-	struct sprdwl_msg_list rx_data_list;
-	struct napi_struct napi_rx;
-#endif
-
 	struct sprdwl_mm mm_entry;
 	struct sprdwl_rx_ba_entry ba_entry;
 	struct sprdwl_rx_defrag_entry defrag_entry;
@@ -62,22 +57,6 @@ struct sprdwl_rx_if {
 	struct workqueue_struct *rx_net_workq;
 #endif
 };
-
-struct sprdwl_addr_trans_value {
-#define SPRDWL_PROCESS_BUFFER 0
-#define SPRDWL_FREE_BUFFER 1
-#define SPRDWL_REQUEST_BUFFER 2
-#define SPRDWL_FLUSH_BUFFER 3
-	unsigned char type;
-	unsigned char num;
-	unsigned char address[][5];
-} __packed;
-
-struct sprdwl_addr_trans {
-	unsigned int timestamp;
-	unsigned char tlv_num;
-	DECLARE_FLEX_ARRAY(struct sprdwl_addr_trans_value, value);
-} __packed;
 
 /* NOTE: MUST not modify, defined by HW */
 /* It still change now */
@@ -213,17 +192,10 @@ static inline int msdu_total_len(struct rx_msdu_desc *msdu_desc)
 
 #ifdef RX_HW_CSUM
 unsigned short get_sdio_data_csum(void *entry, void *data);
-unsigned short get_pcie_data_csum(void *entry, void *data);
 int fill_skb_csum(struct sk_buff *skb, unsigned short csum);
 #else
 static inline unsigned short
 get_sdio_data_csum(void *entry, void *data)
-{
-	return 0;
-}
-
-static inline unsigned short
-get_pcie_data_csum(void *entry, void *data)
 {
 	return 0;
 }

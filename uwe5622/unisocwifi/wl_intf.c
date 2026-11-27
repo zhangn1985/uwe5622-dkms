@@ -183,13 +183,6 @@ inline int if_tx_cmd(struct sprdwl_intf *intf, unsigned char *data, int len)
 	return if_tx_one(intf, data, len, intf->tx_cmd_port);
 }
 
-inline int if_tx_addr_trans(struct sprdwl_intf *intf,
-				unsigned char *data, int len)
-{
-	/* FIXME: Which port is used to send ADDR TRNAS*/
-	return if_tx_one(intf, data, len, intf->tx_data_port);
-}
-
 void sprdwl_add_tx_list_head(struct list_head *tx_fail_list,
 				 struct list_head *tx_list,
 				 int ac_index,
@@ -298,13 +291,10 @@ int sprdwl_intf_tx_list(struct sprdwl_intf *dev,
 			int ac_index,
 			u8 coex_bt_on)
 {
-#define PCIE_TX_NUM 96
-	int ret, i = 0, j = PCIE_TX_NUM, pcie_count = 0, cnt = 0, num = 0;
+	int ret, i = 0;
 	struct sprdwl_msg_buf *msg_pos, *msg_temp;
-	struct pcie_addr_buffer *addr_buffer = NULL;
 	struct sprdwl_tx_msg *tx_msg;
 	struct mbuf_t *head = NULL, *tail = NULL, *mbuf_pos;
-	unsigned long pcie_addr = 0;
 	/*struct sprdwl_data_hdr *hdr; *//*temp for test*/
 	struct list_head *pos, *tx_list_tail, *n_list;
 	unsigned long *msg_ptr;
@@ -683,37 +673,6 @@ static int intf_rx_handle(int chn, struct mbuf_t *head,
 	return 0;
 }
 
-#ifdef RX_NAPI
-static int intf_napi_rx_handle(int chn, struct mbuf_t *head,
-					struct mbuf_t *tail, int num)
-{
-	struct sprdwl_intf *intf = get_intf();
-	struct sprdwl_rx_if *rx_if = (struct sprdwl_rx_if *)intf->sprdwl_rx;
-	struct sprdwl_msg_buf *msg = NULL;
-
-	wl_info("%s: channel:%d head:%p tail:%p num:%d\n",
-		__func__, chn, head, tail, num);
-
-	/* FIXME: Should we use replace msg? */
-	msg = sprdwl_alloc_msg_buf(&rx_if->rx_data_list);
-	if (!msg) {
-		wl_err("%s: no msgbuf\n", __func__);
-		sprdwcn_bus_push_list(chn, head, tail, num);
-		return 0;
-	}
-
-	sprdwl_fill_msg(msg, NULL, (void *)head, num);
-	msg->fifo_id = chn;
-	msg->buffer_type = SPRDWL_DEFRAG_MEM;
-	msg->data = (void *)tail;
-
-	sprdwl_queue_msg_buf(msg, &rx_if->rx_data_list);
-	napi_schedule(&rx_if->napi_rx);
-
-	return 0;
-}
-#endif
-
 void sprdwl_handle_pop_list(void *data)
 {
 	int i;
@@ -772,62 +731,6 @@ int sprdwl_tx_data_pop_list(int channel, struct mbuf_t *head, struct mbuf_t *tai
 	sprdwl_add_topop_list(channel, head, tail, num);
 	wl_debug("%s:%d free : %d msg buf\n", __func__, __LINE__, num);
 
-	return 0;
-}
-
-/*free PCIe data when receive txc event from cp*/
-int sprdwl_tx_free_pcie_data(struct sprdwl_intf *dev, unsigned char *data,
-				 unsigned short len)
-{
-	int i;
-	struct sprdwl_tx_msg *tx_msg;
-	unsigned char *data_addr_ptr;
-	uint64_t pcie_addr;
-	unsigned long timeout;
-	unsigned short  data_num;
-	struct list_head *free_list;
-	struct txc_addr_buff *txc_addr;
-	unsigned char (*pos)[5];
-	struct sprdwl_msg_buf *msg_buf, *pos_buf, *temp_buf;
-#if defined(MORE_DEBUG)
-	unsigned long tx_start_time = 0;
-#endif
-
-	txc_addr = (struct txc_addr_buff *)data;
-	data_num = txc_addr->number;
-	pos = (unsigned char (*)[5])(txc_addr + 1);
-	for (i = 0; i < data_num; i++, pos++) {
-		memcpy(&pcie_addr, pos, SPRDWL_PHYS_LEN);
-		data_addr_ptr = (unsigned char *)
-		mm_phys_to_virt(&dev->pdev->dev, pcie_addr,
-				SPRDWL_MAX_DATA_TXLEN, DMA_TO_DEVICE, true);
-		msg_buf = (struct sprdwl_msg_buf *)
-		(data_addr_ptr - (sizeof(unsigned long *) + dev->hif_offset));
-#if defined(MORE_DEBUG)
-		if (i == 0)
-			tx_start_time = msg_buf->tx_start_time;
-#endif
-		dev_kfree_skb(msg_buf->skb);
-		sprdwl_dequeue_data_buf(msg_buf);
-	}
-#if defined(MORE_DEBUG)
-	sprdwl_get_tx_avg_time(dev, tx_start_time);
-#endif
-	tx_msg = (struct sprdwl_tx_msg *)dev->sprdwl_tx;
-	free_list = &tx_msg->xmit_msg_list.to_free_list;
-	/*if cp fail to sent txc event, data will be freed timeout*/
-	if (!list_empty(free_list)) {
-		timeout = msecs_to_jiffies(SPRDWL_TX_DATA_TIMEOUT);
-		list_for_each_entry_safe(pos_buf,
-					 temp_buf, free_list, list) {
-			if (time_after(jiffies, pos_buf->timeout + timeout)) {
-				dev_kfree_skb(pos_buf->skb);
-				sprdwl_dequeue_data_buf(pos_buf);
-			} else {
-				return 0;
-			}
-		}
-	}
 	return 0;
 }
 
@@ -986,15 +889,9 @@ struct mchn_ops_t sdio_hif_ops[] = {
 	INIT_INTF(SDIO_RX_PKT_LOG_PORT, 0, 0, 0,
 		  SPRDWL_MAX_DATA_RXLEN, 1, 0, 0, 0,
 		  intf_rx_handle, NULL, NULL, NULL),
-#ifdef RX_NAPI
-	INIT_INTF(SDIO_RX_DATA_PORT, 0, 0, 0,
-		  SPRDWL_MAX_DATA_RXLEN, 1, 0, 0, 0,
-		  intf_napi_rx_handle, NULL, NULL, NULL),
-#else
 	INIT_INTF(SDIO_RX_DATA_PORT, 0, 0, 0,
 		  SPRDWL_MAX_DATA_RXLEN, 1, 0, 0, 0,
 		  intf_rx_handle, NULL, NULL, NULL),
-#endif
 
 	/* TX INTF */
 	INIT_INTF(SDIO_TX_CMD_PORT, 0, 1, 0,

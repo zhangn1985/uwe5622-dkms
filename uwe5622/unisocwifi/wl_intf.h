@@ -35,11 +35,6 @@
 /*use port 10 because fifo_len = 8*/
 #define SDIO_TX_DATA_PORT	10
 
-#define PCIE_RX_CMD_PORT	22
-#define PCIE_RX_DATA_PORT	23
-#define PCIE_TX_CMD_PORT	2
-#define PCIE_TX_DATA_PORT	3
-
 #define MSDU_DSCR_RSVD	5
 
 #define DEL_LUT_INDEX 0
@@ -115,51 +110,6 @@ struct tx_msdu_dscr {
 	unsigned short tcp_udp_header_offset;
 } __packed;
 
-struct pcie_addr_buffer {
-	struct {
-		unsigned char type:3;
-		/*direction of address buffer of cmd/event,*/
-		/*0:Tx, 1:Rx*/
-		unsigned char direction_ind:1;
-		unsigned char need_rsp:1;
-		unsigned char interface:3;
-	} common;
-	unsigned short number;
-	unsigned char offset;
-	struct {
-		unsigned char rsvd:6;
-		unsigned char buffer_type:1;
-		unsigned char buffer_inuse:1;
-	} buffer_ctrl;
-	unsigned char pcie_addr[0][5];
-} __packed;
-
-struct txc_addr_buff {
-	struct {
-		unsigned char type:3;
-		unsigned char direction_ind:1;
-		unsigned char need_rsp:1;
-		unsigned char interface:3;
-	} common;
-	/*addr offset from common*/
-	unsigned char offset;
-	struct {
-		unsigned char cksum:1;
-		unsigned char cksum_type:1;
-		unsigned char sw_ctrl:1;
-		unsigned char wds:1;
-		unsigned char swq_flag:1;
-		unsigned char rsvd:1;
-		/*0: data buffer, 1: address buffer*/
-		unsigned char next_buffer_type:1;
-		/*used only by address buffer*/
-		/*0: MH process done, 1: before send to MH*/
-		unsigned char mh_done:1;
-	} tx_ctrl;
-	unsigned short number;
-	unsigned short rsvd;
-} __packed;
-
 #define GET_MSG_BUF(ptr) \
 	((struct sprdwl_msg_buf *) \
 	(*(unsigned long *)((ptr)->buf - sizeof(unsigned long *))))
@@ -231,7 +181,6 @@ static inline bool sprdwl_is_group(unsigned char *addr)
 int sprdwl_intf_init(struct sprdwl_priv *priv, struct sprdwl_intf *intf);
 void sprdwl_intf_deinit(struct sprdwl_intf *dev);
 int if_tx_cmd(struct sprdwl_intf *intf, unsigned char *data, int len);
-int if_tx_addr_trans(struct sprdwl_intf *intf, unsigned char *data, int len);
 int sprdwl_intf_tx_list(struct sprdwl_intf *dev,
 			struct list_head *tx_list,
 			struct list_head *tx_list_head,
@@ -242,8 +191,6 @@ int sprdwl_intf_fill_msdu_dscr(struct sprdwl_vif *vif,
 			       struct sk_buff *skb,
 				   u8 type,
 			       u8 offset);
-int sprdwl_tx_free_pcie_data(struct sprdwl_intf *dev, unsigned char *data,
-			     unsigned short len);
 void *sprdwl_get_rx_data(struct sprdwl_intf *intf, void *pos, void **data,
 			 void **tran_data, int *len, int offset);
 void sprdwl_free_rx_data(struct sprdwl_intf *intf,

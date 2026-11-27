@@ -31,7 +31,6 @@ ccflags-y += -DCOMPAT_SAMPILE_CODE
 ccflags-y += -DRND_MAC_SUPPORT
 ccflags-y += -DATCMD_ASSERT
 ccflags-y += -DTCPACK_DELAY_SUPPORT
-#ccflags-y += -DRX_NAPI
 ifneq ($(TARGET_BUILD_VARIANT),user)
 ccflags-y += -DWL_CONFIG_DEBUG
 endif

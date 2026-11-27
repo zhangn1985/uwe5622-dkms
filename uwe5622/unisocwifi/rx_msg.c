@@ -96,11 +96,6 @@ unsigned short get_sdio_data_csum(void *entry, void *data)
 	return csum;
 }
 
-unsigned short get_pcie_data_csum(void *entry, void *data)
-{
-	return 0;
-}
-
 inline int fill_skb_csum(struct sk_buff *skb, unsigned short csum)
 {
 	int ret = 0;
@@ -161,24 +156,6 @@ sprdwl_rx_mh_data_process(struct sprdwl_rx_if *rx_if, void *data,
 	mm_mh_data_process(&rx_if->mm_entry, data, len, buffer_type);
 }
 
-static void
-sprdwl_rx_mh_addr_process(struct sprdwl_rx_if *rx_if, void *data,
-			  int len, int buffer_type)
-{
-	struct sprdwl_intf *intf = rx_if->intf;
-	struct sprdwl_common_hdr *hdr =
-		(struct sprdwl_common_hdr *)(data + intf->hif_offset);
-
-	if (hdr->reserv) {
-		mm_mh_data_event_process(&rx_if->mm_entry, data,
-					 len, buffer_type);
-	} else {
-		/* TODO: Add TX complete code here */
-		sprdwl_tx_free_pcie_data(intf, (unsigned char *)data, len);
-		wl_err("%s: Add TX complete code here\n", __func__);
-	}
-}
-
 #ifdef SPLIT_STACK
 void sprdwl_rx_net_work_queue(struct work_struct *work)
 {
@@ -214,10 +191,8 @@ static void sprdwl_rx_work_queue(struct work_struct *work)
 	intf = rx_if->intf;
 	priv = intf->priv;
 
-#ifndef RX_NAPI
 	if (!intf->exit && !sprdwl_peek_msg_buf(&rx_if->rx_list))
 		sprdwl_rx_process(rx_if, NULL);
-#endif
 
 	while ((msg = sprdwl_peek_msg_buf(&rx_if->rx_list))) {
 		if (intf->exit)
@@ -412,111 +387,6 @@ int sprdwl_pkt_log_save(struct sprdwl_intf *intf, void *data)
 	return 0;
 }
 
-#ifdef RX_NAPI
-static int sprdwl_netdev_poll_rx(struct napi_struct *napi, int budget)
-{
-	struct sprdwl_msg_buf *msg;
-	struct sprdwl_priv *priv;
-	struct sprdwl_rx_if *rx_if;
-	struct sprdwl_intf *intf;
-	void *pos = NULL, *data = NULL, *tran_data = NULL;
-	int len = 0, num = 0;
-	int print_len;
-
-	int quota = budget;
-	int done;
-
-	rx_if = container_of(napi, struct sprdwl_rx_if, napi_rx);
-	intf = rx_if->intf;
-	priv = intf->priv;
-
-	if (!intf->exit && !sprdwl_peek_msg_buf(&rx_if->rx_data_list))
-		sprdwl_rx_process(rx_if, NULL);
-
-	while (quota && (msg = sprdwl_peek_msg_buf(&rx_if->rx_data_list))) {
-		if (intf->exit)
-			goto next;
-
-		pos = msg->tran_data;
-		for (num = msg->len; num > 0; num--) {
-			pos = sprdwl_get_rx_data(intf, pos, &data, &tran_data,
-						 &len, intf->hif_offset);
-
-			wl_info("%s: rx type:%d\n",
-				__func__, SPRDWL_HEAD_GET_TYPE(data));
-
-			/* len in mbuf_t just means buffer len in ADMA,
-			 * so need to get data len in sdiohal_puh
-			 */
-			if (((struct sdiohal_puh *)tran_data)->len > 100)
-				print_len = 100;
-			else
-				print_len = ((struct sdiohal_puh *)
-						 tran_data)->len;
-			sprdwl_hex_dump("rx data",
-					(unsigned char *)data, print_len);
-
-			if (sprdwl_sdio_process_credit(intf, data))
-				goto free;
-
-			switch (SPRDWL_HEAD_GET_TYPE(data)) {
-			case SPRDWL_TYPE_DATA_SPECIAL:
-				if (msg->len > SPRDWL_MAX_DATA_RXLEN)
-					wl_err("err data trans too long:%d > %d\n",
-						   len, SPRDWL_MAX_CMD_RXLEN);
-				sprdwl_rx_mh_data_process(rx_if, tran_data, len,
-							  msg->buffer_type);
-				tran_data = NULL;
-				data = NULL;
-				break;
-			case SPRDWL_TYPE_DATA_PCIE_ADDR:
-				if (msg->len > SPRDWL_MAX_CMD_RXLEN)
-					wl_err("err rx mh data too long:%d > %d\n",
-						   len, SPRDWL_MAX_DATA_RXLEN);
-				sprdwl_rx_mh_addr_process(rx_if, tran_data, len,
-							  msg->buffer_type);
-				tran_data = NULL;
-				data = NULL;
-				break;
-			default:
-				wl_err("rx unknown type:%d\n",
-					   SPRDWL_HEAD_GET_TYPE(data));
-				break;
-			}
-free:
-			/* Marlin3 should release buffer by ourself */
-			if (tran_data)
-				sprdwl_free_data(tran_data, msg->buffer_type);
-
-			if (!pos) {
-				wl_debug("%s no mbuf\n", __func__);
-				break;
-			}
-		}
-next:
-		/* TODO: Should we free mbuf one by one? */
-		sprdwl_free_rx_data(intf, msg->fifo_id, msg->tran_data,
-					msg->data, msg->len);
-		sprdwl_dequeue_msg_buf(msg, &rx_if->rx_data_list);
-		quota--;
-	}
-
-	done = budget - quota;
-	if (done <= 1)
-		napi_complete(napi);
-
-	return done;
-}
-
-void sprdwl_rx_napi_init(struct net_device *ndev, struct sprdwl_intf *intf)
-{
-	struct sprdwl_rx_if *rx_if = (struct sprdwl_rx_if *)intf->sprdwl_rx;
-
-	netif_napi_add(ndev, &rx_if->napi_rx, sprdwl_netdev_poll_rx, 16);
-	napi_enable(&rx_if->napi_rx);
-}
-#endif
-
 int sprdwl_rx_init(struct sprdwl_intf *intf)
 {
 	int ret = 0;
@@ -535,15 +405,6 @@ int sprdwl_rx_init(struct sprdwl_intf *intf)
 			   __func__, ret);
 		goto err_rx_list;
 	}
-
-#ifdef RX_NAPI
-	ret = sprdwl_msg_init(SPRDWL_RX_MSG_NUM, &rx_if->rx_data_list);
-	if (ret) {
-		wl_err("%s tx_buf create failed: %d\n",
-			   __func__, ret);
-		goto err_rx_data_list;
-	}
-#endif
 
 	/* init rx_work */
 	rx_if->rx_queue =
@@ -601,10 +462,6 @@ err_rx_net_work:
 #endif
 	destroy_workqueue(rx_if->rx_queue);
 err_rx_work:
-#ifdef RX_NAPI
-	sprdwl_msg_deinit(&rx_if->rx_data_list);
-err_rx_data_list:
-#endif
 	sprdwl_msg_deinit(&rx_if->rx_list);
 err_rx_list:
 	kfree(rx_if);
@@ -625,10 +482,6 @@ int sprdwl_rx_deinit(struct sprdwl_intf *intf)
 #endif
 
 	sprdwl_msg_deinit(&rx_if->rx_list);
-#ifdef RX_NAPI
-	sprdwl_msg_deinit(&rx_if->rx_data_list);
-	napi_disable(&rx_if->napi_rx);
-#endif
 
 	sprdwl_defrag_deinit(&rx_if->defrag_entry);
 	sprdwl_mm_deinit(&rx_if->mm_entry, intf);

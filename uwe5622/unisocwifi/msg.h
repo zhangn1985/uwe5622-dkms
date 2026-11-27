@@ -30,7 +30,7 @@ enum sprdwl_head_type {
 	SPRDWL_TYPE_EVENT,
 	SPRDWL_TYPE_DATA,
 	SPRDWL_TYPE_DATA_SPECIAL,
-	SPRDWL_TYPE_DATA_PCIE_ADDR,
+	SPRDWL_TYPE_RESERVED_4,
 	SPRDWL_TYPE_PKT_LOG,
 };
 
@@ -94,11 +94,6 @@ struct sprdwl_cmd_hdr {
 	s8 status;
 	u8 rsp_cnt;
 	u8 reserv[2];
-	DECLARE_FLEX_ARRAY(u8, paydata);
-} __packed;
-
-struct sprdwl_addr_hdr {
-	struct sprdwl_common_hdr common;
 	DECLARE_FLEX_ARRAY(u8, paydata);
 } __packed;
 

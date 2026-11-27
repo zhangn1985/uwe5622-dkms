@@ -86,15 +86,10 @@ void sprdwl_netif_rx(struct sk_buff *skb, struct net_device *ndev)
 			intf->stats.rx_multicast++;
 #endif
 
-#ifndef RX_NAPI
 /*to ensure data handled in netif in order*/
 	local_bh_disable();
 	netif_receive_skb(skb);
 	local_bh_enable();
-#else
-	skb_orphan(skb);
-	napi_gro_receive(&rx_if->napi_rx, skb);
-#endif
 }
 
 void sprdwl_stop_net(struct sprdwl_vif *vif)
@@ -1385,9 +1380,6 @@ static struct sprdwl_vif *sprdwl_register_netdev(struct sprdwl_priv *priv,
 #else
 	ndev->features |= NETIF_F_ALL_CSUM;
 #endif
-#ifdef RX_NAPI
-	ndev->features |= NETIF_F_GRO;
-#endif
 	ndev->features |= NETIF_F_SG;
 	SET_NETDEV_DEV(ndev, wiphy_dev(priv->wiphy));
 
@@ -1543,11 +1535,6 @@ int sprdwl_core_init(struct device *dev, struct sprdwl_priv *priv)
 		ret = -ENXIO;
 		goto out;
 	}
-#endif
-
-#ifdef RX_NAPI
-	sprdwl_rx_napi_init(wdev->netdev,
-				((struct sprdwl_intf *)priv->hw_priv));
 #endif
 
 #if defined(UWE5621_FTR)

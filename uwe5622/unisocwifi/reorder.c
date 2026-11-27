@@ -953,14 +953,10 @@ static void ba_reorder_timeout(unsigned long data)
 	if (ba_entry->skb_head) {
 		spin_unlock_bh(&ba_entry->skb_list_lock);
 
-#ifndef RX_NAPI
 		if (!work_pending(&rx_if->rx_work)) {
 			wl_info("%s: queue rx workqueue\n", __func__);
 			queue_work(rx_if->rx_queue, &rx_if->rx_work);
 		}
-#else
-		napi_schedule(&rx_if->napi_rx);
-#endif
 	} else {
 		spin_unlock_bh(&ba_entry->skb_list_lock);
 	}
