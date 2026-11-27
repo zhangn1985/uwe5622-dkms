@@ -67,10 +67,6 @@
 #define ETHER_TYPE_IPV6 0x86dd             /* IPv6 */
 #define WAPI_TYPE                 0x88B4
 
-#ifdef OTT_UWE
-#define FOUR_BYTES_ALIGN_OFFSET 3
-#endif
-
 struct sprdwl_mc_filter {
 	bool mc_change;
 	u8 subtype;

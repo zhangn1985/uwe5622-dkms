@@ -586,15 +586,11 @@ error:
 
 static inline void mtty_destroy_pdata(struct mtty_init_data **init)
 {
-#ifndef OTT_UWE
 	struct mtty_init_data *pdata = *init;
 
 	kfree(pdata);
 
 	*init = NULL;
-#else
-	return;
-#endif
 }
 
 #ifdef WOBLE_FUN
@@ -647,13 +643,7 @@ static int  mtty_probe(struct platform_device *pdev)
 	if (!mfd_get_cell(pdev))
 		return -ENODEV;
 
-#ifdef OTT_UWE
-	static struct mtty_init_data mtty_driver_data = {
-		.name = "ttyBT",
-	};
 
-	pdata = &mtty_driver_data;
-#else
 	if (pdev->dev.of_node && !pdata) {
 		rval = mtty_parse_dt(&pdata, &pdev->dev);
 		if (rval) {
@@ -668,7 +658,6 @@ static int  mtty_probe(struct platform_device *pdev)
 			return -ENOMEM;
 		pdata->name = "ttyBT";
 	}
-#endif
 
 	mtty = kzalloc(sizeof(struct mtty_device), GFP_KERNEL);
 	if (mtty == NULL) {
@@ -876,33 +865,7 @@ static struct platform_driver mtty_driver = {
 #endif
 };
 
-#ifdef OTT_UWE
-static struct platform_device *mtty_pdev;
-static int __init mtty_pdev_init(void)
-{
-	int ret;
-
-	ret = platform_driver_register(&mtty_driver);
-	if (!ret) {
-		mtty_pdev = platform_device_alloc("mtty", -1);
-		if (platform_device_add(mtty_pdev) != 0)
-			pr_err("register platform device unisoc mtty failed\n");
-	}
-
-	return ret;
-}
-
-static void __exit mtty_pdev_exit(void)
-{
-	platform_driver_unregister(&mtty_driver);
-	platform_device_del(mtty_pdev);
-}
-
-module_init(mtty_pdev_init);
-module_exit(mtty_pdev_exit);
-#else
 module_platform_driver(mtty_driver);
-#endif
 
 MODULE_AUTHOR("Unisoc wcn bt");
 MODULE_DESCRIPTION("Unisoc marlin tty driver");

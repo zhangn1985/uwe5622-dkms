@@ -399,18 +399,6 @@ static void sprdwl_tx_timeout(struct net_device *ndev)
 #define CMD_11V_WNM_SLEEP		"WNM_SLEEP"
 #define CMD_SET_MAX_CLIENTS		"MAX_STA"
 
-#define CMD_BTCOEXSCAN_START     "BTCOEXSCAN-START"
-#define CMD_BTCOEXSCAN_STOP      "BTCOEXSCAN-STOP"
-#define CMD_RXFILTER_STOP        "RXFILTER-STOP"
-#define CMD_RXFILTER_ADD         "RXFILTER-ADD"
-#define CMD_RXFILTER_START       "RXFILTER-START"
-#define CMD_RXFILTER_REMOVE      "RXFILTER-REMOVE"
-#define CMD_SETBAND              "SETBAND"
-#define CMD_BTCOEXMODE           "BTCOEXMODE"
-#define CMD_WLS_BATCHING         "WLS_BATCHING"
-#define CMD_SET_AP_WPS_P2P_IE    "SET_AP_WPS_P2P_IE"
-#define CMD_GTK_REKEY_OFFLOAD    "GTK_REKEY_OFFLOAD"
-
 static int sprdwl_priv_cmd(struct net_device *ndev, struct ifreq *ifr)
 {
 #ifdef CONFIG_COMPAT
@@ -645,48 +633,8 @@ static int sprdwl_priv_cmd(struct net_device *ndev, struct ifreq *ifr)
 		ret = sprdwl_power_save(priv, vif->ctx_id,
 					SPRDWL_SCREEN_ON_OFF, value);
 	} else {
-#ifdef OTT_UWE
-		if (!strncasecmp(command, CMD_BTCOEXSCAN_STOP,
-					strlen(CMD_BTCOEXSCAN_STOP)))
-			ret = 0;
-		else if (!strncasecmp(command, CMD_BTCOEXSCAN_START,
-					strlen(CMD_BTCOEXSCAN_START)))
-			ret = 0;
-		else if (!strncasecmp(command, CMD_RXFILTER_STOP,
-					strlen(CMD_RXFILTER_STOP)))
-			ret = 0;
-		else if (!strncasecmp(command, CMD_RXFILTER_ADD,
-					strlen(CMD_RXFILTER_ADD)))
-			ret = 0;
-		else if (!strncasecmp(command, CMD_RXFILTER_START,
-					strlen(CMD_RXFILTER_START)))
-			ret = 0;
-		else if (!strncasecmp(command, CMD_RXFILTER_REMOVE,
-					strlen(CMD_RXFILTER_REMOVE)))
-			ret = 0;
-		else if (!strncasecmp(command, CMD_BTCOEXMODE,
-					strlen(CMD_BTCOEXMODE)))
-			ret = 0;
-		else if (!strncasecmp(command, CMD_WLS_BATCHING,
-					strlen(CMD_WLS_BATCHING)))
-			ret = 0;
-		else if (!strncasecmp(command, CMD_SETBAND,
-					strlen(CMD_SETBAND)))
-			ret = 0;
-		else if (!strncasecmp(command, CMD_SET_AP_WPS_P2P_IE,
-					strlen(CMD_SET_AP_WPS_P2P_IE)))
-			ret = 0;
-		else if (!strncasecmp(command, CMD_GTK_REKEY_OFFLOAD,
-					strlen(CMD_GTK_REKEY_OFFLOAD)))
-			ret = 0;
-		else {
-			wl_ndev_log(L_ERR, ndev, "sprdbg: %s command(%s) not support\n", __func__, command);
-			ret = -ENOTSUPP;
-		}
-#else
 		wl_ndev_log(L_ERR, ndev, "sprdbg: %s command(%s) not support\n", __func__, command);
 		ret = -ENOTSUPP;
-#endif
 	}
 out:
 	kfree(command);

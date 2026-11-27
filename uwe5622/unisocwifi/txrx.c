@@ -46,21 +46,7 @@ int sprdwl_send_data(struct sprdwl_vif *vif, struct sprdwl_msg_buf *msg,
 
 	if (sprdwl_intf_fill_msdu_dscr(vif, skb, SPRDWL_TYPE_DATA, offset))
 		return -EPERM;
-#ifdef OTT_UWE
-	skb_push(skb, 3);
-	if ((unsigned long)skb->data & 0x3) {
-		if (!skb_pad(skb, 8)) {
-			align_addr = roundup((unsigned long)skb->data, 4);
-			delta = align_addr - (unsigned long)skb->data;
-			memmove((void *)align_addr, skb->data, skb->len);
-			skb_pull(skb, delta);
-			skb_put(skb, delta);
-		} else {
-			wl_err("addr not aligned\n");
-			return -1;
-		}
-	}
-#endif
+
 	sprdwl_fill_msg(msg, skb, skb->data, skb->len);
 
 	if (sprdwl_filter_send_tcp_ack(vif->priv, msg, buf, plen))

@@ -137,12 +137,7 @@ void sprdwl_tx_free_msg_buf(void *pdev, struct sprdwl_msg_buf *msg)
 static inline void
 sprdwl_queue_data_msg_buf(struct sprdwl_msg_buf *msg_buf)
 {
-#ifdef OTT_UWE
-	struct tx_msdu_dscr *dscr = (struct tx_msdu_dscr *)(msg_buf->tran_data + FOUR_BYTES_ALIGN_OFFSET);
-#else
 	struct tx_msdu_dscr *dscr = (struct tx_msdu_dscr *)(msg_buf->tran_data);
-#endif
-
 	spin_lock_bh(&msg_buf->data_list->p_lock);
 	/*to make sure ARP/TDLS/preauth can be tx ASAP*/
 	if (dscr->tx_ctrl.sw_rate == 1)
@@ -1241,20 +1236,12 @@ int sprdwl_tx_msg_func(void *pdev, struct sprdwl_msg_buf *msg)
 		return -EPERM;
 	}
 
-#ifdef OTT_UWE
-	dscr = (struct tx_msdu_dscr *)(msg->tran_data + 3);
-#else
 	dscr = (struct tx_msdu_dscr *)(msg->tran_data);
-#endif
 
 	if (msg->msglist == &tx_msg->tx_list_qos_pool) {
 		struct peer_list *data_list;
 
-#ifdef OTT_UWE
-		qos_index = get_tid_qosindex(msg->skb, 11 + 3, &tid, &tos);
-#else
 		qos_index = get_tid_qosindex(msg->skb, 11, &tid, &tos);
-#endif
 
 #ifdef WMMAC_WFA_CERTIFICATION
 		qos_index = change_priority_if(intf->priv, &tid, &tos, msg->len);

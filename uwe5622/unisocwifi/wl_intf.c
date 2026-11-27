@@ -354,11 +354,7 @@ int sprdwl_intf_tx_list(struct sprdwl_intf *dev,
 		sprdwl_move_tcpack_msg(dev->priv, msg_pos);
 		data_ptr = (unsigned char *)(msg_pos->tran_data) -
 			dev->hif_offset;
-#ifdef OTT_UWE
-		dscr = (struct tx_msdu_dscr *)(msg_pos->tran_data + FOUR_BYTES_ALIGN_OFFSET);
-#else
 		dscr = (struct tx_msdu_dscr *)(msg_pos->tran_data);
-#endif
 		dscr->color_bit = sprdwl_fc_set_clor_bit(tx_msg, i + 1);
 /*TODO*/
 		if (sprdwl_debug_level >= L_DBG) {

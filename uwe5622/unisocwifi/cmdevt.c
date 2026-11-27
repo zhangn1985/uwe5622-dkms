@@ -825,11 +825,6 @@ int sprdwl_get_fw_info(struct sprdwl_priv *priv)
 	u8 ap_version = NOTIFY_AP_VERSION_USER;
 #endif
 
-#ifdef OTT_UWE
-#define OTT_UWE_OFFSET_ENABLE 1
-	tlv_len += 1;
-#endif
-
 	memset(r_buf, 0, r_len);
 	msg = sprdwl_cmd_getbuf(priv, tlv_len, SPRDWL_MODE_NONE,
 				SPRDWL_HEAD_RSP, WIFI_CMD_GET_INFO);
@@ -859,12 +854,6 @@ int sprdwl_get_fw_info(struct sprdwl_priv *priv)
 	sprdwl_set_tlv_elmt((u8 *)msg->data, NOTIFY_AP_VERSION,
 				sizeof(ap_version), &ap_version);
 
-#ifdef OTT_UWE
-	tlv = (struct sprdwl_tlv_data *)msg->data;
-	tlv->type = OTT_UWE_OFFSET_ENABLE;
-	tlv->len = 1;
-	*((char *)tlv->data) = 1;
-#endif
 	ret = sprdwl_cmd_send_recv(priv, msg, CMD_WAIT_TIMEOUT, r_buf, &r_len);
 	if (!ret && r_len) {
 #if defined COMPAT_SAMPILE_CODE
