@@ -303,12 +303,6 @@ static const struct ieee80211_iface_combination sprdwl_iface_combos[] = {
 	}
 };
 
-#ifdef CONFIG_PM
-static const struct wiphy_wowlan_support sprdwl_wowlan_support = {
-	.flags = WIPHY_WOWLAN_ANY | WIPHY_WOWLAN_DISCONNECT | WIPHY_WOWLAN_MAGIC_PKT,
-};
-#endif
-
 /* Interface related stuff*/
 inline void sprdwl_put_vif(struct sprdwl_vif *vif)
 {
@@ -3227,36 +3221,6 @@ out:
 }
 #endif /* ACS_SUPPORT */
 
-#ifdef WOW_SUPPORT
-static void sprdwl_set_wakeup(struct wiphy *wiphy, bool enabled)
-{
-	struct cfg80211_wowlan *cfg = wiphy->wowlan_config;
-	struct sprdwl_priv *priv = wiphy_priv(wiphy);
-
-	if (!enabled) {
-		wl_debug("%s: disabled\n", __func__);
-		sprdwl_set_wowlan(priv, SPRDWL_WOWLAN_ANY, NULL, 0);
-		return;
-	}
-
-	if (cfg->any) {
-		wl_debug("%s: any\n", __func__);
-		sprdwl_set_wowlan(priv, SPRDWL_WOWLAN_ANY, NULL, 0);
-		return;
-	}
-
-	if (cfg->magic_pkt) {
-		wl_debug("%s: magic packet\n", __func__);
-		sprdwl_set_wowlan(priv, SPRDWL_WOWLAN_MAGIC_PKT, NULL, 0);
-	}
-
-	if (cfg->disconnect) {
-		wl_debug("%s: disconnect\n", __func__);
-		sprdwl_set_wowlan(priv, SPRDWL_WOWLAN_DISCONNECT, NULL, 0);
-	}
-}
-#endif
-
 static struct cfg80211_ops sprdwl_cfg80211_ops = {
 #ifndef CONFIG_P2P_INTF
 	.add_virtual_intf = sprdwl_cfg80211_add_iface,
@@ -3317,9 +3281,6 @@ static struct cfg80211_ops sprdwl_cfg80211_ops = {
 #ifdef ACS_SUPPORT
 	.dump_survey = sprdwl_cfg80211_dump_survey,
 #endif /*ACS_SUPPORT*/
-#ifdef WOW_SUPPORT
-	.set_wakeup = sprdwl_set_wakeup,
-#endif
 };
 
 void sprdwl_save_ch_info(struct sprdwl_priv *priv, u32 band, u32 flags, int center_freq)
@@ -3747,14 +3708,6 @@ void sprdwl_setup_wiphy(struct wiphy *wiphy, struct sprdwl_priv *priv)
 		}
 	}
 
-#ifdef CONFIG_PM
-	/* Set WoWLAN flags */
-#if LINUX_VERSION_CODE > KERNEL_VERSION(3, 10, 0)
-	wiphy->wowlan = &sprdwl_wowlan_support;
-#else
-	memcpy(&wiphy->wowlan, &sprdwl_wowlan_support, sizeof(struct wiphy_wowlan_support));
-#endif
-#endif
 	wiphy->max_remain_on_channel_duration = 5000;
 	wiphy->max_num_pmkids = SPRDWL_MAX_NUM_PMKIDS;
 #ifdef RND_MAC_SUPPORT

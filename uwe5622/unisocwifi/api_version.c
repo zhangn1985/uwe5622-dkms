@@ -279,12 +279,6 @@ struct api_version_t g_api_array[] = {
 		.cmd_id = WIFI_CMD_VOWIFI_DATA_PROTECT,
 		.drv_version = 1,
 	},
-#ifdef WOW_SUPPORT
-	[83] = {    /*ID:83*/
-		.cmd_id = WIFI_CMD_SET_WOWLAN,
-		.drv_version = 1,
-	},
-#endif
 	[84] = {
 		/*ID:84*/
 		.cmd_id = WIFI_CMD_PACKET_OFFLOAD,

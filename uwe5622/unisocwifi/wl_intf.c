@@ -306,11 +306,6 @@ int sprdwl_intf_tx_list(struct sprdwl_intf *dev,
 	int tx_count_saved = tx_count;
 	int list_num;
 
-#ifdef CP2_RESET_SUPPORT
-	if (dev->cp_asserted == 1)
-		return 0;
-#endif
-
 	wl_debug("%s:%d tx_count is %d\n", __func__, __LINE__, tx_count);
 	list_num = get_list_num(tx_list);
 	if (list_num < tx_count) {
@@ -716,8 +711,8 @@ int sprdwl_tx_data_pop_list(int channel, struct mbuf_t *head, struct mbuf_t *tai
 {
 #if defined(MORE_DEBUG)
 	struct sprdwl_msg_buf *msg_head;
-#endif
 	struct sprdwl_intf *intf = get_intf();
+#endif
 
 	wl_debug("%s channel: %d, head: %p, tail: %p num: %d\n",
 		__func__, channel, head, tail, num);

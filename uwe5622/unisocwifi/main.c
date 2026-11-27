@@ -1592,16 +1592,4 @@ unsigned int wfa_cap;
 module_param(wfa_cap, uint, 0000);
 MODULE_PARM_DESC(wfa_cap, "set capability for WFA test");
 
-unsigned int tcp_ack_drop_cnt = SPRDWL_TCP_ACK_DROP_CNT;
-/* Maybe you need S_IRUGO | S_IWUSR for debug */
-module_param(tcp_ack_drop_cnt, uint, 0000);
-MODULE_PARM_DESC(tcp_ack_drop_cnt, "valid values: [1, 13]");
-
-#ifdef TCP_ACK_DROP_SUPPORT
-unsigned int tcp_ack_drop_enable = 1;
-module_param(tcp_ack_drop_enable, uint, 0000);
-MODULE_PARM_DESC(tcp_ack_drop_enable, "valid values: [0, 1]");
-#else
-const unsigned int tcp_ack_drop_enable;
-#endif
 

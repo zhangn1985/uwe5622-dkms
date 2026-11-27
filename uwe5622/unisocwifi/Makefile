@@ -35,7 +35,6 @@ ifneq ($(TARGET_BUILD_VARIANT),user)
 ccflags-y += -DWL_CONFIG_DEBUG
 endif
 ccflags-y += -DSPLIT_STACK
-#ccflags-y += -DCP2_RESET_SUPPORT
 ifeq ($(UNISOC_STA_SOFTAP_SCC_MODE),y)
 ccflags-y += -DSTA_SOFTAP_SCC_MODE
 endif
@@ -43,9 +42,6 @@ endif
 ccflags-$(CONFIG_UNISOC_WIFI_PS) += -DUNISOC_WIFI_PS
 ccflags-y += -DPPPOE_LLC_SUPPORT
 ccflags-y += -DSYNC_DISCONNECT
-#ccflags-y += -DSPRDWL_TX_SELF
-#ccflags-y += -DTCP_ACK_DROP_SUPPORT
-#ccflags-y += -DWOW_SUPPORT -DCONFIG_PM
 
 #####module name ###
 obj-m += $(MODULE_NAME).o

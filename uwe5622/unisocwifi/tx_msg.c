@@ -857,11 +857,6 @@ static int sprdwl_handle_to_send_list(struct sprdwl_intf *intf,
 	struct sprdwl_msg_list *list = &tx_msg->tx_list_qos_pool;
 	u8 coex_bt_on = intf->coex_bt_on;
 
-#ifdef CP2_RESET_SUPPORT
-	if (intf->cp_asserted == 1)
-		return 0;
-#endif
-
 	if (!list_empty(&tx_msg->xmit_msg_list.to_send_list)) {
 		to_send_list = &tx_msg->xmit_msg_list.to_send_list;
 		t_lock = &tx_msg->xmit_msg_list.send_lock;

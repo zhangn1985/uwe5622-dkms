@@ -41,15 +41,6 @@
 #define ADD_LUT_INDEX 1
 #define UPD_LUT_INDEX 2
 
-#ifdef SPRDWL_TX_SELF
-struct sprdwl_tx_buf {
-	unsigned char   *base;
-	unsigned short  buf_len;
-	unsigned short  curpos;
-	int change_size;
-};
-#endif
-
 #define MAX_CHN_NUM 16
 struct sprdwl_intf_ops {
 	unsigned int max_num;

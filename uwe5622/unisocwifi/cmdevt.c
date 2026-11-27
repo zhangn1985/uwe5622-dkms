@@ -266,11 +266,6 @@ int sprdwl_cmd_init(void)
 	}
 #endif
 
-#ifdef CP2_RESET_SUPPORT
-	if (atomic_read(&cmd->refcnt) >= SPRDWL_CMD_EXIT_VAL)
-		atomic_set(&cmd->refcnt, 0);
-#endif
-
 	spin_lock_init(&cmd->lock);
 	mutex_init(&cmd->cmd_lock);
 	init_completion(&cmd->completed);
@@ -335,20 +330,12 @@ void sprdwl_cmd_deinit(void)
 	if (cmd->wake_lock)
 		wakeup_source_unregister(cmd->wake_lock);
 #endif
-#ifdef CP2_RESET_SUPPORT
-	cmd->init_ok = 0;
-#endif
 }
 
 extern struct sprdwl_intf_ops g_intf_ops;
 static int sprdwl_cmd_lock(struct sprdwl_cmd *cmd)
 {
 	struct sprdwl_intf *intf = (struct sprdwl_intf *)g_intf_ops.intf;
-
-#ifdef CP2_RESET_SUPPORT
-	if (!unlikely(cmd->init_ok))
-		return -1;
-#endif
 
 	if (atomic_inc_return(&cmd->refcnt) >= SPRDWL_CMD_EXIT_VAL) {
 		atomic_dec(&cmd->refcnt);
@@ -379,11 +366,6 @@ static int sprdwl_cmd_lock(struct sprdwl_cmd *cmd)
 static void sprdwl_cmd_unlock(struct sprdwl_cmd *cmd)
 {
 	struct sprdwl_intf *intf = (struct sprdwl_intf *)g_intf_ops.intf;
-
-#ifdef CP2_RESET_SUPPORT
-	if (!unlikely(cmd->init_ok))
-		return;
-#endif
 
 	mutex_unlock(&cmd->cmd_lock);
 	atomic_dec(&cmd->refcnt);
@@ -3492,34 +3474,6 @@ void sprdwl_set_tlv_elmt(u8 *addr, u16 type, u16 len, u8 *data)
 	p->type = type;
 	p->len = len;
 	memcpy((u8 *)p + sizeof(*p), data, len);
-}
-
-int sprdwl_set_wowlan(struct sprdwl_priv *priv, int subcmd, void *pad, int pad_len)
-{
-	struct sprdwl_msg_buf *msg;
-	struct wowlan_cmd {
-		u8 sub_cmd_id;
-		u8 pad_len;
-		DECLARE_FLEX_ARRAY(char, pad);
-	} *cmd;
-
-	if (priv == NULL)
-		return -EINVAL;
-
-	msg = sprdwl_cmd_getbuf(priv, pad_len + sizeof(struct wowlan_cmd), SPRDWL_MODE_NONE,
-			SPRDWL_HEAD_RSP, WIFI_CMD_SET_WOWLAN);
-	if (!msg)
-		return -ENOMEM;
-
-	cmd = (struct wowlan_cmd *)msg->data;
-	cmd->sub_cmd_id = subcmd;
-	cmd->pad_len = pad_len;
-
-	wl_debug("%s subcmd = %d, len = %d\n", __func__, cmd->sub_cmd_id, cmd->pad_len);
-	if (pad_len)
-		memcpy(cmd->pad, pad, pad_len);
-
-	return sprdwl_cmd_send_recv(priv, msg, CMD_WAIT_TIMEOUT, NULL, NULL);
 }
 
 #ifdef SYNC_DISCONNECT

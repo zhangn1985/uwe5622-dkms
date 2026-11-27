@@ -782,9 +782,6 @@ static int wlan_addba_event(struct sprdwl_rx_ba_entry *ba_entry,
 	}
 
 	spin_lock_bh(&ba_node->ba_node_lock);
-#ifdef CP2_RESET_SUPPORT
-	ba_node->active = 0;
-#endif
 	if (likely(!ba_node->active)) {
 		set_ba_node_desc(ba_node->rx_ba, win_start, win_size,
 				 INDEX_SIZE_MASK(index_size));

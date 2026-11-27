@@ -30,7 +30,6 @@
 #define MIN_WIN 256
 #define SIZE_KB 1024
 
-extern unsigned int tcp_ack_drop_cnt;
 struct sprdwl_tcp_ack_msg {
 	u16 source;
 	u16 dest;

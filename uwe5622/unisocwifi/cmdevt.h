@@ -1115,7 +1115,6 @@ int sprdwl_send_data2cmd(struct sprdwl_priv *priv, u8 vif_ctx_id,
 		void *data, u16 len);
 
 void sprdwl_set_tlv_elmt(u8 *addr, u16 type, u16 len, u8 *data);
-int sprdwl_set_wowlan(struct sprdwl_priv *priv, int subcmd, void *pad, int pad_len);
 #ifdef SYNC_DISCONNECT
 int sprdwl_sync_disconnect_event(struct sprdwl_vif *vif, unsigned int timeout);
 #endif

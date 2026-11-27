@@ -484,10 +484,8 @@ static int sprdwl_ini_download_status(void)
 static void sprdwl_force_exit(void *spdev)
 {
 	struct sprdwl_intf *intf;
-	struct sprdwl_tx_msg *tx_msg;
 
 	intf = (struct sprdwl_intf *)spdev;
-	tx_msg = (struct sprdwl_tx_msg *)intf->sprdwl_tx;
 	intf->exit = 1;
 }
 
@@ -516,11 +514,7 @@ static void sprdwl_tcp_drop_msg(void *spdev, struct sprdwl_msg_buf *msgbuf)
 static struct sprdwl_if_ops sprdwl_core_ops = {
 	.get_msg_buf = sprdwl_get_msg_buf,
 	.free_msg_buf = sprdwl_tx_free_msg_buf,
-#ifdef SPRDWL_TX_SELF
-	.tx = sprdwl_tx_self_msg,
-#else
 	.tx = sprdwl_tx_msg_func,
-#endif
 	.force_exit = sprdwl_force_exit,
 	.is_exit = sprdwl_is_exit,
 	.debugfs = sprdwl_debugfs,
