@@ -77,15 +77,9 @@ int slp_mgr_wakeup(enum slp_subsys subsys)
 	if (STAY_SLPING == (atomic_read(&(slp_mgr.cp2_state)))) {
 		ap_wakeup_cp();
 		time_end = ktime_add_ms(ktime_get(), 30);
-#ifndef CONFIG_CHECK_DRIVER_BY_CHIPID
-#ifdef CONFIG_UWE5623
-		/*select btwf_slp_status*/
-		sprdwcn_bus_aon_writeb(REG_CP_PMU_SEL_CTL, 6);
-#endif
-#else /*CONFIG_CHECK_DRIVER_BY_CHIPID*/
+
 		if (wcn_get_chip_model() == WCN_CHIP_MARLIN3E)
 			sprdwcn_bus_aon_writeb(REG_CP_PMU_SEL_CTL, 6);
-#endif
 		while (1) {
 			ret = sprdwcn_bus_aon_readb(REG_BTWF_SLP_STS, &slp_sts);
 			if (ret < 0) {
@@ -95,27 +89,7 @@ int slp_mgr_wakeup(enum slp_subsys subsys)
 			}
 
 			slp_sts &= SLEEP_STATUS_FLAG;
-#ifndef CONFIG_CHECK_DRIVER_BY_CHIPID
-			if ((slp_sts != BTWF_IN_DEEPSLEEP) &&
-			   (slp_sts != BTWF_IN_DEEPSLEEP_XLT_ON) &&
-#if defined(CONFIG_UWE5622) || defined(CONFIG_UWE5623)
-			   (slp_sts != BTWF_PLL_PWR_WAIT) &&
-			   (slp_sts != BTWF_XLT_WAIT) &&
-			   (slp_sts != BTWF_XLTBUF_WAIT))
-#else
-			   (slp_sts != BTWF_IN_DEEPSLEEP_XLT_ON))
-#endif
-			{
-#if defined(CONFIG_UWE5623)
-				unsigned int reg_val = 0;
 
-				sprdwcn_bus_reg_read(CP_WAKE_STATUS,
-							 &reg_val, 4);
-				if ((reg_val & BIT(31)) == 0)
-#endif
-					break;
-			}
-#else
 			if ((slp_sts != BTWF_IN_DEEPSLEEP) &&
 			   (slp_sts != BTWF_IN_DEEPSLEEP_XLT_ON) &&
 			   ((((wcn_get_chip_model() == WCN_CHIP_MARLIN3E) ||
@@ -135,7 +109,6 @@ int slp_mgr_wakeup(enum slp_subsys subsys)
 				} else
 					break;
 			}
-#endif
 try_timeout:
 			//SLP_MGR_INFO("slp_sts-0x%x", slp_sts);
 			if (do_dump) {

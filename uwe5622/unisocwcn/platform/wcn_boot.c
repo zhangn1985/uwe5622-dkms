@@ -276,14 +276,7 @@ unsigned int marlin_get_wcn_chipid(void)
 		return chip_id;
 
 
-#ifndef CONFIG_CHECK_DRIVER_BY_CHIPID
-	ret = sprdwcn_bus_reg_read(CHIPID_REG, &chip_id, 4);
-	if (ret < 0) {
-		WCN_ERR("marlin read chip ID fail, ret=%d\n", ret);
-		return 0;
-	}
 
-#else
 	/* At first, read Marlin3E chipid register. */
 	ret = sprdwcn_bus_reg_read(CHIPID_REG_M3E, &chip_id, 4);
 	if (ret < 0) {
@@ -299,7 +292,6 @@ unsigned int marlin_get_wcn_chipid(void)
 			return 0;
 		}
 	}
-#endif
 	WCN_INFO("%s: chipid: 0x%lx\n", __func__, chip_id);
 
 	return chip_id;
@@ -506,64 +498,6 @@ static const struct imageinfo *marlin_judge_images(const unsigned char *buffer)
 	if (buffer == NULL)
 		return NULL;
 
-#ifndef CONFIG_CHECK_DRIVER_BY_CHIPID
-	if (wcn_get_chip_model() == WCN_CHIP_MARLIN3) {
-		switch (chip_id) {
-		case MARLIN_AA_CHIPID:
-			return marlin_imageinfo_get_from_data(IMG_MARLINAA_TAG,
-								  buffer);
-		case MARLIN_AB_CHIPID:
-			return marlin_imageinfo_get_from_data(IMG_MARLINAB_TAG,
-								  buffer);
-		case MARLIN_AC_CHIPID:
-		case MARLIN_AD_CHIPID:
-			/* bin of m3 AC and AD chip is the same. */
-			image_info = marlin_imageinfo_get_from_data(
-				IMG_MARLINAC_TAG, buffer);
-			if (image_info) {
-				WCN_INFO("%s find %s tag\n", __func__,
-					 IMG_MARLINAC_TAG);
-				return image_info;
-			}
-			return marlin_imageinfo_get_from_data(IMG_MARLINAD_TAG,
-								  buffer);
-		default:
-			WCN_ERR("Marlin can't find correct imginfo!\n");
-		}
-	}
-	if (wcn_get_chip_model() == WCN_CHIP_MARLIN3L) {
-		switch (chip_id) {
-		case MARLIN_AA_CHIPID:
-			return marlin_imageinfo_get_from_data(IMG_MARLINAA_TAG,
-								  buffer);
-		case MARLIN_AB_CHIPID:
-			return marlin_imageinfo_get_from_data(IMG_MARLINAB_TAG,
-								  buffer);
-		default:
-			WCN_ERR("Marlin can't find correct imginfo!\n");
-		}
-	}
-	if (wcn_get_chip_model() == WCN_CHIP_MARLIN3E) {
-		switch (chip_id) {
-		case MARLIN_AA_CHIPID:
-		case MARLIN_AB_CHIPID:
-			/* bin of m3e AA and AB chip is the same. */
-			image_info = marlin_imageinfo_get_from_data(
-				IMG_MARLINAA_TAG, buffer);
-			if (image_info) {
-				WCN_INFO("%s find %s tag\n", __func__,
-					 IMG_MARLINAA_TAG);
-				return image_info;
-			}
-			return marlin_imageinfo_get_from_data(IMG_MARLINAB_TAG,
-								  buffer);
-		default:
-			WCN_ERR("Marlin can't find correct imginfo!\n");
-		}
-	}
-
-#else  /*ELOF CONFIG_CHECK_DRIVER_BY_CHIPID*/
-
 	switch (chip_id) {
 	case MARLIN3_AA_CHIPID:
 		return marlin_imageinfo_get_from_data(
@@ -617,7 +551,6 @@ static const struct imageinfo *marlin_judge_images(const unsigned char *buffer)
 		WCN_INFO("%s Cannot find Chip Firmware\n", __func__);
 		break;
 	}
-#endif /*EOF CONFIG_CHECK_DRIVER_BY_CHIPID*/
 	return NULL;
 }
 

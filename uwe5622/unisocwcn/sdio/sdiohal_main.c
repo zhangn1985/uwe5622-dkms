@@ -684,17 +684,10 @@ void sdiohal_dump_aon_reg(void)
 
 	sdiohal_info("sdio dump_aon_reg entry\n");
 
-#ifndef CONFIG_CHECK_DRIVER_BY_CHIPID
-#ifdef CONFIG_UWE5623
-	sdiohal_dump_debug_bus();
-	return;
-#endif
-#else /*CONFIG_CHECK_DRIVER_BY_CHIPID*/
 	if (wcn_get_chip_model() == WCN_CHIP_MARLIN3E) {
 		sdiohal_dump_debug_bus();
 		return;
 	}
-#endif
 
 	for (i = 0; i <= CP_128BIT_SIZE; i++) {
 		sdiohal_aon_readb(CP_PMU_STATUS + i, &reg_buf[i]);
@@ -842,7 +835,6 @@ int sdiohal_readl(unsigned int system_addr, void *buf)
 #endif
 
 	sdiohal_resume_check();
-#ifdef CONFIG_CHECK_DRIVER_BY_CHIPID
 	/* If defined this macro, the driver will read chipid register firstly.
 	 * Because sleep and wakeup function need to know register address
 	 * by chipid. Because of getting slp_mgr.drv_slp_lock mutex lock,
@@ -851,9 +843,7 @@ int sdiohal_readl(unsigned int system_addr, void *buf)
 	if ((!IS_BYPASS_WAKE(system_addr)) &&
 		(system_addr != CHIPID_REG_M3E) &&
 		(system_addr != CHIPID_REG_M3_M3L))
-#else
-	if (!IS_BYPASS_WAKE(system_addr))
-#endif
+
 		sdiohal_cp_rx_wakeup(DT_READL);
 	sdiohal_op_enter();
 	ret = sdiohal_dt_set_addr(system_addr);
@@ -871,7 +861,6 @@ int sdiohal_readl(unsigned int system_addr, void *buf)
 
 	sdio_release_host(p_data->sdio_func[FUNC_1]);
 	sdiohal_op_leave();
-#ifdef CONFIG_CHECK_DRIVER_BY_CHIPID
 	/* If defined this macro, the driver will read chipid register firstly.
 	 * Because sleep and wakeup function need to know register address
 	 * by chipid. Because of getting slp_mgr.drv_slp_lock mutex lock,
@@ -880,9 +869,6 @@ int sdiohal_readl(unsigned int system_addr, void *buf)
 	if ((!IS_BYPASS_WAKE(system_addr)) &&
 		(system_addr != CHIPID_REG_M3E) &&
 		(system_addr != CHIPID_REG_M3_M3L))
-#else
-	if (!IS_BYPASS_WAKE(system_addr))
-#endif
 		sdiohal_cp_rx_sleep(DT_READL);
 	if (ret != 0) {
 		sdiohal_err("dt readl fail ret:%d, system_addr=0x%x\n",
@@ -1242,7 +1228,6 @@ static int sdiohal_parse_dt(struct device *dev)
 	struct sdiohal_data_t *p_data = sdiohal_get_data();
 #ifdef CONFIG_WCN_PARSE_DTS
 	struct device_node *np;
-	struct device_node *sdio_node;
 
 	np = dev->of_node;
 	if (!np) {
@@ -1332,14 +1317,9 @@ static int sdiohal_set_cp_pin_status(void)
 	int reg_value;
 
 	/* cp pin pull down on default except uwe5621 */
-#ifndef CONFIG_CHECK_DRIVER_BY_CHIPID
-#ifndef CONFIG_UWE5621
-	return 0;
-#endif
-#else /*CONFIG_CHECK_DRIVER_BY_CHIPID*/
+
 	if (wcn_get_chip_model() != WCN_CHIP_MARLIN3)
 		return 0;
-#endif
 	/*
 	 * Because of cp pin pull up on default, It's lead to
 	 * the sdio mistaken interruption before cp run,
@@ -1626,16 +1606,7 @@ int sdiohal_runtime_put(void)
 #ifdef SDIO_RESET_DEBUG
 int sdiohal_disable_apb_reset(void)
 {
-#ifndef CONFIG_CHECK_DRIVER_BY_CHIPID
-#ifdef SDIO_RESET_ENABLE
-	int reg_value;
 
-	sdiohal_readl(SDIO_RESET_ENABLE, &reg_value);
-	sdiohal_info("0x40930040: 0x%x\n", reg_value);
-	reg_value &= ~BIT(4);
-	sdiohal_writel(SDIO_RESET_ENABLE, &reg_value);
-#endif
-#else /*CONFIG_CHECK_DRIVER_BY_CHIPID*/
 	int ret_value;
 	unsigned int sdio_reset_enable = 0x40930040;
 
@@ -1643,7 +1614,6 @@ int sdiohal_disable_apb_reset(void)
 	sdiohal_info("0x40930040: 0x%x\n", reg_value);
 	reg_value &= ~BIT(4);
 	sdiohal_writel(sdio_reset_enable, &reg_value);
-#endif
 
 	return 0;
 }
