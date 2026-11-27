@@ -37,10 +37,6 @@
 #include "rx_msg.h"
 #include <linux/timer.h>
 
-#ifdef DFS_MASTER
-#include "11h.h"
-#endif
-
 #ifdef WMMAC_WFA_CERTIFICATION
 #include "qos.h"
 #endif
@@ -841,11 +837,6 @@ static int sprdwl_cfg80211_start_ap(struct wiphy *wiphy,
 	}
 #endif
 
-#ifdef DFS_MASTER
-	if (settings->beacon_interval)
-		vif->priv->beacon_period = settings->beacon_interval;
-#endif
-
 	if (!settings->ssid || settings->ssid_len > sizeof(vif->ssid)) {
 		wl_ndev_log(L_ERR, ndev, "%s invalid SSID!\n", __func__);
 		return -EINVAL;
@@ -941,12 +932,6 @@ static int sprdwl_cfg80211_start_ap(struct wiphy *wiphy,
 				  mgmt_len);
 	kfree(mgmt);
 
-#ifdef DFS_MASTER
-	if (!netif_carrier_ok(vif->ndev))
-		netif_carrier_on(vif->ndev);
-	if (netif_queue_stopped(vif->ndev))
-		netif_wake_queue(vif->ndev);
-#endif
 	if (ret)
 		wl_ndev_log(L_ERR, ndev, "%s failed to start AP!\n", __func__);
 	else
@@ -966,18 +951,6 @@ static int sprdwl_cfg80211_change_beacon(struct wiphy *wiphy,
 	struct sprdwl_vif *vif = netdev_priv(ndev);
 	struct cfg80211_beacon_data *beacon = &params->beacon;
 
-#ifdef DFS_MASTER
-	/*send beacon tail ie if needed*/
-	if (beacon->tail_len)
-		sprdwl_reset_beacon(vif->priv, vif->ctx_id,
-				beacon->tail, beacon->tail_len);
-	/*enable wifi traffic*/
-	if (!netif_carrier_ok(vif->ndev))
-		netif_carrier_on(vif->ndev);
-	if (netif_queue_stopped(vif->ndev))
-		netif_wake_queue(vif->ndev);
-#endif
-
 	return sprdwl_change_beacon(vif, beacon);
 }
 
@@ -987,13 +960,6 @@ static int sprdwl_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *ndev,
 static int sprdwl_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *ndev)
 #endif
 {
-#ifdef DFS_MASTER
-	struct sprdwl_vif *vif = netdev_priv(ndev);
-#endif
-#ifdef DFS_MASTER
-	sprdwl_abort_cac(vif);
-#endif
-
 	netif_carrier_off(ndev);
 	return 0;
 }
@@ -3351,10 +3317,6 @@ static struct cfg80211_ops sprdwl_cfg80211_ops = {
 #ifdef ACS_SUPPORT
 	.dump_survey = sprdwl_cfg80211_dump_survey,
 #endif /*ACS_SUPPORT*/
-#ifdef DFS_MASTER
-	.start_radar_detection = sprdwl_cfg80211_start_radar_detection,
-	.channel_switch = sprdwl_cfg80211_channel_switch,
-#endif
 #ifdef WOW_SUPPORT
 	.set_wakeup = sprdwl_set_wakeup,
 #endif
@@ -3924,9 +3886,6 @@ void sprdwl_setup_wiphy(struct wiphy *wiphy, struct sprdwl_priv *priv)
 	wiphy->flags |= WIPHY_FLAG_IBSS_RSN;
 #endif /* IBSS_SUPPORT && IBSS_RSN_SUPPORT */
 
-#ifdef DFS_MASTER
-	wiphy->flags |= WIPHY_FLAG_HAS_CHANNEL_SWITCH;
-#endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
 	wiphy->max_sched_scan_reqs = 1;
 #endif

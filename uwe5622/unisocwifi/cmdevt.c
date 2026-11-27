@@ -29,9 +29,6 @@
 #include "tx_msg.h"
 #include "rx_msg.h"
 #include "wl_intf.h"
-#ifdef DFS_MASTER
-#include "11h.h"
-#endif
 #include "rf_marlin3.h"
 #include <linux/kthread.h>
 #ifdef WMMAC_WFA_CERTIFICATION
@@ -143,10 +140,6 @@ static const char *cmd2str(u8 cmd)
 	C2S(WIFI_CMD_GET_PROTECT_MODE)
 	C2S(WIFI_CMD_DOWNLOAD_INI)
 	C2S(WIFI_CMD_PACKET_OFFLOAD)
-#ifdef DFS_MASTER
-	C2S(WIFI_CMD_RADAR_DETECT)
-	C2S(WIFI_CMD_RESET_BEACON)
-#endif
 	C2S(WIFI_CMD_VOWIFI_DATA_PROTECT)
 	C2S(WIFI_CMD_SET_TLV)
 	C2S(WIFI_CMD_SET_WOWLAN)
@@ -1201,23 +1194,6 @@ int sprdwl_set_ie(struct sprdwl_priv *priv, u8 vif_ctx_id, u8 type,
 
 	return sprdwl_cmd_send_recv(priv, msg, CMD_WAIT_TIMEOUT, NULL, NULL);
 }
-
-#ifdef DFS_MASTER
-int sprdwl_reset_beacon(struct sprdwl_priv *priv,
-			 u8 vif_ctx_id, const u8 *beacon, u16 len)
-{
-	struct sprdwl_msg_buf *msg;
-
-	msg = sprdwl_cmd_getbuf(priv, len, vif_ctx_id, SPRDWL_HEAD_RSP,
-				WIFI_CMD_RESET_BEACON);
-	if (!msg)
-		return -ENOMEM;
-
-	memcpy(msg->data, beacon, len);
-
-	return sprdwl_cmd_send_recv(priv, msg, CMD_WAIT_TIMEOUT, NULL, NULL);
-}
-#endif
 
 int sprdwl_start_ap(struct sprdwl_priv *priv,
 			 u8 vif_ctx_id, u8 *beacon, u16 len)
@@ -3321,9 +3297,6 @@ static const char *evt2str(u8 evt)
 	E2S(WIFI_EVENT_BA)
 	E2S(WIFI_EVENT_RSSI_MONITOR)
 	E2S(WIFI_EVENT_GSCAN_FRAME)
-#ifdef DFS_MASTER
-	E2S(WIFI_EVENT_RADAR_DETECTED)
-#endif
 	E2S(WIFI_EVENT_STA_LUT_INDEX)
 	E2S(WIFI_EVENT_SUSPEND_RESUME)
 	E2S(WIFI_EVENT_NAN)
@@ -3454,11 +3427,6 @@ unsigned short sprdwl_rx_event_process(struct sprdwl_priv *priv, u8 *msg)
 	case WIFI_EVENT_BA:
 		sprdwl_event_ba_mgmt(vif, data, len);
 		break;
-#ifdef DFS_MASTER
-	case WIFI_EVENT_RADAR_DETECTED:
-		sprdwl_11h_handle_radar_detected(vif, data, len);
-		break;
-#endif
 #ifdef RTT_SUPPORT
 	case WIFI_EVENT_RTT:
 		sprdwl_event_ftm(vif, data, len);

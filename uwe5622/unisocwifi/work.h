@@ -20,9 +20,6 @@
 #include <linux/types.h>
 #include <linux/list.h>
 #include <linux/spinlock.h>
-#ifdef DFS_MASTER
-#include "11h.h"
-#endif
 
 struct sprdwl_work {
 	struct list_head list;
@@ -36,9 +33,6 @@ struct sprdwl_work {
 #define SPRDWL_WORK_BA_MGMT	6
 #define SPRDWL_WORK_ADDBA 7
 #define SPRDWL_WORK_DELBA 8
-#ifdef DFS_MASTER
-#define    SPRDWL_WORK_DFS   9
-#endif
 #define SPRDWL_ASSERT 10
 #define SPRDWL_HANG_RECEIVED 11
 #define SPRDWL_POP_MBUF 12

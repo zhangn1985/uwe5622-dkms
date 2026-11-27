@@ -19,9 +19,6 @@
 #include "rx_msg.h"
 #include "tx_msg.h"
 #include "wl_intf.h"
-#ifdef DFS_MASTER
-#include "11h.h"
-#endif
 
 struct sprdwl_work *sprdwl_alloc_work(int len)
 {
@@ -130,12 +127,6 @@ static void sprdwl_do_work(struct work_struct *work)
 		case SPRDWL_SEND_CLOSE:
 			sprdwl_close_fw(vif->priv, vif->ctx_id, *(sprdwl_work->data));
 			break;
-#ifdef DFS_MASTER
-		case SPRDWL_WORK_DFS:
-			sprdwl_send_dfs_cmd(vif, sprdwl_work->data,
-							sprdwl_work->len);
-			break;
-#endif
 		case SPRDWL_CMD_TX_DATA:
 			sprdwl_send_data2cmd(vif->priv, vif->ctx_id,
 					sprdwl_work->data, sprdwl_work->len);

@@ -983,10 +983,6 @@ int sprdwl_set_wps_ie(struct sprdwl_priv *priv, u8 vif_ctx_id, u8 type,
 		      const u8 *ie, u8 len);
 int sprdwl_set_ft_ie(struct sprdwl_priv *priv, u8 vif_ctx_id,
 		     const u8 *ie, u16 len);
-#ifdef DFS_MASTER
-int sprdwl_reset_beacon(struct sprdwl_priv *priv, u8 vif_ctx_id,
-		   const u8 *beacon, u16 len);
-#endif
 int sprdwl_start_ap(struct sprdwl_priv *priv, u8 vif_ctx_id,
 		    u8 *beacon, u16 len);
 int sprdwl_get_rssi(struct sprdwl_priv *priv, u8 vif_ctx_id, u8 *signal,

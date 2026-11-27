@@ -125,14 +125,6 @@ struct sprdwl_vif {
 	/* ACS stuff */
 	struct list_head survey_info_list;
 #endif /* ACS_SUPPORT*/
-#ifdef DFS_MASTER
-	/* dfs master mode */
-	struct workqueue_struct *dfs_cac_workqueue;
-	struct delayed_work dfs_cac_work;
-	struct workqueue_struct *dfs_chan_sw_workqueue;
-	struct delayed_work dfs_chan_sw_work;
-	struct cfg80211_chan_def dfs_chandef;
-#endif
 	u8 wps_flag;
 #ifdef SYNC_DISCONNECT
 	atomic_t sync_disconnect_event;

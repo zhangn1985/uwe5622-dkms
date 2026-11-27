@@ -29,10 +29,8 @@ ccflags-y += -DACS_SUPPORT -DRX_HW_CSUM
 ccflags-y += -DWMMAC_WFA_CERTIFICATION
 ccflags-y += -DCOMPAT_SAMPILE_CODE
 ccflags-y += -DRND_MAC_SUPPORT
-#ccflags-y += -DSOFTAP_HOOK
 ccflags-y += -DATCMD_ASSERT
 ccflags-y += -DTCPACK_DELAY_SUPPORT
-#ccflags-y += -DDFS_MASTER
 #ccflags-y += -DRX_NAPI
 ifneq ($(TARGET_BUILD_VARIANT),user)
 ccflags-y += -DWL_CONFIG_DEBUG
@@ -66,7 +64,6 @@ $(MODULE_NAME)-objs += rtt.o
 $(MODULE_NAME)-objs += api_version.o
 $(MODULE_NAME)-objs += rnd_mac_addr.o
 $(MODULE_NAME)-objs += debug.o
-#$(MODULE_NAME)-objs += 11h.o
 
 all: $(all_dependencies)
 driver: $(driver_dependencies)

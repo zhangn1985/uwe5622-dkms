@@ -33,9 +33,6 @@
 #endif
 #include "tcp_ack.h"
 #include "rnd_mac_addr.h"
-#ifdef DFS_MASTER
-#include "11h.h"
-#endif
 
 #ifdef RTT_SUPPORT
 #include "rtt.h"
@@ -343,9 +340,6 @@ static void sprdwl_uninit(struct net_device *ndev)
 
 static int sprdwl_open(struct net_device *ndev)
 {
-#ifdef DFS_MASTER
-	netif_carrier_off(ndev);
-#endif
 
 	netif_start_queue(ndev);
 
@@ -1453,10 +1447,6 @@ struct wireless_dev *sprdwl_add_iface(struct sprdwl_priv *priv,
 	init_waitqueue_head(&vif->disconnect_wq);
 	atomic_set(&vif->sync_disconnect_event, 0);
 #endif
-#ifdef DFS_MASTER
-	sprdwl_init_dfs_master(vif);
-#endif
-
 	spin_lock_bh(&priv->list_lock);
 	list_add_tail(&vif->vif_node, &priv->vif_list);
 	spin_unlock_bh(&priv->list_lock);
@@ -1466,9 +1456,6 @@ struct wireless_dev *sprdwl_add_iface(struct sprdwl_priv *priv,
 
 int sprdwl_del_iface(struct sprdwl_priv *priv, struct sprdwl_vif *vif)
 {
-#ifdef DFS_MASTER
-	sprdwl_deinit_dfs_master(vif);
-#endif
 	if (!vif->ndev)
 		sprdwl_unregister_wdev(vif);
 	else
