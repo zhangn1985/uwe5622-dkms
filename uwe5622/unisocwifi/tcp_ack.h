@@ -80,9 +80,6 @@ void sprdwl_filter_rx_tcp_ack(struct sprdwl_priv *priv,
 int sprdwl_filter_send_tcp_ack(struct sprdwl_priv *priv,
 			       struct sprdwl_msg_buf *msgbuf,
 			       unsigned char *buf, unsigned int plen);
-void enable_tcp_ack_delay(char *buf, unsigned char offset);
-void adjust_tcp_ack_delay(char *buf, unsigned char offset);
 void sprdwl_move_tcpack_msg(struct sprdwl_priv *priv,
 			    struct sprdwl_msg_buf *msg);
-void adjust_tcp_ack_delay_win(char *buf, unsigned char offset);
 #endif

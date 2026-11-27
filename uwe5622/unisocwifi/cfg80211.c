@@ -3874,7 +3874,6 @@ struct sprdwl_priv *sprdwl_core_create(enum sprdwl_hw_type type,
 	}
 	priv = wiphy_priv(wiphy);
 	priv->wiphy = wiphy;
-	g_sprdwl_priv = priv;
 	priv->hw_type = type;
 	wl_info("hw_type:%d\n", priv->hw_type);
 
@@ -3917,6 +3916,5 @@ void sprdwl_core_free(struct sprdwl_priv *priv)
 
 		if (wiphy)
 			wiphy_free(wiphy);
-		g_sprdwl_priv = NULL;
 	}
 }

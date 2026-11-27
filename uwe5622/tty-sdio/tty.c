@@ -624,8 +624,6 @@ err_rx_channel:
 	sprdwcn_bus_chn_deinit(&bt_rx_ops);
 err_bluesleep:
 	mtty_dev = NULL;
-err_workqueue:
-	mtty_dev = NULL;
 	flush_workqueue(mtty->bt_rx_workqueue);
 	destroy_workqueue(mtty->bt_rx_workqueue);
 	err_tty:

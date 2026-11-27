@@ -58,7 +58,6 @@ $(MODULE_NAME)-objs += rf_marlin3.o
 $(MODULE_NAME)-objs += rtt.o
 $(MODULE_NAME)-objs += api_version.o
 $(MODULE_NAME)-objs += rnd_mac_addr.o
-$(MODULE_NAME)-objs += debug.o
 
 all: $(all_dependencies)
 driver: $(driver_dependencies)

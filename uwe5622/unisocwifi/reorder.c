@@ -23,7 +23,6 @@
 #include "cmdevt.h"
 #include "wl_intf.h"
 #include "qos.h"
-#include "debug.h"
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
 static void ba_reorder_timeout(struct timer_list *t);
@@ -920,7 +919,6 @@ static void ba_reorder_timeout(unsigned long data)
 						  ba_entry);
 	unsigned short pos_seqno = 0;
 
-	debug_cnt_inc(REORDER_TIMEOUT_CNT);
 	spin_lock_bh(&ba_node->ba_node_lock);
 	if (ba_node->active && ba_node_desc->buff_cnt &&
 		!timer_pending(&ba_node->reorder_timer)) {

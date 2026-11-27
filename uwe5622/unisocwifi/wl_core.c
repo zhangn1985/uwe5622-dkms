@@ -18,7 +18,6 @@
 #include <linux/platform_device.h>
 #include <linux/mfd/core.h>
 #include <linux/utsname.h>
-#include <linux/debugfs.h>
 #include <linux/version.h>
 #include <marlin_platform.h>
 #include <linux/of.h>
@@ -29,8 +28,6 @@
 #include "rx_msg.h"
 #include "msg.h"
 #include "txrx.h"
-#include "debug.h"
-#include "tcp_ack.h"
 
 #ifdef WL_CONFIG_DEBUG
 int sprdwl_debug_level = L_ERR;
@@ -39,90 +36,6 @@ int sprdwl_debug_level = L_NONE;
 #endif
 
 struct device *sprdwl_dev;
-void adjust_debug_level(char *buf, unsigned char offset)
-{
-	int level = buf[offset] - '0';
-
-	switch (level) {
-	case L_ERR:
-		sprdwl_debug_level = L_ERR;
-		break;
-	case L_WARN:
-		sprdwl_debug_level = L_WARN;
-		break;
-	case L_INFO:
-		sprdwl_debug_level = L_INFO;
-		break;
-	case L_DBG:
-		sprdwl_debug_level = L_DBG;
-		break;
-	default:
-		sprdwl_debug_level = L_ERR;
-		wl_err("input wrong debug level\n");
-	}
-
-	wl_err("set sprdwl_debug_level: %d\n", sprdwl_debug_level);
-}
-#ifdef WMMAC_WFA_CERTIFICATION
-extern unsigned int vo_ratio;
-extern unsigned int vi_ratio;
-extern unsigned int be_ratio;
-extern unsigned int wmmac_ratio;
-
-void adjust_qos_ratio(char *buf, unsigned char offset)
-{
-	unsigned int qos_ratio =
-		(buf[offset + 3] - '0')*10 + (buf[offset + 4] - '0');
-
-	if (buf[offset] == 'v') {
-		if (buf[offset + 1] == 'o')
-			vo_ratio = qos_ratio;
-		else if (buf[offset + 1] == 'i')
-			vi_ratio = qos_ratio;
-	} else if (buf[offset] == 'b' && buf[offset + 1] == 'e') {
-		be_ratio = qos_ratio;
-	} else if (buf[offset] == 'a' && buf[offset + 1] == 'm') {
-		wmmac_ratio = qos_ratio;
-	}
-
-	wl_err("vo ratio:%u, vi ratio:%u, be ratio:%u, wmmac_ratio:%u\n",
-	       vo_ratio, vi_ratio, be_ratio, wmmac_ratio);
-}
-#endif
-unsigned int new_threshold;
-void adjust_tdls_threshold(char *buf, unsigned char offset)
-{
-	unsigned int value = 0;
-	unsigned int i = 0;
-	unsigned int len = strlen(buf) - strlen("tdls_threshold=");
-
-	for (i = 0; i < len; (value *= 10), i++) {
-		if ((buf[offset + i] >= '0') &&
-		   (buf[offset + i] <= '9')) {
-			value += (buf[offset + i] - '0');
-		} else {
-			value /= 10;
-			break;
-		}
-	}
-	new_threshold = value;
-	wl_err("%s, change tdls_threshold to %d\n", __func__, value);
-}
-
-struct debuginfo_s {
-	void (*func)(char *, unsigned char offset);
-	char str[30];
-} debuginfo[] = {
-	{adjust_debug_level, "debug_level="},
-#ifdef WMMAC_WFA_CERTIFICATION
-	{adjust_qos_ratio, "qos_ratio:"},
-#endif
-	{adjust_ts_cnt_debug, "debug_info="},
-	{enable_tcp_ack_delay, "tcpack_delay_en="},
-	{adjust_tcp_ack_delay, "tcpack_delay_cnt="},
-	{adjust_tcp_ack_delay_win, "tcpack_delay_win="},
-	{adjust_tdls_threshold, "tdls_threshold="},
-};
 
 /* TODO: Could we use netdev_alloc_frag instead of kmalloc?
  *       So we did not need to distinguish buffer type
@@ -250,8 +163,6 @@ void count_tdls_flow(struct sprdwl_vif *vif, u8 *data, u16 len)
 	return;
 
 count_it:
-	if (new_threshold != 0)
-		intf->tdls_flow_count[i].threshold = new_threshold;
 	kt = ktime_get();
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
 	msec = (u32)(div_u64(kt, NSEC_PER_MSEC));
@@ -302,176 +213,6 @@ count_it:
 		intf->tdls_flow_count_enable = 0;
 }
 
-#define SPRDWL_SDIO_DEBUG_BUFLEN 128
-static ssize_t sprdwl_intf_read_info(struct file *file,
-				     char __user *user_buf,
-				     size_t count, loff_t *ppos)
-{
-	size_t ret = 0;
-	unsigned int buflen, len;
-	unsigned char *buf;
-	struct sprdwl_intf *sdev;
-	struct sprdwl_tx_msg *tx_msg;
-
-	sdev = (struct sprdwl_intf *)file->private_data;
-	tx_msg = (struct sprdwl_tx_msg *)sdev->sprdwl_tx;
-	buflen = SPRDWL_SDIO_DEBUG_BUFLEN;
-	buf = kzalloc(buflen, GFP_KERNEL);
-	if (!buf)
-		return -ENOMEM;
-
-	len = 0;
-	len += scnprintf(buf, buflen,
-			 "net: stop %lu, start %lu\n drop cnt:\n"
-			 "cmd %lu, sta %lu, p2p %lu,\n"
-			 "ring_ap:%lu ring_cp:%lu red_flow:%u,\n"
-			 "green_flow:%u blue_flow:%u white_flow:%u\n",
-			 tx_msg->net_stop_cnt, tx_msg->net_start_cnt,
-			 tx_msg->drop_cmd_cnt, tx_msg->drop_data1_cnt,
-			 tx_msg->drop_data2_cnt,
-			 tx_msg->ring_ap, tx_msg->ring_cp,
-			 atomic_read(&tx_msg->flow_ctrl[0].flow),
-			 atomic_read(&tx_msg->flow_ctrl[1].flow),
-			 atomic_read(&tx_msg->flow_ctrl[2].flow),
-			 atomic_read(&tx_msg->flow_ctrl[3].flow));
-	if (len > buflen)
-		len = buflen;
-
-	ret = simple_read_from_buffer(user_buf, count, ppos, buf, len);
-	kfree(buf);
-
-	return ret;
-}
-
-static ssize_t sprdwl_intf_write(struct file *file,
-				 const char __user *__user_buf,
-				 size_t count, loff_t *ppos)
-{
-	char buf[30];
-	struct sprdwl_intf *sdev;
-	int type = 0;
-	int debug_size = sizeof(debuginfo)/sizeof(struct debuginfo_s);
-
-	sdev = (struct sprdwl_intf *)file->private_data;
-
-	if (!count || count >= sizeof(buf)) {
-		wl_err("write len too long:%zu >= %zu\n", count, sizeof(buf));
-		return -EINVAL;
-	}
-	if (copy_from_user(buf, __user_buf, count))
-		return -EFAULT;
-	buf[count] = '\0';
-	wl_debug("write info:%s\n", buf);
-	for (type = 0; type < debug_size; type++)
-		if (!strncmp(debuginfo[type].str, buf,
-			     strlen(debuginfo[type].str))) {
-			wl_err("write info:type %d\n", type);
-			debuginfo[type].func(buf, strlen(debuginfo[type].str));
-			break;
-		}
-
-	return count;
-}
-
-static const struct file_operations sprdwl_intf_debug_fops = {
-	.read = sprdwl_intf_read_info,
-	.write = sprdwl_intf_write,
-	.open = simple_open,
-	.owner = THIS_MODULE,
-	.llseek = default_llseek
-};
-
-static int txrx_debug_show(struct seq_file *s, void *p)
-{
-	unsigned int i = 0;
-
-	for (i = 0; i < MAX_DEBUG_CNT_INDEX; i++)
-		debug_cnt_show(s, i);
-
-	for (i = 0; i < MAX_DEBUG_TS_INDEX; i++)
-		debug_ts_show(s, i);
-
-	for (i = 0; i < MAX_DEBUG_RECORD_INDEX; i++)
-		debug_record_show(s, i);
-
-	return 0;
-}
-
-static int txrx_debug_open(struct inode *inode, struct file *file)
-{
-	return single_open(file, txrx_debug_show, inode->i_private);
-}
-
-static ssize_t txrx_debug_write(struct file *file,
-				const char __user *__user_buf,
-				size_t count, loff_t *ppos)
-{
-	char buf[20] = "debug_info=";
-	unsigned char len = strlen(buf);
-
-	if (!count || (count + len) >= sizeof(buf)) {
-		wl_err("write len too long:%zu >= %zu\n", count, sizeof(buf));
-		return -EINVAL;
-	}
-
-	if (copy_from_user((buf + len), __user_buf, count))
-		return -EFAULT;
-
-	buf[count + len] = '\0';
-	wl_debug("write info:%s\n", buf);
-
-	adjust_ts_cnt_debug(buf, len);
-
-	return count;
-}
-
-static const struct file_operations txrx_debug_fops = {
-	.owner = THIS_MODULE,
-	.open = txrx_debug_open,
-	.read = seq_read,
-	.write = txrx_debug_write,
-	.llseek = seq_lseek,
-	.release = single_release,
-};
-
-void sprdwl_debugfs(void *spdev, struct dentry *dir)
-{
-	struct sprdwl_intf *intf;
-
-	intf = (struct sprdwl_intf *)spdev;
-	debugfs_create_file("sprdwlinfo", 0400,
-			    dir, intf, &sprdwl_intf_debug_fops);
-}
-
-static struct dentry *sprdwl_debug_root;
-
-void sprdwl_debugfs_init(struct sprdwl_intf *intf)
-{
-	/* create debugfs */
-	sprdwl_debug_root = debugfs_create_dir("sprdwl_debug", NULL);
-	if (IS_ERR(sprdwl_debug_root)) {
-		wl_err("%s, create dir fail!\n", __func__);
-		sprdwl_debug_root = NULL;
-		return;
-	}
-
-	if (!debugfs_create_file("log_level", 0600,
-		sprdwl_debug_root, intf, &sprdwl_intf_debug_fops))
-		wl_err("%s, create file fail!\n", __func__);
-
-	if (!debugfs_create_file("txrx_dbg", 0600,
-		sprdwl_debug_root, NULL, &txrx_debug_fops))
-		wl_err("%s, %d, create_file fail!\n", __func__, __LINE__);
-	else
-		debug_ctrl_init();
-}
-
-void sprdwl_debugfs_deinit(void)
-{
-	/* remove debugfs */
-	debugfs_remove_recursive(sprdwl_debug_root);
-}
-
 static int sprdwl_ini_download_status(void)
 {
 	/*disable download ini function, just return 1*/
@@ -517,7 +258,6 @@ static struct sprdwl_if_ops sprdwl_core_ops = {
 	.tx = sprdwl_tx_msg_func,
 	.force_exit = sprdwl_force_exit,
 	.is_exit = sprdwl_is_exit,
-	.debugfs = sprdwl_debugfs,
 	.tcp_drop_msg = sprdwl_tcp_drop_msg,
 	.ini_download_status = sprdwl_ini_download_status
 };
@@ -602,7 +342,6 @@ static int sprdwl_probe(struct platform_device *pdev)
 	if (ret)
 		goto err_core_init;
 
-	sprdwl_debugfs_init(intf);
 
 	return ret;
 
@@ -626,7 +365,6 @@ static void sprdwl_remove(struct platform_device *pdev)
 	struct sprdwl_intf *intf = platform_get_drvdata(pdev);
 	struct sprdwl_priv *priv = intf->priv;
 
-	sprdwl_debugfs_deinit();
 	sprdwl_core_deinit(priv);
 	sprdwl_tx_deinit(intf);
 	sprdwl_rx_deinit(intf);

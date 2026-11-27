@@ -232,8 +232,6 @@ struct sprdwl_priv {
 	struct list_head work_list;
 	struct workqueue_struct *common_workq;
 
-	struct dentry *debugfs;
-
 	/* tcp ack management */
 	struct sprdwl_tcp_ack_manage ack_m;
 
@@ -364,7 +362,6 @@ void acs_scan_result(struct sprdwl_vif *vif, u16 chan,
 
 void init_scan_list(struct sprdwl_vif *vif);
 void clean_scan_list(struct sprdwl_vif *vif);
-extern struct sprdwl_priv *g_sprdwl_priv;
 
 void sprdwl_netif_rx(struct sk_buff *skb, struct net_device *ndev);
 void sprdwl_stop_net(struct sprdwl_vif *vif);

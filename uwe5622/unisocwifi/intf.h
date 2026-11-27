@@ -33,7 +33,6 @@ struct sprdwl_if_ops {
 	int (*is_exit)(void *spdev);
 	int (*suspend)(struct sprdwl_priv *priv);
 	int (*resume)(struct sprdwl_priv *priv);
-	void (*debugfs)(void *spdev, struct dentry *dir);
 	void (*tcp_drop_msg)(void *spdev, struct sprdwl_msg_buf *msg);
 	int (*ini_download_status)(void);
 };

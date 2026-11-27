@@ -42,8 +42,6 @@
 #include "tcp_ack.h"
 #endif
 
-struct sprdwl_priv *g_sprdwl_priv;
-
 static void str2mac(const char *mac_addr, u8 *mac)
 {
 	unsigned int m[ETH_ALEN];
@@ -1475,17 +1473,6 @@ next_intf:
 
 }
 
-static void sprdwl_init_debugfs(struct sprdwl_priv *priv)
-{
-	if (!priv->wiphy->debugfsdir)
-		return;
-	priv->debugfs = debugfs_create_dir("sprdwl_wifi",
-					   priv->wiphy->debugfsdir);
-	if (IS_ERR_OR_NULL(priv->debugfs))
-		return;
-	sprdwl_intf_debugfs(priv, priv->debugfs);
-}
-
 int sprdwl_core_init(struct device *dev, struct sprdwl_priv *priv)
 {
 	struct wiphy *wiphy = priv->wiphy;
@@ -1515,7 +1502,6 @@ int sprdwl_core_init(struct device *dev, struct sprdwl_priv *priv)
 		wl_err("failed to regitster wiphy(%d)!\n", ret);
 		goto out;
 	}
-	sprdwl_init_debugfs(priv);
 
 	rtnl_lock();
 	wdev = sprdwl_add_iface(priv, "wlan%d", NL80211_IFTYPE_STATION, NULL);

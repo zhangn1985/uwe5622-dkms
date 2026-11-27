@@ -73,13 +73,6 @@ static inline int sprdwl_intf_resume(struct sprdwl_priv *priv)
 	return 0;
 }
 
-static inline void sprdwl_intf_debugfs(struct sprdwl_priv *priv,
-				       struct dentry *dir)
-{
-	if (priv->if_ops->debugfs)
-		priv->if_ops->debugfs(priv->hw_priv, dir);
-}
-
 static inline void sprdwl_intf_tcp_drop_msg(struct sprdwl_priv *priv,
 					    struct sprdwl_msg_buf *msg)
 {

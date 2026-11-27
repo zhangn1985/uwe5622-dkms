@@ -31,7 +31,6 @@
 #include "mm.h"
 #include "intf_ops.h"
 #include "cmdevt.h"
-#include "debug.h"
 #include <linux/kthread.h>
 
 struct sprdwl_msg_buf *sprdwl_get_msg_buf(void *pdev,
@@ -1134,14 +1133,6 @@ out:
 		(ret == -1) ? "event" : "data",
 		in_count,
 		div_u64(div_u64(kt - tx_msg->kt, NSEC_PER_USEC), in_count));
-
-		debug_record_add(TX_CREDIT_ADD, in_count);
-		debug_record_add(TX_CREDIT_PER_ADD,
-			div_u64(div_u64(kt - tx_msg->kt,
-				 NSEC_PER_USEC), in_count));
-		debug_record_add(TX_CREDIT_RECORD, jiffies_to_usecs(jiffies));
-		debug_record_add(TX_CREDIT_TIME_DIFF,
-			div_u64(kt - tx_msg->kt, NSEC_PER_USEC));
 	}
 #else
 	if ((tx_msg->kt.tv64 == 0) || (in_count == 0)) {
@@ -1152,14 +1143,6 @@ out:
 		(ret == -1) ? "event" : "data",
 		in_count,
 		div_u64(div_u64(kt.tv64 - tx_msg->kt.tv64, NSEC_PER_USEC), in_count));
-
-		debug_record_add(TX_CREDIT_ADD, in_count);
-		debug_record_add(TX_CREDIT_PER_ADD,
-			div_u64(div_u64(kt.tv64 - tx_msg->kt.tv64,
-				NSEC_PER_USEC), in_count));
-		debug_record_add(TX_CREDIT_RECORD, jiffies_to_usecs(jiffies));
-		debug_record_add(TX_CREDIT_TIME_DIFF,
-			div_u64(kt.tv64 - tx_msg->kt.tv64, NSEC_PER_USEC));
 	}
 #endif
 	tx_msg->kt = ktime_get();

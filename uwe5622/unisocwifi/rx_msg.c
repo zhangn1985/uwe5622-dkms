@@ -24,7 +24,6 @@
 #include "wl_intf.h"
 #include "tx_msg.h"
 #include <net/ip6_checksum.h>
-#include "debug.h"
 #include "tcp_ack.h"
 
 #ifdef RX_HW_CSUM
@@ -283,9 +282,6 @@ static void sprdwl_rx_work_queue(struct work_struct *work)
 				sprdwl_rx_event_process(priv, data);
 				break;
 			case SPRDWL_TYPE_DATA_SPECIAL:
-				debug_ts_leave(RX_SDIO_PORT);
-				debug_ts_enter(RX_SDIO_PORT);
-
 				if (msg->len > SPRDWL_MAX_DATA_RXLEN)
 					wl_err("err data trans too long:%d > %d\n",
 						   len, SPRDWL_MAX_CMD_RXLEN);
