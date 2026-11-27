@@ -195,9 +195,6 @@ int sdiohal_rx_thread(void *data)
 	unsigned int valid_len = 0;
 	static char *rx_buf;
 	struct sdiohal_list_t *data_list = NULL;
-	struct timespec tm_begin, tm_end;
-	static long time_total_ns;
-	static int times_count;
 
 	sdiohal_rx_adapt_set_dtbs(0);
 	sdiohal_rx_adapt_set_pac_num(1);
@@ -216,17 +213,10 @@ int sdiohal_rx_thread(void *data)
 			continue;
 		}
 
-		getnstimeofday(&p_data->tm_end_irq);
-		sdiohal_pr_perf("rx sch time:%ld\n",
-				(long)(timespec_to_ns(&p_data->tm_end_irq)
-				- timespec_to_ns(&p_data->tm_begin_irq)));
-
 		sdiohal_resume_wait();
 		sdiohal_cp_rx_wakeup(PACKER_RX);
 
 read_again:
-		getnstimeofday(&tm_begin);
-
 		if (p_data->adma_rx_enable) {
 			/* read len is packet num */
 			mbuf_num = sdiohal_rx_adapt_get_pac_num();
@@ -305,17 +295,6 @@ read_again:
 		}
 
 submit_list:
-		getnstimeofday(&tm_end);
-		time_total_ns += timespec_to_ns(&tm_end)
-			- timespec_to_ns(&tm_begin);
-		times_count++;
-		if (!(times_count % PERFORMANCE_COUNT)) {
-			sdiohal_pr_perf("rx list avg time:%ld\n",
-					(time_total_ns / PERFORMANCE_COUNT));
-			time_total_ns = 0;
-			times_count = 0;
-		}
-
 		sdiohal_rx_list_dispatch();
 		if (p_data->adma_rx_enable)
 			sdiohal_rx_adapt_set_pac_num(rx_dtbs);

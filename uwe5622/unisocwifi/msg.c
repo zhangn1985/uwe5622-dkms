@@ -17,7 +17,6 @@
 
 #include "sprdwl.h"
 #include "msg.h"
-#include "wcn_wrapper.h"
 /* static struct sprdwl_msg_list msg_list */
 
 int sprdwl_msg_init(int num, struct sprdwl_msg_list *list)
@@ -59,24 +58,22 @@ err_alloc_buf:
 }
 
 #define SPRDWL_MSG_EXIT_VAL 0x8000
+#define SPRDWL_MSG_DEINIT_WAIT_COUNT 1333
 void sprdwl_msg_deinit(struct sprdwl_msg_list *list)
 {
 	struct sprdwl_msg_buf *msg_buf;
 	struct sprdwl_msg_buf *pos;
-	struct timespec txmsgftime1, txmsgftime2;
+	unsigned int wait_count;
 
 	atomic_add(SPRDWL_MSG_EXIT_VAL, &list->ref);
 	if (atomic_read(&list->ref) > SPRDWL_MSG_EXIT_VAL)
 		wl_err("%s ref not ok! wait for pop!\n", __func__);
 
-	getnstimeofday(&txmsgftime1);
-	while (atomic_read(&list->ref) > SPRDWL_MSG_EXIT_VAL) {
-		getnstimeofday(&txmsgftime2);
-		if (((unsigned long)(timespec_to_ns(&txmsgftime2) -
-			timespec_to_ns(&txmsgftime1))/1000000) > 3000)
-			break;
+	for (wait_count = 0;
+	     wait_count < SPRDWL_MSG_DEINIT_WAIT_COUNT &&
+	     atomic_read(&list->ref) > SPRDWL_MSG_EXIT_VAL;
+	     wait_count++)
 		usleep_range(2000, 2500);
-	}
 
 	wl_info("%s list->ref ok!\n", __func__);
 

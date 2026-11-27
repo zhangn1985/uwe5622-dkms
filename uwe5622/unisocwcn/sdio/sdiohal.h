@@ -26,13 +26,11 @@
 #include "../sleep/slp_mgr.h"
 #endif
 
-#define PERFORMANCE_COUNT 100
 #define SDIOHAL_PRINTF_LEN (16)
 #define SDIOHAL_NORMAL_LEVEL (0x01)
 #define SDIOHAL_DEBUG_LEVEL (0x02)
 #define SDIOHAL_LIST_LEVEL (0x04)
 #define SDIOHAL_DATA_LEVEL (0x08)
-#define SDIOHAL_PERF_LEVEL (0x10)
 
 #define sdiohal_info(fmt, args...) \
 	pr_info("sdiohal:" fmt, ## args)
@@ -60,17 +58,12 @@ extern long sdiohal_log_level;
 		print_hex_dump(level, prefix_str, prefix_type, \
 			       rowsize, groupsize, buf, len, ascii); \
 	} while (0)
-#define sdiohal_pr_perf(fmt, args...) \
-	do { if (sdiohal_log_level & SDIOHAL_PERF_LEVEL) \
-		printk(fmt, ## args); \
-	} while (0)
 #else
 #define sdiohal_normal(fmt, args...)
 #define sdiohal_debug(fmt, args...)
 #define sdiohal_pr_list(loglevel, fmt, args...)
 #define	sdiohal_pr_data(level, prefix_str, prefix_type, \
 			rowsize, groupsize, buf, len, ascii, loglevel)
-#define sdiohal_pr_perf(fmt, args...)
 #endif
 
 #define SDIOHAL_SDMA	0
@@ -364,12 +357,6 @@ struct sdiohal_data_t {
 	unsigned int dtbs;
 	unsigned int remain_pac_num;
 	char *dtbs_buf;
-
-	/* for performance statics */
-	struct timespec tm_begin_sch;
-	struct timespec tm_end_sch;
-	struct timespec tm_begin_irq;
-	struct timespec tm_end_irq;
 
 #ifdef CONFIG_PM_SLEEP
 	/*wakeup_source pointer*/
