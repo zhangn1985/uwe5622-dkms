@@ -57,14 +57,16 @@ u32 wcn_print_level = WCN_DEBUG_OFF;
 
 struct wcn_sync_info_t {
 	unsigned int init_status;
+	unsigned int rsvd0[4];
 	unsigned int prj_type;
 	unsigned int tsx_dac_data;
 	unsigned int sdio_config;
 	unsigned int dcache_status;
 	unsigned int dcache_start_addr;
 	unsigned int dcache_end_addr;
+	unsigned int rsvd1;
 	unsigned int mem_ap_cmd;
-	unsigned int rsvd[3];
+	unsigned int rsvd2[3];
 	unsigned int bind_verify_data[4];
 };
 
