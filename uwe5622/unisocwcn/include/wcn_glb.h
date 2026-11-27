@@ -20,6 +20,4 @@
 #include "uwe562x_glb.h"
 #endif
 
-#include "rdc_debug.h"
-
 #endif

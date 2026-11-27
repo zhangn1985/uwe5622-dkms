@@ -2,7 +2,6 @@
 #define __UWE562X_GLB_H__
 
 #include "../sleep/slp_mgr.h"
-#include "rdc_debug.h"
 
 static inline unsigned int reg_value(unsigned int marlin3reg,
 	unsigned int marlin3lreg, unsigned int marlin3ereg) {

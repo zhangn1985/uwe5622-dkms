@@ -38,7 +38,6 @@
 #include "rf/rf.h"
 #include "../sleep/sdio_int.h"
 #include "../sleep/slp_mgr.h"
-#include "rdc_debug.h"
 #include "mdbg_type.h"
 #include "wcn_glb_reg.h"
 #include "wcn_glb.h"
