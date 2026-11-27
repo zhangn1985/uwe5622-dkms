@@ -41,7 +41,6 @@
 #include "tty.h"
 #include "lpm.h"
 #include "rfkill.h"
-#include "dump.h"
 #include "woble.h"
 #include "alignment/sitm.h"
 
@@ -78,86 +77,11 @@ struct mtty_device {
 	/*struct tasklet_struct rx_task;*/
 	struct work_struct bt_rx_work;
 	struct workqueue_struct *bt_rx_workqueue;
-	bool sysfs_created;
 };
 
 static struct mtty_device *mtty_dev;
 static unsigned int que_task = 1;
 static int que_sche = 1;
-
-static bool is_dumped;
-static bool is_user_debug;
-bt_host_data_dump *data_dump;
-
-static ssize_t dumpmem_store(struct device *dev,
-	struct device_attribute *attr, const char *buf, size_t count)
-{
-	if (buf[0] == 2) {
-		pr_info("Set is_user_debug true!\n");
-		is_user_debug = true;
-		return 0;
-	}
-
-	if (is_dumped == false) {
-		pr_info("mtty BT start dump cp mem !\n");
-		bt_host_data_printf();
-		if (data_dump != NULL) {
-			data_dump = NULL;
-			vfree(data_dump);
-		}
-	} else {
-		pr_info("mtty BT has dumped cp mem, pls restart phone!\n");
-	}
-	is_dumped = true;
-
-	return 0;
-}
-
-static DEVICE_ATTR_WO(dumpmem);
-
-static ssize_t chipid_show(struct device *dev,
-	   struct device_attribute *attr, char *buf)
-{
-	int i = 0, id;
-	const char *id_str = NULL;
-
-	id = wcn_get_chip_type();
-	id_str = wcn_get_chip_name();
-	pr_info("%s: chipid: %d, chipid_str: %s", __func__, id, id_str);
-
-	i = scnprintf(buf, PAGE_SIZE, "%d/", id);
-	pr_info("%s: buf: %s, i = %d", __func__, buf, i);
-	strcat(buf, id_str);
-	i += scnprintf(buf + i, PAGE_SIZE - i, buf + i);
-	pr_info("%s: buf: %s, i = %d", __func__, buf, i);
-	return i;
-}
-
-static DEVICE_ATTR_RO(chipid);
-
-static ssize_t ant_num_show(struct device *dev, struct device_attribute *attr, char *buf)
-{
-	int num = 2;
-
-	num = marlin_get_ant_num();
-	pr_err("%s: %d", __func__, num);
-
-	return sprintf(buf, "%d", num);
-}
-
-static DEVICE_ATTR_RO(ant_num);
-
-static struct attribute *bluetooth_attrs[] = {
-	&dev_attr_dumpmem.attr,
-	&dev_attr_chipid.attr,
-	&dev_attr_ant_num.attr,
-	NULL,
-};
-
-static struct attribute_group bluetooth_group = {
-	.name = NULL,
-	.attrs = bluetooth_attrs,
-};
 
 static void hex_dump(unsigned char *bin, size_t binsz)
 {
@@ -274,10 +198,6 @@ static int mtty_rx_cb(int chn, struct mbuf_t *head, struct mbuf_t *tail, int num
 		BT_VER("%s dump block %d\n", __func__, block_size);
 		hex_dump_block((unsigned char *)head->buf + BT_SDIO_HEAD_LEN, block_size);
 	}
-	if (is_user_debug) {
-		bt_host_data_save((unsigned char *)head->buf + BT_SDIO_HEAD_LEN, block_size, BT_DATA_IN);
-	}
-
 	woble_data_recv((unsigned char *)head->buf + BT_SDIO_HEAD_LEN, block_size);
 
 	if (atomic_read(&mtty_dev->state) == MTTY_STATE_CLOSE) {
@@ -366,8 +286,6 @@ static int mtty_open(struct tty_struct *tty, struct file *filp)
 	struct mtty_device *mtty = NULL;
 	struct tty_driver *driver = NULL;
 
-	data_dump = (bt_host_data_dump *)vmalloc(sizeof(bt_host_data_dump));
-	memset(data_dump, 0, sizeof(bt_host_data_dump));
 	if (tty == NULL) {
 		pr_err("mtty open input tty is NULL!\n");
 		return -ENOMEM;
@@ -408,10 +326,6 @@ static void mtty_close(struct tty_struct *tty, struct file *filp)
 	atomic_set(&mtty->state, MTTY_STATE_CLOSE);
 	sitm_cleanup();
 
-	if (data_dump != NULL) {
-		vfree(data_dump);
-		data_dump = NULL;
-	}
 	pr_info("mtty_close device success !\n");
 }
 
@@ -424,9 +338,6 @@ static int mtty_write(struct tty_struct *tty,
 
 	BT_VER("%s +++\n", __func__);
 
-	if (is_user_debug) {
-		bt_host_data_save(buf, count, BT_DATA_OUT);
-	}
 	if (log_level == MTTY_LOG_LEVEL_VER) {
 		BT_VER("%s dump size: %d\n", __func__, count);
 		hex_dump_block((unsigned char *)buf, count);
@@ -638,7 +549,6 @@ static int  mtty_probe(struct platform_device *pdev)
 								pdev->dev.platform_data;
 	struct mtty_device *mtty;
 	int rval = 0;
-	bool sysfs_created = false;
 
 	if (!mfd_get_cell(pdev))
 		return -ENODEV;
@@ -708,14 +618,6 @@ static int  mtty_probe(struct platform_device *pdev)
 		goto err_rx_channel;
 	sema_init(&sem_id, BT_TX_POOL_SIZE - 1);
 
-	rval = sysfs_create_group(&pdev->dev.kobj, &bluetooth_group);
-	if (rval) {
-		pr_err("%s failed to create bluetooth tty attributes.\n", __func__);
-	} else {
-		sysfs_created = true;
-		mtty->sysfs_created = true;
-	}
-
 	rval = rfkill_bluetooth_init(pdev);
 	if (rval)
 		goto err_channels;
@@ -723,8 +625,6 @@ static int  mtty_probe(struct platform_device *pdev)
 	return 0;
 
 err_channels:
-	if (sysfs_created)
-		sysfs_remove_group(&pdev->dev.kobj, &bluetooth_group);
 	sprdwcn_bus_chn_deinit(&bt_tx_ops);
 err_rx_channel:
 	sprdwcn_bus_chn_deinit(&bt_rx_ops);
@@ -828,8 +728,6 @@ static void mtty_remove(struct platform_device *pdev)
 		stop_marlin(MARLIN_BLUETOOTH);
 	mtty_dev = NULL;
 
-	if (mtty->sysfs_created)
-		sysfs_remove_group(&pdev->dev.kobj, &bluetooth_group);
 	mtty_tty_driver_exit(mtty);
 	sprdwcn_bus_chn_deinit(&bt_rx_ops);
 	sprdwcn_bus_chn_deinit(&bt_tx_ops);

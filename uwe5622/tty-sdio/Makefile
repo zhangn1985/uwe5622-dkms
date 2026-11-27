@@ -13,8 +13,7 @@ sprdbt_tty-objs := \
 	rfkill.o \
 	lpm.o \
 	woble.o\
-	alignment/sitm.o \
-	dump.o
+	alignment/sitm.o
 
 obj-$(CONFIG_TTY_OVERY_SDIO) += sprdbt_tty.o
 endif
